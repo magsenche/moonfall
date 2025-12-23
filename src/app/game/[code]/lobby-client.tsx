@@ -47,6 +47,23 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   // Phase transition state
   const [isChangingPhase, setIsChangingPhase] = useState(false);
 
+  // Wolf chat state
+  type WolfMessage = {
+    id: string;
+    message: string;
+    created_at: string;
+    player: { id: string; pseudo: string } | null;
+  };
+  const [wolfMessages, setWolfMessages] = useState<WolfMessage[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+
+  // Night vote state (wolves)
+  const [nightTarget, setNightTarget] = useState<string | null>(null);
+  const [hasNightVoted, setHasNightVoted] = useState(false);
+  const [isNightVoting, setIsNightVoting] = useState(false);
+  const [nightVoteError, setNightVoteError] = useState<string | null>(null);
+
   // Get current player ID from localStorage on mount
   useEffect(() => {
     const playerId = getPlayerIdForGame(initialGame.code);
@@ -112,6 +129,37 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
       supabase.removeChannel(channel);
     };
   }, [game.id, supabase, router]);
+
+  // Wolf chat realtime subscription
+  useEffect(() => {
+    // Only subscribe if game is in progress
+    if (game.status !== 'en_cours') return;
+
+    // Initial fetch
+    fetchWolfMessages();
+
+    const chatChannel = supabase
+      .channel(`wolf-chat:${game.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'wolf_chat',
+          filter: `game_id=eq.${game.id}`,
+        },
+        () => {
+          // Refetch messages on new message
+          fetchWolfMessages();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(chatChannel);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.id, game.status, supabase]);
 
   const copyCode = async () => {
     await navigator.clipboard.writeText(game.code);
@@ -209,6 +257,92 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
       console.error('Vote resolution error:', err);
     } finally {
       setIsChangingPhase(false);
+    }
+  };
+
+  // Submit night vote (wolves only)
+  const submitNightVote = async () => {
+    if (!currentPlayerId || !nightTarget) return;
+    
+    setIsNightVoting(true);
+    setNightVoteError(null);
+    try {
+      const response = await fetch(`/api/games/${game.code}/vote/night`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          visitorId: currentPlayerId,
+          targetId: nightTarget,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors du vote');
+      }
+      setHasNightVoted(true);
+    } catch (err) {
+      setNightVoteError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } finally {
+      setIsNightVoting(false);
+    }
+  };
+
+  // Resolve night vote (MJ only)
+  const resolveNightVote = async () => {
+    setIsChangingPhase(true);
+    try {
+      const response = await fetch(`/api/games/${game.code}/vote/night/resolve`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors de la résolution');
+      }
+      // Reset night vote state
+      setHasNightVoted(false);
+      setNightTarget(null);
+      router.refresh();
+    } catch (err) {
+      console.error('Night vote resolution error:', err);
+    } finally {
+      setIsChangingPhase(false);
+    }
+  };
+
+  // Send wolf chat message
+  const sendWolfMessage = async () => {
+    if (!currentPlayerId || !newMessage.trim()) return;
+    
+    setIsSendingMessage(true);
+    try {
+      const response = await fetch(`/api/games/${game.code}/wolf-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId: currentPlayerId,
+          message: newMessage.trim(),
+        }),
+      });
+      if (response.ok) {
+        setNewMessage('');
+      }
+    } catch (err) {
+      console.error('Send message error:', err);
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+
+  // Fetch wolf chat messages
+  const fetchWolfMessages = async () => {
+    try {
+      const response = await fetch(`/api/games/${game.code}/wolf-chat`);
+      const data = await response.json();
+      if (response.ok && data.messages) {
+        setWolfMessages(data.messages);
+      }
+    } catch (err) {
+      console.error('Fetch wolf messages error:', err);
     }
   };
 
@@ -440,6 +574,131 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
           </Card>
         )}
 
+        {/* Wolf Night Vote - Only during night for alive wolves */}
+        {game.status === 'nuit' && isWolf && currentPlayer?.is_alive !== false && (
+          <Card className="mb-6 border border-red-500/30">
+            <CardHeader>
+              <CardTitle className="text-red-400">🩸 Choisir une victime</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {hasNightVoted ? (
+                <div className="text-center py-4">
+                  <p className="text-2xl mb-2">✅</p>
+                  <p className="text-red-300">Vote enregistré</p>
+                  <p className="text-sm text-slate-500 mt-2">
+                    En attente de la meute...
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <ul className="space-y-2 mb-4">
+                    {alivePlayers
+                      .filter(p => !wolves.some(w => w.id === p.id)) // Can't attack wolves
+                      .map((player) => (
+                        <li key={player.id}>
+                          <button
+                            onClick={() => setNightTarget(player.id)}
+                            className={cn(
+                              "w-full flex items-center gap-3 p-3 rounded-xl transition-all",
+                              nightTarget === player.id
+                                ? "bg-red-500/30 border-2 border-red-500"
+                                : "bg-slate-800/50 hover:bg-red-900/30 border-2 border-transparent"
+                            )}
+                          >
+                            <PlayerAvatar 
+                              playerId={player.id} 
+                              pseudo={player.pseudo} 
+                              size="sm"
+                            />
+                            <span className="font-medium text-white">{player.pseudo}</span>
+                            {nightTarget === player.id && (
+                              <span className="ml-auto text-red-400">🩸</span>
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                  <Button
+                    className="w-full bg-red-600 hover:bg-red-700"
+                    onClick={submitNightVote}
+                    disabled={!nightTarget || isNightVoting}
+                  >
+                    {isNightVoting ? '⏳ Vote en cours...' : '🐺 Dévorer cette proie'}
+                  </Button>
+                  {nightVoteError && (
+                    <p className="text-sm text-red-400 text-center mt-2">{nightVoteError}</p>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Wolf Chat - Only during night for wolves */}
+        {game.status === 'nuit' && isWolf && (
+          <Card className="mb-6 border border-red-500/20">
+            <CardHeader>
+              <CardTitle className="text-red-400 text-lg">💬 Chat de la Meute</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Messages */}
+              <div className="h-48 overflow-y-auto mb-4 space-y-2 p-2 bg-slate-900/50 rounded-lg">
+                {wolfMessages.length === 0 ? (
+                  <p className="text-slate-500 text-center text-sm py-8">
+                    Aucun message. Commencez à discuter...
+                  </p>
+                ) : (
+                  wolfMessages.map((msg) => {
+                    const isOwn = msg.player?.id === currentPlayerId;
+                    return (
+                      <div
+                        key={msg.id}
+                        className={cn(
+                          "p-2 rounded-lg max-w-[85%]",
+                          isOwn 
+                            ? "bg-red-500/20 ml-auto" 
+                            : "bg-slate-800"
+                        )}
+                      >
+                        {!isOwn && (
+                          <p className="text-xs text-red-400 font-medium mb-1">
+                            {msg.player?.pseudo}
+                          </p>
+                        )}
+                        <p className="text-white text-sm">{msg.message}</p>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              {/* Input */}
+              {currentPlayer?.is_alive !== false && (
+                <form 
+                  onSubmit={(e) => { e.preventDefault(); sendWolfMessage(); }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Message à la meute..."
+                    className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    disabled={isSendingMessage}
+                  />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="bg-red-600 hover:bg-red-700"
+                    disabled={!newMessage.trim() || isSendingMessage}
+                  >
+                    {isSendingMessage ? '...' : '➤'}
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Phase Instructions */}
         <Card className="mb-6">
           <CardContent className="pt-6">
@@ -551,13 +810,22 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
             </CardHeader>
             <CardContent className="space-y-3">
               {game.status === 'nuit' && (
-                <Button
-                  className="w-full"
-                  onClick={() => changePhase('jour')}
-                  disabled={isChangingPhase}
-                >
-                  ☀️ Passer au jour
-                </Button>
+                <>
+                  <Button
+                    className="w-full bg-red-600 hover:bg-red-700"
+                    onClick={resolveNightVote}
+                    disabled={isChangingPhase}
+                  >
+                    🐺 Résoudre l&apos;attaque des loups
+                  </Button>
+                  <Button
+                    className="w-full"
+                    onClick={() => changePhase('jour')}
+                    disabled={isChangingPhase}
+                  >
+                    ☀️ Passer au jour (sans attaque)
+                  </Button>
+                </>
               )}
               {game.status === 'jour' && (
                 <Button
