@@ -105,15 +105,15 @@ src/
 - [x] Système d'identification joueur (session/localStorage)
 - [x] Système de vote jour (élimination publique)
 - [x] Conditions de victoire (loups >= villageois / plus de loups)
+- [x] Vote nuit des loups
+- [x] Chat privé des loups (realtime)
 
 ### 🔄 En Cours
 
-- [ ] Vote nuit des loups
+- [ ] Pouvoir Voyante (voir un rôle)
 
 ### ⏳ À Faire - MVP
 
-- [ ] Vote nuit des loups
-- [ ] Chat privé des loups (realtime)
 - [ ] Pouvoir Voyante (voir un rôle)
 - [ ] Timer avant prochain conseil
 - [ ] Missions basiques (création MJ, validation)
