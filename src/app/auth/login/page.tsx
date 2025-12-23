@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 
 type Step = 'email' | 'otp';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signInWithOtp, verifyOtp, user, isLoading: authLoading } = useAuth();
@@ -192,5 +192,18 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+// Wrapper avec Suspense pour useSearchParams
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-slate-400">Chargement...</div>
+      </main>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
