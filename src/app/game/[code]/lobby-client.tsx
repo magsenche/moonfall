@@ -79,6 +79,24 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   // Timer state
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
+  // Missions state
+  type Mission = {
+    id: string;
+    title: string;
+    description: string;
+    type: string;
+    status: string;
+    assigned_to: string | null;
+    assigned_player: { id: string; pseudo: string } | null;
+    deadline: string | null;
+    reward_description: string | null;
+    penalty_description: string | null;
+  };
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [showMissionForm, setShowMissionForm] = useState(false);
+  const [newMission, setNewMission] = useState({ title: '', description: '', assignedTo: '' });
+  const [isCreatingMission, setIsCreatingMission] = useState(false);
+
   // Get current player ID from localStorage on mount
   useEffect(() => {
     const playerId = getPlayerIdForGame(initialGame.code);
@@ -198,6 +216,14 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
 
     return () => clearInterval(interval);
   }, [game.phase_ends_at]);
+
+  // Fetch missions when game is in progress
+  useEffect(() => {
+    if (game.status !== 'lobby') {
+      fetchMissions();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.status, game.code]);
 
   const copyCode = async () => {
     await navigator.clipboard.writeText(game.code);
@@ -409,6 +435,68 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
       setSeerError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setIsUsingSeerPower(false);
+    }
+  };
+
+  // Fetch missions
+  const fetchMissions = async () => {
+    try {
+      const response = await fetch(`/api/games/${game.code}/missions`);
+      const data = await response.json();
+      if (response.ok && data.missions) {
+        setMissions(data.missions);
+      }
+    } catch (err) {
+      console.error('Fetch missions error:', err);
+    }
+  };
+
+  // Create mission (MJ only)
+  const createMission = async () => {
+    if (!currentPlayerId || !newMission.title || !newMission.description) return;
+    
+    setIsCreatingMission(true);
+    try {
+      const response = await fetch(`/api/games/${game.code}/missions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newMission.title,
+          description: newMission.description,
+          assignedTo: newMission.assignedTo || undefined,
+          creatorId: currentPlayerId,
+        }),
+      });
+      if (response.ok) {
+        setNewMission({ title: '', description: '', assignedTo: '' });
+        setShowMissionForm(false);
+        fetchMissions();
+      }
+    } catch (err) {
+      console.error('Create mission error:', err);
+    } finally {
+      setIsCreatingMission(false);
+    }
+  };
+
+  // Update mission status (MJ only)
+  const updateMissionStatus = async (missionId: string, action: 'validate' | 'fail' | 'cancel') => {
+    if (!currentPlayerId) return;
+    
+    try {
+      const response = await fetch(`/api/games/${game.code}/missions/${missionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId: currentPlayerId,
+          action,
+        }),
+      });
+      if (response.ok) {
+        fetchMissions();
+      }
+    } catch (err) {
+      console.error('Update mission error:', err);
     }
   };
 
@@ -1032,6 +1120,138 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
               )}
               {isChangingPhase && (
                 <p className="text-sm text-slate-400 text-center">⏳ Changement en cours...</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Missions Section */}
+        {game.status !== 'lobby' && game.status !== 'terminee' && (
+          <Card className="mb-6 border border-amber-500/30">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between text-amber-400">
+                <span>📋 Missions</span>
+                {isMJ && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowMissionForm(!showMissionForm)}
+                    className="text-amber-400 hover:text-amber-300"
+                  >
+                    {showMissionForm ? '✕ Annuler' : '+ Nouvelle'}
+                  </Button>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Mission Creation Form (MJ only) */}
+              {isMJ && showMissionForm && (
+                <div className="mb-4 p-4 bg-slate-800/50 rounded-xl space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Titre de la mission"
+                    value={newMission.title}
+                    onChange={(e) => setNewMission(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder:text-slate-500"
+                  />
+                  <textarea
+                    placeholder="Description de la mission"
+                    value={newMission.description}
+                    onChange={(e) => setNewMission(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 min-h-[80px]"
+                  />
+                  <select
+                    value={newMission.assignedTo}
+                    onChange={(e) => setNewMission(prev => ({ ...prev, assignedTo: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white"
+                  >
+                    <option value="">Assigner à... (optionnel)</option>
+                    {alivePlayers.map((player) => (
+                      <option key={player.id} value={player.id}>
+                        {player.pseudo}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    className="w-full bg-amber-600 hover:bg-amber-700"
+                    onClick={createMission}
+                    disabled={!newMission.title || !newMission.description || isCreatingMission}
+                  >
+                    {isCreatingMission ? '⏳ Création...' : '✓ Créer la mission'}
+                  </Button>
+                </div>
+              )}
+
+              {/* Missions List */}
+              {missions.length === 0 ? (
+                <p className="text-center text-slate-500 py-4">
+                  Aucune mission pour le moment
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {missions.map((mission) => (
+                    <li
+                      key={mission.id}
+                      className={cn(
+                        "p-3 rounded-xl",
+                        mission.status === 'success' && "bg-green-500/10 border border-green-500/30",
+                        mission.status === 'failed' && "bg-red-500/10 border border-red-500/30",
+                        mission.status === 'cancelled' && "bg-slate-500/10 border border-slate-500/30 opacity-50",
+                        (mission.status === 'pending' || mission.status === 'in_progress') && "bg-amber-500/10 border border-amber-500/30"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-white">{mission.title}</h4>
+                          <p className="text-sm text-slate-400 mt-1">{mission.description}</p>
+                          {mission.assigned_player && (
+                            <p className="text-xs text-amber-400 mt-2">
+                              👤 {mission.assigned_player.pseudo}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          {mission.status === 'pending' && (
+                            <span className="text-xs px-2 py-1 bg-slate-500/20 text-slate-400 rounded">⏳ En attente</span>
+                          )}
+                          {mission.status === 'in_progress' && (
+                            <span className="text-xs px-2 py-1 bg-amber-500/20 text-amber-400 rounded">🎯 En cours</span>
+                          )}
+                          {mission.status === 'success' && (
+                            <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded">✅ Réussie</span>
+                          )}
+                          {mission.status === 'failed' && (
+                            <span className="text-xs px-2 py-1 bg-red-500/20 text-red-400 rounded">❌ Échouée</span>
+                          )}
+                          {mission.status === 'cancelled' && (
+                            <span className="text-xs px-2 py-1 bg-slate-500/20 text-slate-500 rounded">🚫 Annulée</span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* MJ Actions */}
+                      {isMJ && mission.status === 'in_progress' && (
+                        <div className="flex gap-2 mt-3 pt-3 border-t border-slate-700">
+                          <Button
+                            size="sm"
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                            onClick={() => updateMissionStatus(mission.id, 'validate')}
+                          >
+                            ✅ Valider
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="flex-1 text-red-400 hover:bg-red-500/20"
+                            onClick={() => updateMissionStatus(mission.id, 'fail')}
+                          >
+                            ❌ Échouer
+                          </Button>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               )}
             </CardContent>
           </Card>
