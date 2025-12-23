@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
-import { PlayerAvatar, GamePhaseBadge } from '@/components/game';
+import { PlayerAvatar, GamePhaseBadge, GameOver } from '@/components/game';
 import { NotificationPrompt } from '@/components/game/notification-prompt';
 import { getRoleConfig } from '@/config/roles';
 import { cn } from '@/lib/utils';
@@ -90,14 +90,18 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
     status: string;
     assigned_to: string | null;
     assigned_player: { id: string; pseudo: string } | null;
+    assigned_players: { id: string; pseudo: string; status: string }[]; // Multi-player support
     deadline: string | null;
     reward_description: string | null;
     penalty_description: string | null;
   };
   const [missions, setMissions] = useState<Mission[]>([]);
   const [showMissionForm, setShowMissionForm] = useState(false);
-  const [newMission, setNewMission] = useState({ title: '', description: '', assignedTo: '' });
+  const [newMission, setNewMission] = useState({ title: '', description: '', assignedToMultiple: [] as string[] });
   const [isCreatingMission, setIsCreatingMission] = useState(false);
+
+  // Game over state
+  const [gameWinner, setGameWinner] = useState<'village' | 'loups' | null>(null);
 
   // Notifications hook
   const { sendNotification, permission, isSupported, registerServiceWorker } = useNotifications();
@@ -199,8 +203,8 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
 
   // Wolf chat realtime subscription
   useEffect(() => {
-    // Only subscribe if game is in progress
-    if (game.status !== 'en_cours') return;
+    // Only subscribe if game is in progress (not lobby or terminee)
+    if (game.status === 'lobby' || game.status === 'terminee') return;
 
     // Initial fetch
     fetchWolfMessages();
@@ -258,6 +262,33 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game.status, game.code]);
+
+  // Fetch game winner when game is over
+  useEffect(() => {
+    if (game.status !== 'terminee') return;
+
+    const fetchWinner = async () => {
+      const { data } = await supabase
+        .from('game_events')
+        .select('data')
+        .eq('game_id', game.id)
+        .eq('event_type', 'game_ended')
+        .single();
+      
+      if (data?.data && typeof data.data === 'object' && 'winner' in data.data) {
+        setGameWinner(data.data.winner as 'village' | 'loups');
+      } else {
+        // Fallback: calculate winner from current state
+        const aliveWolves = game.players.filter(p => {
+          const r = roles.find(role => role.id === p.role_id);
+          return r?.team === 'loups' && p.is_alive !== false;
+        }).length;
+        setGameWinner(aliveWolves === 0 ? 'village' : 'loups');
+      }
+    };
+
+    fetchWinner();
+  }, [game.status, game.id, game.players, roles, supabase]);
 
   const copyCode = async () => {
     await navigator.clipboard.writeText(game.code);
@@ -497,12 +528,12 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
         body: JSON.stringify({
           title: newMission.title,
           description: newMission.description,
-          assignedTo: newMission.assignedTo || undefined,
+          assignedToMultiple: newMission.assignedToMultiple.length > 0 ? newMission.assignedToMultiple : undefined,
           creatorId: currentPlayerId,
         }),
       });
       if (response.ok) {
-        setNewMission({ title: '', description: '', assignedTo: '' });
+        setNewMission({ title: '', description: '', assignedToMultiple: [] });
         setShowMissionForm(false);
         fetchMissions();
       }
@@ -686,6 +717,31 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
       })
     : [];
 
+  // Game Over screen
+  if (game.status === 'terminee' && gameWinner) {
+    const playersForGameOver = game.players
+      .filter(p => !p.is_mj)
+      .map(p => {
+        const role = roles.find(r => r.id === p.role_id);
+        const roleConf = role ? getRoleConfig(role.name) : null;
+        return {
+          pseudo: p.pseudo,
+          roleName: roleConf?.displayName || roleConf?.name || role?.name || 'Inconnu',
+          team: role?.team || 'village',
+          isAlive: p.is_alive !== false,
+        };
+      });
+
+    return (
+      <GameOver
+        winner={gameWinner}
+        gameName={game.name}
+        players={playersForGameOver}
+        onPlayAgain={() => router.push('/')}
+      />
+    );
+  }
+
   return (
     <main className="min-h-screen p-4">
       {/* Background */}
@@ -704,7 +760,7 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
         {/* Game Header */}
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-white mb-2">{game.name}</h1>
-          <GamePhaseBadge phase={game.status} className="inline-flex" />
+          <GamePhaseBadge status={game.status || 'lobby'} className="inline-flex" />
         </div>
 
         {/* Player's Role Card */}
@@ -1199,18 +1255,47 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
                     onChange={(e) => setNewMission(prev => ({ ...prev, description: e.target.value }))}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 min-h-[80px]"
                   />
-                  <select
-                    value={newMission.assignedTo}
-                    onChange={(e) => setNewMission(prev => ({ ...prev, assignedTo: e.target.value }))}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white"
-                  >
-                    <option value="">Assigner à... (optionnel)</option>
-                    {alivePlayers.map((player) => (
-                      <option key={player.id} value={player.id}>
-                        {player.pseudo}
-                      </option>
-                    ))}
-                  </select>
+                  
+                  {/* Multi-select for players */}
+                  <div className="space-y-2">
+                    <label className="text-sm text-slate-400">Assigner à (plusieurs joueurs possibles)</label>
+                    <div className="flex flex-wrap gap-2 p-3 bg-slate-900 border border-slate-700 rounded-lg min-h-[48px]">
+                      {alivePlayers.map((player) => {
+                        const isSelected = newMission.assignedToMultiple.includes(player.id);
+                        return (
+                          <button
+                            key={player.id}
+                            type="button"
+                            onClick={() => {
+                              setNewMission(prev => ({
+                                ...prev,
+                                assignedToMultiple: isSelected
+                                  ? prev.assignedToMultiple.filter(id => id !== player.id)
+                                  : [...prev.assignedToMultiple, player.id]
+                              }));
+                            }}
+                            className={cn(
+                              "px-3 py-1 rounded-full text-sm font-medium transition-colors",
+                              isSelected
+                                ? "bg-amber-600 text-white"
+                                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                            )}
+                          >
+                            {isSelected ? '✓ ' : ''}{player.pseudo}
+                          </button>
+                        );
+                      })}
+                      {alivePlayers.length === 0 && (
+                        <span className="text-slate-500 text-sm">Aucun joueur disponible</span>
+                      )}
+                    </div>
+                    {newMission.assignedToMultiple.length > 0 && (
+                      <p className="text-xs text-slate-400">
+                        {newMission.assignedToMultiple.length} joueur(s) sélectionné(s)
+                      </p>
+                    )}
+                  </div>
+                  
                   <Button
                     className="w-full bg-amber-600 hover:bg-amber-700"
                     onClick={createMission}
@@ -1243,7 +1328,19 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
                         <div className="flex-1">
                           <h4 className="font-medium text-white">{mission.title}</h4>
                           <p className="text-sm text-slate-400 mt-1">{mission.description}</p>
-                          {mission.assigned_player && (
+                          {/* Show assigned players (multi-player support) */}
+                          {mission.assigned_players && mission.assigned_players.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {mission.assigned_players.map((player) => (
+                                <span 
+                                  key={player.id}
+                                  className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-full"
+                                >
+                                  👤 {player.pseudo}
+                                </span>
+                              ))}
+                            </div>
+                          ) : mission.assigned_player && (
                             <p className="text-xs text-amber-400 mt-2">
                               👤 {mission.assigned_player.pseudo}
                             </p>

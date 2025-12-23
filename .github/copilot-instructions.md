@@ -52,6 +52,7 @@ src/
 - `games` - Parties (code, status, settings JSON)
 - `players` - Joueurs (pseudo, role_id, is_alive, is_mj, avatar_url, color)
 - `missions` - Missions (title, type, status, assigned_to)
+- `mission_assignments` - Assignments multi-joueurs (mission_id, player_id, status)
 - `votes` - Votes (phase, voter_id, target_id, vote_type)
 - `wolf_chat` - Chat privé des loups
 - `power_uses` - Historique pouvoirs utilisés
@@ -112,6 +113,8 @@ src/
 - [x] Missions basiques (création MJ, validation)
 - [x] Interface MJ (voir rôles, panneau de contrôle, vue d'ensemble)
 - [x] Web Push Notifications (Service Worker, permission prompt, phase change alerts)
+- [x] Écran de fin de partie festif (message victoire, confettis)
+- [x] Missions multi-joueurs (assigner à plusieurs personnes via mission_assignments)
 
 ### 🔄 En Cours
 
@@ -124,10 +127,8 @@ src/
 ### 📋 Backlog
 
 **Priorité haute (post-MVP) :**
-- [ ] Écran de fin de partie festif (message victoire, confettis)
 - [ ] Vérifier/corriger chat loups (affichage realtime)
 - [ ] Valider notifications push en conditions réelles
-- [ ] Missions multi-joueurs (assigner à plusieurs personnes)
 - [ ] Settings partie modifiables par MJ :
   - [ ] Temps des phases (jour, conseil, nuit)
   - [ ] Répartition des rôles présents

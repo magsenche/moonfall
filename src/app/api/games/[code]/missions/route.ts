@@ -25,7 +25,7 @@ export async function GET(
     return NextResponse.json({ error: 'Partie non trouvée' }, { status: 404 });
   }
 
-  // Get missions with assigned player info
+  // Get missions with assigned player info (legacy single player)
   const { data: missions, error: missionsError } = await supabase
     .from('missions')
     .select(`
@@ -40,7 +40,40 @@ export async function GET(
     return NextResponse.json({ error: 'Erreur lors de la récupération des missions' }, { status: 500 });
   }
 
-  return NextResponse.json({ missions });
+  // Get multi-player assignments
+  const missionIds = missions?.map(m => m.id) || [];
+  const assignmentsMap: Record<string, { id: string; pseudo: string; status: string }[]> = {};
+  
+  if (missionIds.length > 0) {
+    const { data: assignments } = await supabase
+      .from('mission_assignments')
+      .select('mission_id, player_id, status, player:players(id, pseudo)')
+      .in('mission_id', missionIds);
+    
+    if (assignments) {
+      for (const assignment of assignments) {
+        if (!assignmentsMap[assignment.mission_id]) {
+          assignmentsMap[assignment.mission_id] = [];
+        }
+        const player = assignment.player as unknown as { id: string; pseudo: string } | null;
+        if (player) {
+          assignmentsMap[assignment.mission_id].push({
+            id: player.id,
+            pseudo: player.pseudo,
+            status: assignment.status || 'assigned',
+          });
+        }
+      }
+    }
+  }
+
+  // Merge assignments into missions
+  const missionsWithAssignments = missions?.map(mission => ({
+    ...mission,
+    assigned_players: assignmentsMap[mission.id] || [],
+  })) || [];
+
+  return NextResponse.json({ missions: missionsWithAssignments });
 }
 
 // POST - Create a new mission (MJ only)
@@ -55,6 +88,7 @@ export async function POST(
     description, 
     type = 'custom',
     assignedTo,
+    assignedToMultiple, // NEW: array of player IDs for multi-player missions
     deadline,
     rewardDescription,
     penaltyDescription,
@@ -64,6 +98,7 @@ export async function POST(
     description: string;
     type?: string;
     assignedTo?: string;
+    assignedToMultiple?: string[];
     deadline?: string;
     rewardDescription?: string;
     penaltyDescription?: string;
@@ -101,21 +136,23 @@ export async function POST(
     return NextResponse.json({ error: 'Seul le MJ peut créer des missions' }, { status: 403 });
   }
 
-  // If assignedTo is provided, verify the player exists
-  if (assignedTo) {
-    const { data: assignee } = await supabase
+  // Determine assigned players (multi or single)
+  const playerIds = assignedToMultiple?.length ? assignedToMultiple : (assignedTo ? [assignedTo] : []);
+  
+  // Verify all assigned players exist
+  if (playerIds.length > 0) {
+    const { data: assignees } = await supabase
       .from('players')
       .select('id')
-      .eq('id', assignedTo)
-      .eq('game_id', game.id)
-      .single();
+      .in('id', playerIds)
+      .eq('game_id', game.id);
 
-    if (!assignee) {
-      return NextResponse.json({ error: 'Joueur assigné non trouvé' }, { status: 400 });
+    if (!assignees || assignees.length !== playerIds.length) {
+      return NextResponse.json({ error: 'Un ou plusieurs joueurs assignés non trouvés' }, { status: 400 });
     }
   }
 
-  // Create mission
+  // Create mission (keep assigned_to for backward compatibility with single player)
   const { data: mission, error: missionError } = await supabase
     .from('missions')
     .insert({
@@ -123,11 +160,11 @@ export async function POST(
       title,
       description,
       type,
-      assigned_to: assignedTo ?? null,
+      assigned_to: playerIds.length === 1 ? playerIds[0] : null, // Legacy single-player field
       deadline: deadline ?? null,
       reward_description: rewardDescription ?? null,
       penalty_description: penaltyDescription ?? null,
-      status: assignedTo ? 'in_progress' : 'pending',
+      status: playerIds.length > 0 ? 'in_progress' : 'pending',
     })
     .select()
     .single();
@@ -136,16 +173,28 @@ export async function POST(
     return NextResponse.json({ error: 'Erreur lors de la création de la mission' }, { status: 500 });
   }
 
+  // Create assignments in junction table for multi-player support
+  if (playerIds.length > 0) {
+    const assignments = playerIds.map(playerId => ({
+      mission_id: mission.id,
+      player_id: playerId,
+      status: 'assigned',
+    }));
+    
+    await supabase.from('mission_assignments').insert(assignments);
+  }
+
   // Log event
   await supabase.from('game_events').insert({
     game_id: game.id,
     actor_id: creatorId,
-    target_id: assignedTo ?? null,
+    target_id: playerIds.length === 1 ? playerIds[0] : null,
     event_type: 'mission_created',
     data: {
       mission_id: mission.id,
       title,
       type,
+      assigned_player_ids: playerIds,
     },
   });
 

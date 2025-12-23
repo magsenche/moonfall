@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
@@ -107,6 +105,45 @@ export type Database = {
           winner?: Database["public"]["Enums"]["team_type"] | null
         }
         Relationships: []
+      }
+      mission_assignments: {
+        Row: {
+          created_at: string | null
+          id: string
+          mission_id: string
+          player_id: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          mission_id: string
+          player_id: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mission_id?: string
+          player_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_assignments_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_assignments_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       missions: {
         Row: {
