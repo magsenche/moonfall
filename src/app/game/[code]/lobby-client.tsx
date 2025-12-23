@@ -35,6 +35,17 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
+  
+  // Vote state
+  const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
+  const [voteError, setVoteError] = useState<string | null>(null);
+  const [votesCount, setVotesCount] = useState(0);
+  const [totalVoters, setTotalVoters] = useState(0);
+  
+  // Phase transition state
+  const [isChangingPhase, setIsChangingPhase] = useState(false);
 
   // Get current player ID from localStorage on mount
   useEffect(() => {
@@ -127,8 +138,83 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
     }
   };
 
+  // Change game phase (MJ only)
+  const changePhase = async (phase: string) => {
+    setIsChangingPhase(true);
+    try {
+      const response = await fetch(`/api/games/${game.code}/phase`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phase }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erreur lors du changement de phase');
+      }
+      // Reset vote state on phase change
+      setHasVoted(false);
+      setSelectedTarget(null);
+      setVotesCount(0);
+    } catch (err) {
+      console.error('Phase change error:', err);
+    } finally {
+      setIsChangingPhase(false);
+    }
+  };
+
+  // Submit vote
+  const submitVote = async () => {
+    if (!currentPlayerId) return;
+    
+    setIsVoting(true);
+    setVoteError(null);
+    try {
+      const response = await fetch(`/api/games/${game.code}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          voterId: currentPlayerId,
+          targetId: selectedTarget,
+          voteType: 'jour',
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors du vote');
+      }
+      setHasVoted(true);
+      setVotesCount(data.votesCount);
+      setTotalVoters(data.totalPlayers);
+    } catch (err) {
+      setVoteError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } finally {
+      setIsVoting(false);
+    }
+  };
+
+  // Resolve vote (MJ only)
+  const resolveVote = async () => {
+    setIsChangingPhase(true);
+    try {
+      const response = await fetch(`/api/games/${game.code}/vote/resolve`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors de la résolution');
+      }
+      // Realtime will update the game state
+      router.refresh();
+    } catch (err) {
+      console.error('Vote resolution error:', err);
+    } finally {
+      setIsChangingPhase(false);
+    }
+  };
+
   const mj = game.players.find(p => p.is_mj);
   const players = game.players.filter(p => !p.is_mj);
+  const alivePlayers = players.filter(p => p.is_alive !== false);
   const isMJ = currentPlayerId === mj?.id;
 
   // Lobby view
@@ -383,13 +469,120 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
               <div className="text-center">
                 <p className="text-xl mb-2">⚖️</p>
                 <h3 className="font-bold text-white mb-2">Conseil du village</h3>
-                <p className="text-slate-400 text-sm">
-                  Il est temps de voter pour éliminer un suspect.
-                </p>
+                {hasVoted ? (
+                  <p className="text-green-400 text-sm">
+                    ✓ Vote enregistré ! ({votesCount}/{totalVoters})
+                  </p>
+                ) : (
+                  <p className="text-slate-400 text-sm">
+                    Sélectionnez un joueur à éliminer ci-dessous.
+                  </p>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Vote Section - Only during conseil phase for alive non-MJ players */}
+        {game.status === 'conseil' && currentPlayer && currentPlayer.is_alive !== false && !isMJ && (
+          <Card className="mb-6 border border-amber-500/30">
+            <CardHeader>
+              <CardTitle className="text-amber-400">🗳️ Votre vote</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {hasVoted ? (
+                <div className="text-center py-4">
+                  <p className="text-2xl mb-2">✅</p>
+                  <p className="text-slate-300">Vote enregistré</p>
+                  <p className="text-sm text-slate-500 mt-2">
+                    En attente des autres joueurs...
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <ul className="space-y-2 mb-4">
+                    {alivePlayers
+                      .filter(p => p.id !== currentPlayerId)
+                      .map((player) => (
+                        <li key={player.id}>
+                          <button
+                            onClick={() => setSelectedTarget(player.id)}
+                            className={cn(
+                              "w-full flex items-center gap-3 p-3 rounded-xl transition-all",
+                              selectedTarget === player.id
+                                ? "bg-red-500/30 border-2 border-red-500"
+                                : "bg-slate-800/50 hover:bg-slate-700/50 border-2 border-transparent"
+                            )}
+                          >
+                            <PlayerAvatar 
+                              playerId={player.id} 
+                              pseudo={player.pseudo} 
+                              size="sm"
+                            />
+                            <span className="font-medium text-white">{player.pseudo}</span>
+                            {selectedTarget === player.id && (
+                              <span className="ml-auto text-red-400">☠️</span>
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                  <Button
+                    className="w-full"
+                    onClick={submitVote}
+                    disabled={!selectedTarget || isVoting}
+                  >
+                    {isVoting ? '⏳ Vote en cours...' : '🗳️ Confirmer le vote'}
+                  </Button>
+                  {voteError && (
+                    <p className="text-sm text-red-400 text-center mt-2">{voteError}</p>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* MJ Controls */}
+        {isMJ && game.status !== 'lobby' && game.status !== 'terminee' && (
+          <Card className="mb-6 border border-purple-500/30">
+            <CardHeader>
+              <CardTitle className="text-purple-400">🎭 Contrôles MJ</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {game.status === 'nuit' && (
+                <Button
+                  className="w-full"
+                  onClick={() => changePhase('jour')}
+                  disabled={isChangingPhase}
+                >
+                  ☀️ Passer au jour
+                </Button>
+              )}
+              {game.status === 'jour' && (
+                <Button
+                  className="w-full"
+                  onClick={() => changePhase('conseil')}
+                  disabled={isChangingPhase}
+                >
+                  ⚖️ Ouvrir le conseil
+                </Button>
+              )}
+              {game.status === 'conseil' && (
+                <Button
+                  className="w-full"
+                  onClick={resolveVote}
+                  disabled={isChangingPhase}
+                >
+                  🗳️ Résoudre le vote
+                </Button>
+              )}
+              {isChangingPhase && (
+                <p className="text-sm text-slate-400 text-center">⏳ Changement en cours...</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Players List */}
         <Card>
@@ -409,12 +602,14 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
                   const isCurrentPlayer = player.id === currentPlayer?.id;
                   const playerRole = roles.find(r => r.id === player.role_id);
                   const pRoleConfig = playerRole ? getRoleConfig(playerRole.name) : null;
+                  const isDead = player.is_alive === false;
                   
                   return (
                     <li
                       key={player.id}
                       className={cn(
                         "flex items-center gap-3 p-3 rounded-xl",
+                        isDead && "opacity-50",
                         isCurrentPlayer 
                           ? "bg-indigo-500/20 border border-indigo-500/30" 
                           : "bg-slate-800/50"
@@ -426,13 +621,19 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
                         size="sm"
                       />
                       <div className="flex-1">
-                        <p className="font-medium text-white">
+                        <p className={cn("font-medium", isDead ? "text-slate-500 line-through" : "text-white")}>
                           {player.pseudo}
                           {isCurrentPlayer && <span className="text-indigo-400 text-sm ml-2">(Vous)</span>}
+                          {isDead && <span className="text-red-400 text-sm ml-2">☠️</span>}
                         </p>
+                        {isDead && pRoleConfig && (
+                          <p className="text-xs text-slate-500">
+                            était {pRoleConfig.displayName}
+                          </p>
+                        )}
                       </div>
                       {/* Show role icon only for self and wolves see other wolves */}
-                      {(isCurrentPlayer || (isWolf && wolves.some(w => w.id === player.id))) && pRoleConfig && (
+                      {!isDead && (isCurrentPlayer || (isWolf && wolves.some(w => w.id === player.id))) && pRoleConfig && (
                         <span className="text-lg">{pRoleConfig.assets.icon}</span>
                       )}
                     </li>
