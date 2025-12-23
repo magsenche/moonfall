@@ -132,8 +132,8 @@ src/
 - [ ] Valider notifications push en conditions réelles
 - [x] Settings partie modifiables par MJ :
   - [x] Temps des phases (jour, conseil, nuit)
-  - [ ] Répartition des rôles présents
-  - [ ] Nombre de loups selon joueurs
+  - [x] Répartition des rôles présents
+  - [x] Nombre de loups selon joueurs
 
 **Backlog général :**
 - [ ] Email notifications (via Supabase Edge Functions)

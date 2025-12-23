@@ -108,12 +108,14 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
     nightDurationMinutes: number;
     voteDurationMinutes: number;
     councilIntervalMinutes: number;
+    rolesDistribution: Record<string, number>; // roleId -> count
   };
   const [showSettings, setShowSettings] = useState(false);
   const [gameSettings, setGameSettings] = useState<GameSettings>({
     nightDurationMinutes: 30,
     voteDurationMinutes: 15,
     councilIntervalMinutes: 120,
+    rolesDistribution: {}, // empty = auto distribution
   });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
@@ -316,10 +318,12 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
       const response = await fetch(`/api/games/${game.code}/settings`);
       if (response.ok) {
         const data = await response.json();
+        const settings = data.settings || data;
         setGameSettings({
-          nightDurationMinutes: data.nightDurationMinutes ?? 30,
-          voteDurationMinutes: data.voteDurationMinutes ?? 15,
-          councilIntervalMinutes: data.councilIntervalMinutes ?? 120,
+          nightDurationMinutes: settings.nightDurationMinutes ?? 30,
+          voteDurationMinutes: settings.voteDurationMinutes ?? 15,
+          councilIntervalMinutes: settings.councilIntervalMinutes ?? 120,
+          rolesDistribution: settings.rolesDistribution ?? {},
         });
       }
     } catch (err) {
@@ -819,6 +823,90 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
                         }
                       </span>
                     </div>
+                  </div>
+
+                  {/* Roles Distribution */}
+                  <div className="border-t border-slate-700 pt-4 mt-4">
+                    <label className="text-sm text-slate-400 mb-3 block">
+                      🎭 Distribution des rôles
+                    </label>
+                    <p className="text-xs text-slate-500 mb-3">
+                      Laisse à 0 pour une distribution automatique (~1/3 loups, 1 voyante)
+                    </p>
+                    <div className="space-y-3">
+                      {roles.filter(r => r.is_active).map(role => {
+                        const count = gameSettings.rolesDistribution[role.id] ?? 0;
+                        const emoji = role.team === 'loups' ? '🐺' : role.name === 'voyante' ? '🔮' : '👤';
+                        const teamColor = role.team === 'loups' ? 'text-red-400' : 'text-blue-400';
+                        
+                        return (
+                          <div key={role.id} className="flex items-center justify-between gap-3 p-2 bg-slate-800 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <span>{emoji}</span>
+                              <span className={`text-sm font-medium ${teamColor}`}>
+                                {role.name === 'loup_garou' ? 'Loup-Garou' : 
+                                 role.name === 'villageois' ? 'Villageois' :
+                                 role.name === 'voyante' ? 'Voyante' : role.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setGameSettings(prev => ({
+                                  ...prev,
+                                  rolesDistribution: {
+                                    ...prev.rolesDistribution,
+                                    [role.id]: Math.max(0, count - 1)
+                                  }
+                                }))}
+                                className="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 text-white font-bold"
+                                disabled={count === 0}
+                              >
+                                -
+                              </button>
+                              <span className="w-8 text-center text-white font-medium">
+                                {count}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setGameSettings(prev => ({
+                                  ...prev,
+                                  rolesDistribution: {
+                                    ...prev.rolesDistribution,
+                                    [role.id]: count + 1
+                                  }
+                                }))}
+                                className="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 text-white font-bold"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Total count indicator */}
+                    {Object.values(gameSettings.rolesDistribution).some(v => v > 0) && (
+                      <div className="mt-3 p-2 bg-slate-700/50 rounded-lg">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-400">Rôles configurés:</span>
+                          <span className="text-white font-medium">
+                            {Object.values(gameSettings.rolesDistribution).reduce((a, b) => a + b, 0)} rôles
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm mt-1">
+                          <span className="text-slate-400">Joueurs dans le lobby:</span>
+                          <span className="text-white font-medium">
+                            {players.length} joueurs
+                          </span>
+                        </div>
+                        {Object.values(gameSettings.rolesDistribution).reduce((a, b) => a + b, 0) !== players.length && (
+                          <p className="text-xs text-yellow-400 mt-2">
+                            ⚠️ Le nombre de rôles doit correspondre au nombre de joueurs
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Save Button */}

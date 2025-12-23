@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { shuffle } from '@/lib/utils/game';
+import type { GameSettings } from '@/types/game';
 
 // POST /api/games/[code]/start - Start the game and distribute roles
 export async function POST(
@@ -11,7 +12,7 @@ export async function POST(
     const { code } = await params;
     const supabase = await createClient();
 
-    // Get game with players
+    // Get game with players and settings
     const { data: game, error: gameError } = await supabase
       .from('games')
       .select(`
@@ -66,6 +67,7 @@ export async function POST(
 
     // Create role map for easy lookup
     const roleMap = new Map(roles.map((r) => [r.name, r.id]));
+    const roleIdMap = new Map(roles.map((r) => [r.id, r]));
     
     const villageoisId = roleMap.get('villageois');
     const loupGarouId = roleMap.get('loup_garou');
@@ -78,27 +80,64 @@ export async function POST(
       );
     }
 
-    // Calculate role distribution based on player count
-    // Rule: ~1/3 loups, 1 voyante, rest villageois
     const playerCount = players.length;
-    const wolfCount = Math.max(1, Math.floor(playerCount / 3));
+    const settings = (game.settings || {}) as Partial<GameSettings>;
+    const customDistribution = settings.rolesDistribution || {};
     
+    // Check if we have a custom distribution configured
+    const totalCustomRoles = Object.values(customDistribution).reduce((a, b) => a + b, 0);
+    const useCustomDistribution = totalCustomRoles > 0;
+
     // Build roles array
-    const rolesArray: string[] = [];
+    let rolesArray: string[] = [];
     
-    // Add wolves
-    for (let i = 0; i < wolfCount; i++) {
-      rolesArray.push(loupGarouId);
-    }
-    
-    // Add voyante (if more than 3 players)
-    if (playerCount > 3) {
-      rolesArray.push(voyanteId);
-    }
-    
-    // Fill rest with villageois
-    while (rolesArray.length < playerCount) {
-      rolesArray.push(villageoisId);
+    if (useCustomDistribution) {
+      // Use custom distribution from settings
+      if (totalCustomRoles !== playerCount) {
+        return NextResponse.json(
+          { 
+            error: `Le nombre de rôles configurés (${totalCustomRoles}) ne correspond pas au nombre de joueurs (${playerCount})`,
+            configured: totalCustomRoles,
+            players: playerCount
+          },
+          { status: 400 }
+        );
+      }
+      
+      // Validate all role IDs exist
+      for (const roleId of Object.keys(customDistribution)) {
+        if (!roleIdMap.has(roleId)) {
+          return NextResponse.json(
+            { error: `Rôle invalide dans la configuration` },
+            { status: 400 }
+          );
+        }
+      }
+      
+      // Build array from custom distribution
+      for (const [roleId, count] of Object.entries(customDistribution)) {
+        for (let i = 0; i < count; i++) {
+          rolesArray.push(roleId);
+        }
+      }
+    } else {
+      // Automatic distribution: ~1/3 loups, 1 voyante, rest villageois
+      const wolfCount = Math.max(1, Math.floor(playerCount / 3));
+      
+      // Add wolves
+      for (let i = 0; i < wolfCount; i++) {
+        rolesArray.push(loupGarouId);
+      }
+      
+      // Add voyante (if more than 3 players)
+      if (playerCount > 3) {
+        rolesArray.push(voyanteId);
+      }
+      
+      // Fill rest with villageois
+      while (rolesArray.length < playerCount) {
+        rolesArray.push(villageoisId);
+      }
     }
 
     // Shuffle and assign
@@ -141,6 +180,9 @@ export async function POST(
       );
     }
 
+    // Count wolves in the distribution
+    const wolfCount = rolesArray.filter(id => roleIdMap.get(id)?.team === 'loups').length;
+
     // Log game event
     await supabase.from('game_events').insert({
       game_id: game.id,
@@ -148,7 +190,8 @@ export async function POST(
       data: { 
         player_count: playerCount,
         wolf_count: wolfCount,
-        has_voyante: playerCount > 3
+        custom_distribution: useCustomDistribution,
+        roles_distribution: useCustomDistribution ? customDistribution : 'auto'
       }
     });
 
@@ -156,7 +199,8 @@ export async function POST(
       success: true,
       message: 'La partie a commencé !',
       playerCount,
-      wolfCount
+      wolfCount,
+      customDistribution: useCustomDistribution
     });
   } catch (error) {
     console.error('Error starting game:', error);
