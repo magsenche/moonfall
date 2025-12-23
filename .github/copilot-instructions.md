@@ -103,14 +103,15 @@ src/
 - [x] Vue joueur avec son rôle (carte, équipe, phase)
 - [x] RLS policies corrigées (anon access pour prototype)
 - [x] Système d'identification joueur (session/localStorage)
+- [x] Système de vote jour (élimination publique)
+- [x] Conditions de victoire (loups >= villageois / plus de loups)
 
 ### 🔄 En Cours
 
-- [ ] Système de vote jour (élimination publique)
+- [ ] Vote nuit des loups
 
 ### ⏳ À Faire - MVP
 
-- [ ] Système de vote jour (élimination publique)
 - [ ] Vote nuit des loups
 - [ ] Chat privé des loups (realtime)
 - [ ] Pouvoir Voyante (voir un rôle)
@@ -118,7 +119,6 @@ src/
 - [ ] Missions basiques (création MJ, validation)
 - [ ] Interface MJ (voir rôles, gérer partie)
 - [ ] Notifications (Email + Web Push)
-- [ ] Conditions de victoire
 
 ### 📋 Backlog
 
