@@ -15,11 +15,11 @@ Chaque joueur reçoit un rôle secret. Missions IRL + conseils réguliers avec �
 | Framework | Next.js 16 (App Router, React 19, React Compiler) |
 | Styling | Tailwind CSS 4 |
 | Database | Supabase (PostgreSQL, Frankfurt) |
-| Auth | Supabase Auth (code partie + pseudo) |
-| Realtime | Supabase Realtime |
-| Storage | Supabase Storage (3 buckets: role-assets, player-avatars, game-assets) |
+| Auth | Supabase Auth (Magic Link / OTP par email) |
+| Realtime | Supabase Realtime (postgres_changes) |
+| Storage | Supabase Storage (3 buckets) |
+| Notifications | Web Push (VAPID keys) + Edge Functions |
 | Hébergement | Vercel |
-| Notifications | À définir (Web Push / Email) |
 
 ---
 
@@ -29,34 +29,66 @@ Chaque joueur reçoit un rôle secret. Missions IRL + conseils réguliers avec �
 
 ```
 src/
-├── app/                    # Pages (App Router)
-│   ├── page.tsx           # Accueil (créer/rejoindre)
-│   ├── game/[code]/       # Page de jeu
-│   └── api/games/         # API Routes
+├── app/                         # Pages (App Router)
+│   ├── page.tsx                 # Accueil (créer/rejoindre partie)
+│   ├── layout.tsx               # Layout racine + AuthProvider
+│   ├── auth/
+│   │   └── login/page.tsx       # Login (email → OTP)
+│   ├── game/[code]/
+│   │   ├── page.tsx             # Page serveur
+│   │   └── lobby-client.tsx     # Client (lobby/jeu complet)
+│   └── api/games/
+│       ├── route.ts             # POST (créer partie)
+│       └── [code]/
+│           ├── route.ts         # GET game
+│           ├── join/            # POST rejoindre
+│           ├── start/           # POST lancer
+│           ├── phase/           # PATCH changer phase
+│           ├── vote/            # POST voter
+│           ├── power/           # POST utiliser pouvoir
+│           ├── wolf-chat/       # GET/POST chat loups
+│           ├── missions/        # GET/POST/PATCH missions
+│           └── settings/        # GET/PATCH settings MJ
 ├── components/
-│   ├── ui/                # Button, Input, Card
-│   └── game/              # PlayerAvatar, RoleBadge, GamePhaseBadge
-├── config/                # Thème, rôles, personnalisation joueurs
+│   ├── ui/                      # Button, Input, Card
+│   └── game/                    # PlayerAvatar, RoleBadge, GamePhaseBadge, GameOver, NotificationPrompt
+├── config/                      # Thème, rôles, personnalisation joueurs
 ├── lib/
-│   ├── supabase/          # Client, server, storage helpers
-│   ├── roles/             # Handlers par rôle (modulaire)
-│   └── utils/
-└── types/                 # Types Supabase générés + helpers
+│   ├── auth/                    # AuthProvider, useAuth hook
+│   ├── notifications/           # useNotifications, subscribeToPush
+│   ├── supabase/                # Client (browser), Server (SSR), Storage helpers
+│   ├── roles/                   # Handlers par rôle (villageois, loup-garou, voyante)
+│   └── utils/                   # cn(), generateGameCode(), player-session
+└── types/                       # database.ts, supabase.ts (générés), game.ts
+
+supabase/
+├── migrations/                  # SQL migrations
+└── functions/
+    └── push/                    # Edge Function pour Web Push
 ```
 
-### Base de Données
+### Base de Données (12 tables)
 
-**Tables principales :**
-- `roles` - Config des rôles (name, team, description, image_url, card_image_url)
-- `powers` - Pouvoirs par rôle (phase, priority, uses_per_game)
-- `games` - Parties (code, status, settings JSON)
-- `players` - Joueurs (pseudo, role_id, is_alive, is_mj, avatar_url, color)
-- `missions` - Missions (title, type, status, assigned_to)
-- `mission_assignments` - Assignments multi-joueurs (mission_id, player_id, status)
-- `votes` - Votes (phase, voter_id, target_id, vote_type)
-- `wolf_chat` - Chat privé des loups
-- `power_uses` - Historique pouvoirs utilisés
-- `game_events` - Audit log
+| Table | Description |
+|-------|-------------|
+| `roles` | Rôles disponibles (name, team, description, icon, image_url) |
+| `powers` | Pouvoirs par rôle (phase, priority, uses_per_game) |
+| `games` | Parties (code, status, settings JSON, phase_ends_at, winner) |
+| `players` | Joueurs (pseudo, role_id, is_alive, is_mj, user_id → auth.users) |
+| `missions` | Missions créées par MJ |
+| `mission_assignments` | Assignments multi-joueurs (mission_id, player_id, status) |
+| `votes` | Votes jour/nuit (phase, voter_id, target_id, vote_type) |
+| `wolf_chat` | Chat privé des loups-garous |
+| `power_uses` | Historique des pouvoirs utilisés |
+| `game_events` | Audit log (game_started, phase_change, player_killed...) |
+| `push_subscriptions` | Abonnements Web Push (user_id, endpoint, p256dh, auth) |
+
+**Enums :**
+- `game_status`: lobby, jour, nuit, conseil, terminee
+- `team_type`: village, loups, solo
+- `vote_type`: jour, nuit_loup, pouvoir
+- `power_phase`: nuit, jour, mort
+- `mission_status`: pending, in_progress, success, failed, cancelled
 
 **Storage Buckets :**
 - `role-assets` - Illustrations rôles (5MB, public)
@@ -129,20 +161,30 @@ src/
 
 **Priorité haute (post-MVP) :**
 - [x] Vérifier/corriger chat loups (affichage realtime) ✅ Fonctionnel
-- [ ] Valider notifications push en conditions réelles
+- [ ] Valider notifications push en conditions réelles (test sur plusieurs appareils)
 - [x] Settings partie modifiables par MJ :
   - [x] Temps des phases (jour, conseil, nuit)
   - [x] Répartition des rôles présents
   - [x] Nombre de loups selon joueurs
 
+**Auth & Notifications (✅ implémenté et configuré) :**
+- [x] Auth Supabase (Magic Link / OTP par email)
+- [x] AuthProvider + useAuth hook
+- [x] Page /auth/login (email → code 6 chiffres)
+- [x] Liaison players ↔ auth.users (user_id)
+- [x] Détection partie en cours sur la page d'accueil
+- [x] Table push_subscriptions
+- [x] Web Push avec VAPID keys (subscribeToPush)
+- [x] Edge Function push (supabase/functions/push) - Déployée
+- [x] VAPID keys configurées (.env.local + Supabase secrets)
+- [x] Database webhook sur game_events créé
+
 **Backlog général :**
-- [ ] Email notifications (via Supabase Edge Functions)
-- [ ] Auth Supabase complète
 - [ ] Rôles avancés (Sorcière, Chasseur, Cupidon...)
 - [ ] Missions avancées (templates, types variés)
 - [ ] Système Fantôme (morts peuvent aider)
 - [ ] Scoring et classement
-- [ ] PWA complète
+- [ ] PWA complète (manifest, offline support)
 - [ ] Custom assets (images rôles, avatars)
 
 ---
@@ -174,8 +216,13 @@ npm run lint         # Linter
 ## Variables d'Environnement
 
 ```env
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
+
+# Web Push (VAPID) - voir docs/AUTH_PUSH_SETUP.md
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=BPxxx...
+VAPID_PRIVATE_KEY=xxx...  # Edge Function uniquement
 ```
 
 ---

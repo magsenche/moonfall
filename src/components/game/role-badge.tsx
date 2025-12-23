@@ -75,7 +75,7 @@ export function RoleBadge({
         </span>
       )}
       {showDescription && (
-        <span className="text-xs text-slate-400 text-center max-w-[150px]">
+        <span className="text-xs text-slate-400 text-center max-w-36">
           {config.shortDescription}
         </span>
       )}
@@ -137,7 +137,7 @@ export function RoleCard({ roleId, revealed = true, className }: RoleCardProps) 
       <div className="text-center">
         <h3 className="text-xl font-bold">{config.displayName}</h3>
         <p className="text-sm opacity-80 mt-1">{config.shortDescription}</p>
-        <p className="text-xs text-slate-300 mt-3 max-w-[250px]">
+        <p className="text-xs text-slate-300 mt-3 max-w-64">
           {config.description}
         </p>
       </div>

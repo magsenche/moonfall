@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth';
 
 export type NotificationPermission = 'default' | 'granted' | 'denied';
 
@@ -19,15 +21,35 @@ export interface UseNotificationsReturn {
   permission: NotificationPermission;
   isSupported: boolean;
   isRegistered: boolean;
+  isPushSubscribed: boolean;
   requestPermission: () => Promise<NotificationPermission>;
   sendNotification: (options: NotificationOptions) => void;
   registerServiceWorker: () => Promise<ServiceWorkerRegistration | null>;
+  subscribeToPush: () => Promise<boolean>;
+}
+
+// VAPID public key - must match the private key on server
+// Generate with: npx web-push generate-vapid-keys
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
+
+// Convert URL-safe base64 to Uint8Array for push subscription
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
 }
 
 export function useNotifications(): UseNotificationsReturn {
+  const { user } = useAuth();
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSupported, setIsSupported] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [isPushSubscribed, setIsPushSubscribed] = useState(false);
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
   // Check support and current permission on mount
@@ -134,13 +156,91 @@ export function useNotifications(): UseNotificationsReturn {
     }
   }, [isSupported, permission, swRegistration]);
 
+  // Subscribe to push notifications and save to database
+  const subscribeToPush = useCallback(async (): Promise<boolean> => {
+    if (!user) {
+      console.warn('[Push] User not authenticated');
+      return false;
+    }
+
+    if (!VAPID_PUBLIC_KEY) {
+      console.warn('[Push] VAPID public key not configured');
+      return false;
+    }
+
+    let registration = swRegistration;
+    if (!registration) {
+      registration = await registerServiceWorker();
+      if (!registration) {
+        console.error('[Push] Could not register service worker');
+        return false;
+      }
+    }
+
+    try {
+      // Check for existing subscription
+      let subscription = await registration.pushManager.getSubscription();
+      
+      if (!subscription) {
+        // Create new subscription
+        const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
+        });
+        console.log('[Push] New subscription created');
+      }
+
+      // Extract keys from subscription
+      const key = subscription.getKey('p256dh');
+      const auth = subscription.getKey('auth');
+      
+      if (!key || !auth) {
+        console.error('[Push] Could not get subscription keys');
+        return false;
+      }
+
+      // Convert to base64 for storage
+      const p256dh = btoa(String.fromCharCode(...new Uint8Array(key)));
+      const authKey = btoa(String.fromCharCode(...new Uint8Array(auth)));
+
+      // Save to database
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('push_subscriptions')
+        .upsert({
+          user_id: user.id,
+          endpoint: subscription.endpoint,
+          p256dh,
+          auth: authKey,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'endpoint',
+        });
+
+      if (error) {
+        console.error('[Push] Failed to save subscription:', error);
+        return false;
+      }
+
+      console.log('[Push] Subscription saved successfully');
+      setIsPushSubscribed(true);
+      return true;
+    } catch (error) {
+      console.error('[Push] Subscription failed:', error);
+      return false;
+    }
+  }, [user, swRegistration, registerServiceWorker]);
+
   return {
     permission,
     isSupported,
     isRegistered,
+    isPushSubscribed,
     requestPermission,
     sendNotification,
     registerServiceWorker,
+    subscribeToPush,
   };
 }
 

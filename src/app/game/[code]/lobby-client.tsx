@@ -122,7 +122,6 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   // Notifications hook
   const { sendNotification, permission, isSupported, registerServiceWorker } = useNotifications();
   const previousStatusRef = useRef<string>(initialGame.status);
-  const previousPhaseRef = useRef<string | null>(null);
 
   // Register service worker on mount
   useEffect(() => {
@@ -146,6 +145,12 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
     
     previousStatusRef.current = newStatus;
   }, [permission, game.code, sendNotification]);
+  
+  // Keep a ref to the notify function to avoid useEffect dependency issues
+  const notifyPhaseChangeRef = useRef(notifyPhaseChange);
+  useEffect(() => {
+    notifyPhaseChangeRef.current = notifyPhaseChange;
+  }, [notifyPhaseChange]);
 
   // Get current player ID from localStorage on mount
   useEffect(() => {
@@ -202,7 +207,7 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
           
           // Send notification on phase change
           const newStatus = payload.new.status as string;
-          notifyPhaseChange(newStatus);
+          notifyPhaseChangeRef.current(newStatus);
           
           // If game started, refresh the page to get roles
           if (payload.new.status !== 'lobby') {
@@ -1431,7 +1436,7 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
         )}
 
         {/* MJ Controls */}
-        {isMJ && game.status !== 'lobby' && game.status !== 'terminee' && (
+        {isMJ && game.status !== 'terminee' && (
           <Card className="mb-6 border border-purple-500/30">
             <CardHeader>
               <CardTitle className="text-purple-400">🎭 Contrôles MJ</CardTitle>
@@ -1481,7 +1486,7 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
         )}
 
         {/* Missions Section */}
-        {game.status !== 'lobby' && game.status !== 'terminee' && (
+        {game.status !== 'terminee' && (
           <Card className="mb-6 border border-amber-500/30">
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-amber-400">
@@ -1513,13 +1518,13 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
                     placeholder="Description de la mission"
                     value={newMission.description}
                     onChange={(e) => setNewMission(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 min-h-[80px]"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 min-h-20"
                   />
                   
                   {/* Multi-select for players */}
                   <div className="space-y-2">
                     <label className="text-sm text-slate-400">Assigner à (plusieurs joueurs possibles)</label>
-                    <div className="flex flex-wrap gap-2 p-3 bg-slate-900 border border-slate-700 rounded-lg min-h-[48px]">
+                    <div className="flex flex-wrap gap-2 p-3 bg-slate-900 border border-slate-700 rounded-lg min-h-12">
                       {alivePlayers.map((player) => {
                         const isSelected = newMission.assignedToMultiple.includes(player.id);
                         return (
@@ -1726,7 +1731,7 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
         </Card>
 
         {/* MJ Overview Panel */}
-        {isMJ && game.status !== 'lobby' && (
+        {isMJ && (
           <Card className="mt-6 border border-purple-500/30">
             <CardHeader>
               <CardTitle className="text-purple-400">📊 Vue d&apos;ensemble MJ</CardTitle>

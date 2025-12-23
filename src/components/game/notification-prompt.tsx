@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useNotifications } from '@/lib/notifications';
+import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui';
 
 interface NotificationPromptProps {
@@ -8,7 +10,9 @@ interface NotificationPromptProps {
 }
 
 export function NotificationPrompt({ onPermissionChange }: NotificationPromptProps) {
-  const { permission, isSupported, requestPermission, isRegistered } = useNotifications();
+  const { user } = useAuth();
+  const { permission, isSupported, requestPermission, subscribeToPush } = useNotifications();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Don't show if not supported or already granted
   if (!isSupported || permission === 'granted') {
@@ -28,8 +32,18 @@ export function NotificationPrompt({ onPermissionChange }: NotificationPromptPro
   }
 
   const handleRequestPermission = async () => {
-    const result = await requestPermission();
-    onPermissionChange?.(result);
+    setIsLoading(true);
+    try {
+      const result = await requestPermission();
+      onPermissionChange?.(result);
+      
+      // If permission granted and user is authenticated, subscribe to push
+      if (result === 'granted' && user) {
+        await subscribeToPush();
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -39,15 +53,19 @@ export function NotificationPrompt({ onPermissionChange }: NotificationPromptPro
         <div className="flex-1">
           <h4 className="font-medium text-purple-200">Activer les notifications</h4>
           <p className="text-sm text-purple-300/70 mt-1">
-            Recevez des alertes quand c'est votre tour, quand la phase change, ou quand vous avez une mission !
+            {user 
+              ? "Recevez des alertes même quand l'app est fermée !"
+              : "Recevez des alertes quand c'est votre tour ou quand la phase change !"
+            }
           </p>
           <Button 
             onClick={handleRequestPermission}
             variant="secondary"
             size="sm"
             className="mt-3"
+            disabled={isLoading}
           >
-            Activer les notifications
+            {isLoading ? 'Activation...' : 'Activer les notifications'}
           </Button>
         </div>
       </div>
