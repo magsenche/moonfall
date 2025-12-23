@@ -123,6 +123,17 @@ src/
 
 ### 📋 Backlog
 
+**Priorité haute (post-MVP) :**
+- [ ] Écran de fin de partie festif (message victoire, confettis)
+- [ ] Vérifier/corriger chat loups (affichage realtime)
+- [ ] Valider notifications push en conditions réelles
+- [ ] Missions multi-joueurs (assigner à plusieurs personnes)
+- [ ] Settings partie modifiables par MJ :
+  - [ ] Temps des phases (jour, conseil, nuit)
+  - [ ] Répartition des rôles présents
+  - [ ] Nombre de loups selon joueurs
+
+**Backlog général :**
 - [ ] Email notifications (via Supabase Edge Functions)
 - [ ] Auth Supabase complète
 - [ ] Rôles avancés (Sorcière, Chasseur, Cupidon...)
