@@ -1,20 +1,20 @@
-import type { RoleHandler, Action, GamePhase } from './base';
+import type { RoleHandler, Action, GamePhase, PlayerWithRole, GameWithPlayers } from './base';
 import { registerRole } from './base';
-import type { Player, Game, GameEvent } from '@/types/game';
+import type { GameEventInsert } from '@/types/database';
 
 const loupGarouHandler: RoleHandler = {
   id: 'loup_garou',
   name: 'Loup-Garou',
   
-  canAct: (phase: GamePhase, player: Player, game: Game): boolean => {
+  canAct: (phase: GamePhase, player: PlayerWithRole, game: GameWithPlayers): boolean => {
     // Loups can act during night
-    return phase === 'nuit' && player.isAlive;
+    return phase === 'nuit' && player.is_alive === true;
   },
   
-  getActions: (player: Player, game: Game): Action[] => {
+  getActions: (player: PlayerWithRole, game: GameWithPlayers): Action[] => {
     // Get all alive villagers (non-wolves) as potential targets
     const targets = game.players.filter(p => 
-      p.isAlive && 
+      p.is_alive === true && 
       p.id !== player.id &&
       p.role?.team !== 'loups'
     );
@@ -24,25 +24,23 @@ const loupGarouHandler: RoleHandler = {
       name: 'Dévorer',
       description: 'Choisir une victime à éliminer cette nuit',
       targetType: 'player',
-      execute: async (target: Player | null, game: Game): Promise<GameEvent> => {
+      execute: async (target: PlayerWithRole | null, game: GameWithPlayers): Promise<GameEventInsert> => {
         if (!target) {
           throw new Error('Une cible est requise pour dévorer');
         }
         
         return {
-          id: crypto.randomUUID(),
-          gameId: game.id,
-          eventType: 'wolf_vote',
-          actorId: player.id,
-          targetId: target.id,
+          game_id: game.id,
+          event_type: 'wolf_vote',
+          actor_id: player.id,
+          target_id: target.id,
           data: { action: 'devorer' },
-          createdAt: new Date().toISOString(),
         };
       },
     }];
   },
   
-  executeAction: async (action: Action, target: Player | null, game: Game): Promise<GameEvent> => {
+  executeAction: async (action: Action, target: PlayerWithRole | null, game: GameWithPlayers): Promise<GameEventInsert> => {
     return action.execute(target, game);
   },
 };

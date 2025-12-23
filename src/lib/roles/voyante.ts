@@ -1,20 +1,20 @@
-import type { RoleHandler, Action, GamePhase } from './base';
+import type { RoleHandler, Action, GamePhase, PlayerWithRole, GameWithPlayers } from './base';
 import { registerRole } from './base';
-import type { Player, Game, GameEvent } from '@/types/game';
+import type { GameEventInsert } from '@/types/database';
 
 const voyanteHandler: RoleHandler = {
   id: 'voyante',
   name: 'Voyante',
   
-  canAct: (phase: GamePhase, player: Player, game: Game): boolean => {
+  canAct: (phase: GamePhase, player: PlayerWithRole, game: GameWithPlayers): boolean => {
     // Voyante acts during night
-    return phase === 'nuit' && player.isAlive;
+    return phase === 'nuit' && player.is_alive === true;
   },
   
-  getActions: (player: Player, game: Game): Action[] => {
+  getActions: (player: PlayerWithRole, game: GameWithPlayers): Action[] => {
     // Can see the role of any alive player (except self)
     const targets = game.players.filter(p => 
-      p.isAlive && 
+      p.is_alive === true && 
       p.id !== player.id
     );
     
@@ -23,29 +23,27 @@ const voyanteHandler: RoleHandler = {
       name: 'Voir un rôle',
       description: 'Découvrir le rôle d\'un joueur',
       targetType: 'player',
-      execute: async (target: Player | null, game: Game): Promise<GameEvent> => {
+      execute: async (target: PlayerWithRole | null, game: GameWithPlayers): Promise<GameEventInsert> => {
         if (!target) {
           throw new Error('Une cible est requise pour voir un rôle');
         }
         
         return {
-          id: crypto.randomUUID(),
-          gameId: game.id,
-          eventType: 'power_used',
-          actorId: player.id,
-          targetId: target.id,
+          game_id: game.id,
+          event_type: 'power_used',
+          actor_id: player.id,
+          target_id: target.id,
           data: { 
             action: 'voir_role',
             roleRevealed: target.role?.name || 'unknown',
             roleTeam: target.role?.team || 'unknown',
           },
-          createdAt: new Date().toISOString(),
         };
       },
     }];
   },
   
-  executeAction: async (action: Action, target: Player | null, game: Game): Promise<GameEvent> => {
+  executeAction: async (action: Action, target: PlayerWithRole | null, game: GameWithPlayers): Promise<GameEventInsert> => {
     return action.execute(target, game);
   },
 };

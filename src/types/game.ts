@@ -52,8 +52,8 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
   rolesDistribution: {},
 };
 
-// Player in a game
-export interface Player {
+// Player in a game (frontend/camelCase version)
+export interface AppPlayer {
   id: string;
   gameId: string;
   userId: string | null;
@@ -66,22 +66,22 @@ export interface Player {
   deathAt: string | null;
 }
 
-// Game/Party
-export interface Game {
+// Game/Party (frontend/camelCase version)
+export interface AppGame {
   id: string;
   code: string;
   name: string;
   status: GameStatus;
   currentPhase: number;
   settings: GameSettings;
-  players: Player[];
+  players: AppPlayer[];
   createdAt: string;
   startedAt: string | null;
   endedAt: string | null;
 }
 
-// Vote
-export interface Vote {
+// Vote (frontend/camelCase version)
+export interface AppVote {
   id: string;
   gameId: string;
   phase: number;
@@ -91,8 +91,8 @@ export interface Vote {
   createdAt: string;
 }
 
-// Mission
-export interface Mission {
+// Mission (frontend/camelCase version)
+export interface AppMission {
   id: string;
   gameId: string;
   title: string;
@@ -106,18 +106,18 @@ export interface Mission {
   createdAt: string;
 }
 
-// Wolf chat message
-export interface WolfChatMessage {
+// Wolf chat message (frontend/camelCase version)
+export interface AppWolfChatMessage {
   id: string;
   gameId: string;
   playerId: string;
-  player?: Player;
+  player?: AppPlayer;
   message: string;
   createdAt: string;
 }
 
-// Game event (audit log)
-export interface GameEvent {
+// Game event (audit log) (frontend/camelCase version)
+export interface AppGameEvent {
   id: string;
   gameId: string;
   eventType: string;
