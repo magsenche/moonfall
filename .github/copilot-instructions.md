@@ -111,18 +111,19 @@ src/
 - [x] Timer countdown (jour: 5min, conseil: 3min)
 - [x] Missions basiques (création MJ, validation)
 - [x] Interface MJ (voir rôles, panneau de contrôle, vue d'ensemble)
+- [x] Web Push Notifications (Service Worker, permission prompt, phase change alerts)
 
 ### 🔄 En Cours
 
-- [ ] Notifications (Email + Web Push)
+(rien en cours)
 
 ### ⏳ À Faire - MVP
 
-- [ ] Notifications (Email + Web Push)
-- [ ] Notifications (Email + Web Push)
+✅ MVP Complet !
 
 ### 📋 Backlog
 
+- [ ] Email notifications (via Supabase Edge Functions)
 - [ ] Auth Supabase complète
 - [ ] Rôles avancés (Sorcière, Chasseur, Cupidon...)
 - [ ] Missions avancées (templates, types variés)
