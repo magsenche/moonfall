@@ -2,6 +2,8 @@
 
 > App web pour jouer au Loup-Garou IRL, inspirée de l'émission Fary x Panayotis (Canal+).
 
+🔗 **Production :** https://moonfall-magsenches-projects.vercel.app
+
 ## Concept
 
 Chaque joueur reçoit un rôle secret. Missions IRL + conseils réguliers avec éliminations par vote.
@@ -19,7 +21,8 @@ Chaque joueur reçoit un rôle secret. Missions IRL + conseils réguliers avec �
 | Realtime | Supabase Realtime (postgres_changes) |
 | Storage | Supabase Storage (3 buckets) |
 | Notifications | Web Push (VAPID keys) + Edge Functions |
-| Hébergement | Vercel |
+| Hébergement | Vercel (CD sur push main) |
+| Repo | github.com/magsenche/moonfall |
 
 ---
 
