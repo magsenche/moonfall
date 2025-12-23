@@ -96,14 +96,16 @@ src/
 - [x] Composants game (PlayerAvatar, RoleBadge, GamePhaseBadge)
 - [x] Config thème/rôles/joueurs extensible
 - [x] Page d'accueil (créer/rejoindre partie)
-- [x] API routes (POST/GET games, join)
+- [x] API routes (POST/GET games, join, start)
 - [x] Lobby avec realtime (liste joueurs)
 - [x] Handlers de rôles (Villageois, Loup-Garou, Voyante)
+- [x] Lancement de partie (distribution des rôles)
+- [x] Vue joueur avec son rôle (carte, équipe, phase)
+- [x] RLS policies corrigées (anon access pour prototype)
 
 ### 🔄 En Cours
 
-- [ ] Lancement de partie (distribution des rôles)
-- [ ] Vue joueur avec son rôle
+- [ ] Système d'identification joueur (session/localStorage)
 
 ### ⏳ À Faire - MVP
 
@@ -119,6 +121,7 @@ src/
 
 ### 📋 Backlog
 
+- [ ] Auth Supabase complète
 - [ ] Rôles avancés (Sorcière, Chasseur, Cupidon...)
 - [ ] Missions avancées (templates, types variés)
 - [ ] Système Fantôme (morts peuvent aider)
@@ -135,6 +138,7 @@ src/
 - **Types DB** : snake_case (`is_alive`, `game_id`)
 - **Types TS** : camelCase pour les alias (`isAlive`)
 - **Commits** : Conventional Commits (feat:, fix:, etc.)
+- **Instructions Copilot** : Mettre à jour `.github/copilot-instructions.md` lors de changements significatifs
 
 ---
 
@@ -157,3 +161,32 @@ npm run lint         # Linter
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
 ```
+
+---
+
+## Outils MCP Disponibles
+
+### Supabase MCP
+
+Connecté au projet. Utiliser pour :
+- `list_tables` - Voir schéma et données
+- `execute_sql` - Requêtes SELECT/debug
+- `apply_migration` - DDL (CREATE, ALTER)
+- `generate_typescript_types` - Régénérer types
+- `get_advisors` - Sécurité/perf (RLS manquantes)
+- `get_logs` - Debug (postgres, auth, edge-function)
+
+### Playwright MCP
+
+Browser automation pour tests E2E :
+- `browser_navigate` - Aller à une URL
+- `browser_snapshot` - Capture accessibilité (meilleur que screenshot)
+- `browser_click`, `browser_type` - Interactions
+- `browser_fill_form` - Remplir formulaires
+- `browser_console_messages` - Debug JS
+
+### Context7
+
+Documentation à jour des librairies :
+- `resolve-library-id` - Trouver l'ID (ex: "supabase" → "/supabase/supabase")
+- `get-library-docs` - Docs + exemples code (topic="auth", mode="code")
