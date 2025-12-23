@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Add the creator as MJ
-    const { error: playerError } = await supabase
+    const { data: player, error: playerError } = await supabase
       .from('players')
       .insert({
         game_id: game.id,
@@ -76,9 +76,11 @@ export async function POST(request: NextRequest) {
         pseudo,
         is_mj: true,
         is_alive: true,
-      });
+      })
+      .select()
+      .single();
 
-    if (playerError) {
+    if (playerError || !player) {
       console.error('Error adding MJ:', playerError);
       // Clean up the game if player creation failed
       await supabase.from('games').delete().eq('id', game.id);
@@ -99,6 +101,7 @@ export async function POST(request: NextRequest) {
       id: game.id,
       code: game.code,
       name: game.name,
+      playerId: player.id,
     });
   } catch (error) {
     console.error('Unexpected error:', error);

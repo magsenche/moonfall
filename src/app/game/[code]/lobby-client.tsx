@@ -7,6 +7,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/u
 import { PlayerAvatar, GamePhaseBadge } from '@/components/game';
 import { getRoleConfig } from '@/config/roles';
 import { cn } from '@/lib/utils';
+import { getPlayerIdForGame } from '@/lib/utils/player-session';
 import type { Database } from '@/types/database';
 
 // Partial player type for what we actually select
@@ -33,6 +34,13 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
+
+  // Get current player ID from localStorage on mount
+  useEffect(() => {
+    const playerId = getPlayerIdForGame(initialGame.code);
+    setCurrentPlayerId(playerId);
+  }, [initialGame.code]);
 
   // Real-time subscription for players
   useEffect(() => {
@@ -121,6 +129,7 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
 
   const mj = game.players.find(p => p.is_mj);
   const players = game.players.filter(p => !p.is_mj);
+  const isMJ = currentPlayerId === mj?.id;
 
   // Lobby view
   if (game.status === 'lobby') {
@@ -211,7 +220,7 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
           </Card>
 
           {/* Start Game Button (MJ only) */}
-          {mj && game.players.length >= 3 && (
+          {isMJ && game.players.length >= 3 && (
             <div className="mt-6">
               <Button 
                 className="w-full" 
@@ -246,9 +255,13 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   }
 
   // Game in progress - show player's role and game state
-  // Find current player's role
-  const currentPlayer = game.players.find(p => p.role_id);
-  const currentRole = currentPlayer ? roles.find(r => r.id === currentPlayer.role_id) : null;
+  // Find current player using stored playerId
+  const currentPlayer = currentPlayerId 
+    ? game.players.find(p => p.id === currentPlayerId)
+    : null;
+  const currentRole = currentPlayer?.role_id 
+    ? roles.find(r => r.id === currentPlayer.role_id) 
+    : null;
   const roleConfig = currentRole ? getRoleConfig(currentRole.name) : null;
 
   // Get wolves for wolf players

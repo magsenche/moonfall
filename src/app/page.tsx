@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import { savePlayerSession } from '@/lib/utils/player-session';
 
 type Mode = 'home' | 'create' | 'join';
 
@@ -35,6 +36,13 @@ export default function HomePage() {
         throw new Error(data.error || 'Erreur lors de la création');
       }
 
+      // Save player session
+      savePlayerSession({
+        playerId: data.playerId,
+        gameCode: data.code,
+        pseudo,
+      });
+
       // Redirect to lobby
       router.push(`/game/${data.code}`);
     } catch (err) {
@@ -61,6 +69,13 @@ export default function HomePage() {
       if (!response.ok) {
         throw new Error(data.error || 'Erreur lors de la connexion');
       }
+
+      // Save player session
+      savePlayerSession({
+        playerId: data.player.id,
+        gameCode: gameCode.toUpperCase(),
+        pseudo,
+      });
 
       // Redirect to lobby
       router.push(`/game/${gameCode.toUpperCase()}`);

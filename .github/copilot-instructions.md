@@ -102,10 +102,11 @@ src/
 - [x] Lancement de partie (distribution des rôles)
 - [x] Vue joueur avec son rôle (carte, équipe, phase)
 - [x] RLS policies corrigées (anon access pour prototype)
+- [x] Système d'identification joueur (session/localStorage)
 
 ### 🔄 En Cours
 
-- [ ] Système d'identification joueur (session/localStorage)
+- [ ] Système de vote jour (élimination publique)
 
 ### ⏳ À Faire - MVP
 
