@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { PlayerAvatar, GamePhaseBadge } from '@/components/game';
+import { NotificationPrompt } from '@/components/game/notification-prompt';
 import { getRoleConfig } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import { getPlayerIdForGame } from '@/lib/utils/player-session';
+import { useNotifications, GAME_NOTIFICATIONS } from '@/lib/notifications';
 import type { Database } from '@/types/database';
 
 // Partial player type for what we actually select
@@ -97,6 +99,34 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   const [newMission, setNewMission] = useState({ title: '', description: '', assignedTo: '' });
   const [isCreatingMission, setIsCreatingMission] = useState(false);
 
+  // Notifications hook
+  const { sendNotification, permission, isSupported, registerServiceWorker } = useNotifications();
+  const previousStatusRef = useRef<string>(initialGame.status);
+  const previousPhaseRef = useRef<string | null>(null);
+
+  // Register service worker on mount
+  useEffect(() => {
+    if (isSupported && permission === 'granted') {
+      registerServiceWorker();
+    }
+  }, [isSupported, permission, registerServiceWorker]);
+
+  // Send notification callback
+  const notifyPhaseChange = useCallback((newStatus: string) => {
+    if (permission !== 'granted') return;
+    
+    // Don't notify on initial load or same status
+    if (previousStatusRef.current === newStatus) return;
+    
+    // Check if tab is in background
+    if (document.hidden) {
+      const notification = GAME_NOTIFICATIONS.phaseChange(newStatus, game.code);
+      sendNotification(notification);
+    }
+    
+    previousStatusRef.current = newStatus;
+  }, [permission, game.code, sendNotification]);
+
   // Get current player ID from localStorage on mount
   useEffect(() => {
     const playerId = getPlayerIdForGame(initialGame.code);
@@ -149,6 +179,10 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
         async (payload) => {
           // Game status changed
           setGame(prev => ({ ...prev, ...payload.new }));
+          
+          // Send notification on phase change
+          const newStatus = payload.new.status as string;
+          notifyPhaseChange(newStatus);
           
           // If game started, refresh the page to get roles
           if (payload.new.status !== 'lobby') {
@@ -539,6 +573,11 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
               </p>
             </CardContent>
           </Card>
+
+          {/* Notification Prompt */}
+          <div className="mb-6">
+            <NotificationPrompt />
+          </div>
 
           {/* Players List */}
           <Card>
