@@ -26,6 +26,8 @@ CREATE TABLE roles (
   team team_type NOT NULL,
   description TEXT NOT NULL,
   icon VARCHAR(10), -- Emoji
+  image_url TEXT, -- URL to role icon/avatar image in storage
+  card_image_url TEXT, -- URL to full role card illustration in storage
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -57,6 +59,7 @@ CREATE TABLE games (
   name VARCHAR(100) NOT NULL,
   status game_status DEFAULT 'lobby',
   current_phase INTEGER DEFAULT 0,
+  phase_ends_at TIMESTAMPTZ, -- Timestamp when the current phase ends (for timer display)
   settings JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   started_at TIMESTAMPTZ,
@@ -81,6 +84,8 @@ CREATE TABLE players (
   is_mj BOOLEAN DEFAULT false,
   death_reason VARCHAR(100),
   death_at TIMESTAMPTZ,
+  avatar_url TEXT, -- URL to custom avatar image in storage
+  color TEXT, -- Player chosen color for UI
   created_at TIMESTAMPTZ DEFAULT NOW(),
   
   UNIQUE(game_id, pseudo) -- Unique pseudo per game
@@ -382,3 +387,78 @@ CREATE POLICY "Players can view game events" ON game_events
 
 -- Note: Run this in Supabase Dashboard > Database > Replication
 -- Or use: ALTER PUBLICATION supabase_realtime ADD TABLE games, players, missions, votes, wolf_chat, game_events;
+
+-- ============================================
+-- PROTOTYPE MODE: Anonymous Access Policies
+-- These policies allow anonymous users to access the app without authentication.
+-- Remove these in production and use the authenticated policies above.
+-- ============================================
+
+-- Roles: Allow anon to read roles
+CREATE POLICY "Allow anon read roles" ON roles
+  FOR SELECT TO anon USING (true);
+
+-- Powers: Allow anon to read powers
+CREATE POLICY "Allow anon read powers" ON powers
+  FOR SELECT TO anon USING (true);
+
+-- Games: Allow anon full access for prototype
+CREATE POLICY "Allow anon read games" ON games
+  FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert games" ON games
+  FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow anon update games" ON games
+  FOR UPDATE TO anon USING (true);
+
+-- Players: Allow anon full access for prototype
+CREATE POLICY "Allow anon read players" ON players
+  FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert players" ON players
+  FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow anon update players" ON players
+  FOR UPDATE TO anon USING (true);
+
+-- Missions: Allow anon full access for prototype
+CREATE POLICY "Allow anon read missions" ON missions
+  FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert missions" ON missions
+  FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow anon update missions" ON missions
+  FOR UPDATE TO anon USING (true);
+
+CREATE POLICY "Allow anon delete missions" ON missions
+  FOR DELETE TO anon USING (true);
+
+-- Votes: Allow anon full access for prototype
+CREATE POLICY "Allow anon read votes" ON votes
+  FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert votes" ON votes
+  FOR INSERT TO anon WITH CHECK (true);
+
+-- Wolf chat: Allow anon full access for prototype
+CREATE POLICY "Allow anon read wolf_chat" ON wolf_chat
+  FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert wolf_chat" ON wolf_chat
+  FOR INSERT TO anon WITH CHECK (true);
+
+-- Power uses: Allow anon full access for prototype
+CREATE POLICY "Allow anon read power_uses" ON power_uses
+  FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert power_uses" ON power_uses
+  FOR INSERT TO anon WITH CHECK (true);
+
+-- Game events: Allow anon full access for prototype
+CREATE POLICY "Allow anon read game_events" ON game_events
+  FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert game_events" ON game_events
+  FOR INSERT TO anon WITH CHECK (true);

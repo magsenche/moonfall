@@ -109,14 +109,14 @@ src/
 - [x] Chat privé des loups (realtime)
 - [x] Pouvoir Voyante (voir un rôle)
 - [x] Timer countdown (jour: 5min, conseil: 3min)
+- [x] Missions basiques (création MJ, validation)
 
 ### 🔄 En Cours
 
-- [ ] Missions basiques (création MJ, validation)
+- [ ] Interface MJ (voir rôles, gérer partie)
 
 ### ⏳ À Faire - MVP
 
-- [ ] Missions basiques (création MJ, validation)
 - [ ] Interface MJ (voir rôles, gérer partie)
 - [ ] Notifications (Email + Web Push)
 
