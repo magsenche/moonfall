@@ -115,6 +115,7 @@ src/
 - [x] Web Push Notifications (Service Worker, permission prompt, phase change alerts)
 - [x] Écran de fin de partie festif (message victoire, confettis)
 - [x] Missions multi-joueurs (assigner à plusieurs personnes via mission_assignments)
+- [x] Settings partie MJ (temps des phases personnalisables via UI)
 
 ### 🔄 En Cours
 
@@ -127,10 +128,10 @@ src/
 ### 📋 Backlog
 
 **Priorité haute (post-MVP) :**
-- [ ] Vérifier/corriger chat loups (affichage realtime)
+- [x] Vérifier/corriger chat loups (affichage realtime) ✅ Fonctionnel
 - [ ] Valider notifications push en conditions réelles
-- [ ] Settings partie modifiables par MJ :
-  - [ ] Temps des phases (jour, conseil, nuit)
+- [x] Settings partie modifiables par MJ :
+  - [x] Temps des phases (jour, conseil, nuit)
   - [ ] Répartition des rôles présents
   - [ ] Nombre de loups selon joueurs
 

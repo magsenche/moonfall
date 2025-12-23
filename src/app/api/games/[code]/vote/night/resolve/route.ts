@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
 import { PHASE_DURATIONS } from "@/config/game";
+import type { GameSettings } from "@/types/game";
 
 // POST - Resolve night vote (wolf attack)
 export async function POST(
@@ -10,10 +11,10 @@ export async function POST(
   const { code } = await params;
   const supabase = createClient();
 
-  // Get game
+  // Get game with settings
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select("id, status, current_phase")
+    .select("id, status, current_phase, settings")
     .eq("code", code)
     .single();
 
@@ -27,6 +28,10 @@ export async function POST(
       { status: 400 }
     );
   }
+
+  // Get custom duration from settings
+  const settings = (game.settings || {}) as Partial<GameSettings>;
+  const jourDurationSeconds = (settings.councilIntervalMinutes || 5) * 60;
 
   // Get all wolves alive
   const { data: wolves } = await supabase
@@ -162,8 +167,8 @@ export async function POST(
     });
   }
 
-  // Transition to day with timer
-  const phaseEndsAt = new Date(Date.now() + PHASE_DURATIONS.jour * 1000).toISOString();
+  // Transition to day with timer (using custom settings)
+  const phaseEndsAt = new Date(Date.now() + jourDurationSeconds * 1000).toISOString();
   await supabase
     .from("games")
     .update({ 

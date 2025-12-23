@@ -103,6 +103,20 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   // Game over state
   const [gameWinner, setGameWinner] = useState<'village' | 'loups' | null>(null);
 
+  // Game settings state (MJ only)
+  type GameSettings = {
+    nightDurationMinutes: number;
+    voteDurationMinutes: number;
+    councilIntervalMinutes: number;
+  };
+  const [showSettings, setShowSettings] = useState(false);
+  const [gameSettings, setGameSettings] = useState<GameSettings>({
+    nightDurationMinutes: 30,
+    voteDurationMinutes: 15,
+    councilIntervalMinutes: 120,
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
   // Notifications hook
   const { sendNotification, permission, isSupported, registerServiceWorker } = useNotifications();
   const previousStatusRef = useRef<string>(initialGame.status);
@@ -294,6 +308,49 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
     await navigator.clipboard.writeText(game.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Load game settings
+  const loadSettings = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/games/${game.code}/settings`);
+      if (response.ok) {
+        const data = await response.json();
+        setGameSettings({
+          nightDurationMinutes: data.nightDurationMinutes ?? 30,
+          voteDurationMinutes: data.voteDurationMinutes ?? 15,
+          councilIntervalMinutes: data.councilIntervalMinutes ?? 120,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load settings:', err);
+    }
+  }, [game.code]);
+
+  // Save game settings
+  const saveSettings = async () => {
+    if (!currentPlayerId) return;
+    
+    setIsSavingSettings(true);
+    try {
+      const response = await fetch(`/api/games/${game.code}/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId: currentPlayerId,
+          settings: gameSettings,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erreur lors de la sauvegarde');
+      }
+      setShowSettings(false);
+    } catch (err) {
+      console.error('Save settings error:', err);
+    } finally {
+      setIsSavingSettings(false);
+    }
   };
 
   const startGame = async () => {
@@ -570,6 +627,13 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   const alivePlayers = players.filter(p => p.is_alive !== false);
   const isMJ = currentPlayerId === mj?.id;
 
+  // Load settings on mount (MJ only, lobby only)
+  useEffect(() => {
+    if (isMJ && game.status === 'lobby') {
+      loadSettings();
+    }
+  }, [isMJ, game.status, loadSettings]);
+
   // Lobby view
   if (game.status === 'lobby') {
     return (
@@ -662,6 +726,114 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
               </ul>
             </CardContent>
           </Card>
+
+          {/* Game Settings (MJ only) */}
+          {isMJ && (
+            <Card className="mt-4 bg-slate-800/50 border-slate-700">
+              <CardHeader className="pb-2">
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  className="flex items-center justify-between w-full text-left"
+                >
+                  <CardTitle className="text-sm font-medium text-slate-300">
+                    ⚙️ Paramètres de la partie
+                  </CardTitle>
+                  <span className="text-slate-400">
+                    {showSettings ? '▲' : '▼'}
+                  </span>
+                </button>
+              </CardHeader>
+              
+              {showSettings && (
+                <CardContent className="space-y-4">
+                  {/* Night Duration */}
+                  <div>
+                    <label className="text-sm text-slate-400 mb-1 block">
+                      🌙 Durée de la nuit
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min={5}
+                        max={60}
+                        step={5}
+                        value={gameSettings.nightDurationMinutes}
+                        onChange={(e) => setGameSettings(prev => ({
+                          ...prev,
+                          nightDurationMinutes: parseInt(e.target.value)
+                        }))}
+                        className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <span className="text-white font-medium w-16 text-right">
+                        {gameSettings.nightDurationMinutes} min
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Vote Duration */}
+                  <div>
+                    <label className="text-sm text-slate-400 mb-1 block">
+                      🗳️ Durée du vote (conseil)
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min={1}
+                        max={30}
+                        step={1}
+                        value={gameSettings.voteDurationMinutes}
+                        onChange={(e) => setGameSettings(prev => ({
+                          ...prev,
+                          voteDurationMinutes: parseInt(e.target.value)
+                        }))}
+                        className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <span className="text-white font-medium w-16 text-right">
+                        {gameSettings.voteDurationMinutes} min
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Council Interval */}
+                  <div>
+                    <label className="text-sm text-slate-400 mb-1 block">
+                      ☀️ Durée du jour (avant conseil)
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min={30}
+                        max={480}
+                        step={30}
+                        value={gameSettings.councilIntervalMinutes}
+                        onChange={(e) => setGameSettings(prev => ({
+                          ...prev,
+                          councilIntervalMinutes: parseInt(e.target.value)
+                        }))}
+                        className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <span className="text-white font-medium w-16 text-right">
+                        {gameSettings.councilIntervalMinutes >= 60 
+                          ? `${Math.floor(gameSettings.councilIntervalMinutes / 60)}h${gameSettings.councilIntervalMinutes % 60 > 0 ? gameSettings.councilIntervalMinutes % 60 : ''}`
+                          : `${gameSettings.councilIntervalMinutes} min`
+                        }
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Save Button */}
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={saveSettings}
+                    disabled={isSavingSettings}
+                  >
+                    {isSavingSettings ? '⏳ Sauvegarde...' : '💾 Sauvegarder'}
+                  </Button>
+                </CardContent>
+              )}
+            </Card>
+          )}
 
           {/* Start Game Button (MJ only) */}
           {isMJ && game.players.length >= 3 && (

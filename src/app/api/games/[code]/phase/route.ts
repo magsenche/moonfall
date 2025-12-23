@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 import { PHASE_DURATIONS } from '@/config/game';
+import type { GameSettings } from '@/types/game';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,10 +34,10 @@ export async function POST(
     return NextResponse.json({ error: 'Phase requise' }, { status: 400 });
   }
 
-  // Get game
+  // Get game with settings
   const { data: game, error: gameError } = await supabase
     .from('games')
-    .select('id, status, current_phase')
+    .select('id, status, current_phase, settings')
     .eq('code', code)
     .single();
 
@@ -53,10 +54,28 @@ export async function POST(
     );
   }
 
+  // Get custom durations from settings or use defaults
+  const settings = (game.settings || {}) as Partial<GameSettings>;
+  
+  // Map phase to settings key (conseil uses voteDurationMinutes)
+  const getPhaseDurationSeconds = (p: GameStatus): number => {
+    if (p === 'jour') {
+      return (settings.councilIntervalMinutes || 5) * 60; // defaults to 5 min
+    }
+    if (p === 'conseil') {
+      return (settings.voteDurationMinutes || 3) * 60; // defaults to 3 min
+    }
+    // nuit uses nightDurationMinutes
+    if (p === 'nuit') {
+      return (settings.nightDurationMinutes || 2) * 60; // defaults to 2 min  
+    }
+    return PHASE_DURATIONS[p as keyof typeof PHASE_DURATIONS] ?? 0;
+  };
+
   // Calculate phase_ends_at if this phase has a timer
   let phaseEndsAt: string | null = null;
   if (TIMED_PHASES.includes(phase)) {
-    const durationSeconds = PHASE_DURATIONS[phase as keyof typeof PHASE_DURATIONS];
+    const durationSeconds = getPhaseDurationSeconds(phase);
     if (durationSeconds) {
       phaseEndsAt = new Date(Date.now() + durationSeconds * 1000).toISOString();
     }
