@@ -110,14 +110,15 @@ src/
 - [x] Pouvoir Voyante (voir un rôle)
 - [x] Timer countdown (jour: 5min, conseil: 3min)
 - [x] Missions basiques (création MJ, validation)
+- [x] Interface MJ (voir rôles, panneau de contrôle, vue d'ensemble)
 
 ### 🔄 En Cours
 
-- [ ] Interface MJ (voir rôles, gérer partie)
+- [ ] Notifications (Email + Web Push)
 
 ### ⏳ À Faire - MVP
 
-- [ ] Interface MJ (voir rôles, gérer partie)
+- [ ] Notifications (Email + Web Push)
 - [ ] Notifications (Email + Web Push)
 
 ### 📋 Backlog
