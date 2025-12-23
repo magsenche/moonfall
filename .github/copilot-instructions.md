@@ -108,14 +108,14 @@ src/
 - [x] Vote nuit des loups
 - [x] Chat privé des loups (realtime)
 - [x] Pouvoir Voyante (voir un rôle)
+- [x] Timer countdown (jour: 5min, conseil: 3min)
 
 ### 🔄 En Cours
 
-- [ ] Timer avant prochain conseil
+- [ ] Missions basiques (création MJ, validation)
 
 ### ⏳ À Faire - MVP
 
-- [ ] Timer avant prochain conseil
 - [ ] Missions basiques (création MJ, validation)
 - [ ] Interface MJ (voir rôles, gérer partie)
 - [ ] Notifications (Email + Web Push)
