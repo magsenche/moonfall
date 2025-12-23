@@ -64,6 +64,18 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   const [isNightVoting, setIsNightVoting] = useState(false);
   const [nightVoteError, setNightVoteError] = useState<string | null>(null);
 
+  // Voyante power state
+  type SeerResult = {
+    targetName: string;
+    roleName: string;
+    team: string;
+  };
+  const [seerTarget, setSeerTarget] = useState<string | null>(null);
+  const [seerResult, setSeerResult] = useState<SeerResult | null>(null);
+  const [hasUsedSeerPower, setHasUsedSeerPower] = useState(false);
+  const [isUsingSeerPower, setIsUsingSeerPower] = useState(false);
+  const [seerError, setSeerError] = useState<string | null>(null);
+
   // Get current player ID from localStorage on mount
   useEffect(() => {
     const playerId = getPlayerIdForGame(initialGame.code);
@@ -343,6 +355,34 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
       }
     } catch (err) {
       console.error('Fetch wolf messages error:', err);
+    }
+  };
+
+  // Use seer power (voyante only)
+  const useSeerPower = async () => {
+    if (!currentPlayerId || !seerTarget) return;
+    
+    setIsUsingSeerPower(true);
+    setSeerError(null);
+    try {
+      const response = await fetch(`/api/games/${game.code}/power/seer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId: currentPlayerId,
+          targetId: seerTarget,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors de l\'utilisation du pouvoir');
+      }
+      setSeerResult(data.result);
+      setHasUsedSeerPower(true);
+    } catch (err) {
+      setSeerError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } finally {
+      setIsUsingSeerPower(false);
     }
   };
 
@@ -694,6 +734,91 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
                     {isSendingMessage ? '...' : '➤'}
                   </Button>
                 </form>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Voyante Power - Only during night for the seer */}
+        {game.status === 'nuit' && currentRole?.name === 'voyante' && currentPlayer?.is_alive !== false && (
+          <Card className="mb-6 border border-purple-500/30">
+            <CardHeader>
+              <CardTitle className="text-purple-400">👁️ Votre don de voyance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {seerResult ? (
+                <div className="text-center py-4">
+                  <p className="text-3xl mb-3">🔮</p>
+                  <p className="text-white text-lg font-bold mb-2">
+                    {seerResult.targetName}
+                  </p>
+                  <p className="text-slate-300 mb-2">
+                    est <span className={cn(
+                      "font-bold",
+                      seerResult.team === 'loups' ? "text-red-400" : "text-blue-400"
+                    )}>
+                      {seerResult.roleName === 'loup_garou' ? 'Loup-Garou' : 
+                       seerResult.roleName === 'villageois' ? 'Villageois' : 
+                       seerResult.roleName}
+                    </span>
+                  </p>
+                  <span className={cn(
+                    "inline-block px-3 py-1 rounded-full text-sm",
+                    seerResult.team === 'loups' 
+                      ? 'bg-red-500/20 text-red-400' 
+                      : 'bg-blue-500/20 text-blue-400'
+                  )}>
+                    Équipe {seerResult.team === 'loups' ? 'Loups-Garous' : 'Village'}
+                  </span>
+                </div>
+              ) : hasUsedSeerPower ? (
+                <div className="text-center py-4">
+                  <p className="text-2xl mb-2">✅</p>
+                  <p className="text-slate-300">Pouvoir utilisé cette nuit</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-slate-400 text-sm mb-4 text-center">
+                    Choisissez un joueur pour découvrir son rôle
+                  </p>
+                  <ul className="space-y-2 mb-4">
+                    {alivePlayers
+                      .filter(p => p.id !== currentPlayerId)
+                      .map((player) => (
+                        <li key={player.id}>
+                          <button
+                            onClick={() => setSeerTarget(player.id)}
+                            className={cn(
+                              "w-full flex items-center gap-3 p-3 rounded-xl transition-all",
+                              seerTarget === player.id
+                                ? "bg-purple-500/30 border-2 border-purple-500"
+                                : "bg-slate-800/50 hover:bg-purple-900/20 border-2 border-transparent"
+                            )}
+                          >
+                            <PlayerAvatar 
+                              playerId={player.id} 
+                              pseudo={player.pseudo} 
+                              size="sm"
+                            />
+                            <span className="font-medium text-white">{player.pseudo}</span>
+                            {seerTarget === player.id && (
+                              <span className="ml-auto text-purple-400">👁️</span>
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                  <Button
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                    onClick={useSeerPower}
+                    disabled={!seerTarget || isUsingSeerPower}
+                  >
+                    {isUsingSeerPower ? '⏳ Vision en cours...' : '🔮 Sonder cette âme'}
+                  </Button>
+                  {seerError && (
+                    <p className="text-sm text-red-400 text-center mt-2">{seerError}</p>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
