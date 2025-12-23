@@ -107,14 +107,14 @@ src/
 - [x] Conditions de victoire (loups >= villageois / plus de loups)
 - [x] Vote nuit des loups
 - [x] Chat privé des loups (realtime)
+- [x] Pouvoir Voyante (voir un rôle)
 
 ### 🔄 En Cours
 
-- [ ] Pouvoir Voyante (voir un rôle)
+- [ ] Timer avant prochain conseil
 
 ### ⏳ À Faire - MVP
 
-- [ ] Pouvoir Voyante (voir un rôle)
 - [ ] Timer avant prochain conseil
 - [ ] Missions basiques (création MJ, validation)
 - [ ] Interface MJ (voir rôles, gérer partie)
