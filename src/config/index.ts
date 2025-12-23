@@ -2,3 +2,4 @@
 export * from './theme';
 export * from './roles';
 export * from './players';
+export * from './game';

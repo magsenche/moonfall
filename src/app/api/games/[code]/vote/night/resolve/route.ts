@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
+import { PHASE_DURATIONS } from "@/config/game";
 
 // POST - Resolve night vote (wolf attack)
 export async function POST(
@@ -65,7 +66,9 @@ export async function POST(
   // Count votes for each target
   const voteCounts: Record<string, number> = {};
   for (const vote of wolfVotes) {
-    voteCounts[vote.target_id] = (voteCounts[vote.target_id] || 0) + 1;
+    if (vote.target_id) {
+      voteCounts[vote.target_id] = (voteCounts[vote.target_id] || 0) + 1;
+    }
   }
 
   // Find the target with most votes
@@ -159,10 +162,14 @@ export async function POST(
     });
   }
 
-  // Transition to day
+  // Transition to day with timer
+  const phaseEndsAt = new Date(Date.now() + PHASE_DURATIONS.jour * 1000).toISOString();
   await supabase
     .from("games")
-    .update({ status: "jour" })
+    .update({ 
+      status: "jour",
+      phase_ends_at: phaseEndsAt,
+    })
     .eq("id", game.id);
 
   return NextResponse.json({

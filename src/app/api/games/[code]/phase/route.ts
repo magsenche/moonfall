@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
+import { PHASE_DURATIONS } from '@/config/game';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,6 +17,9 @@ const VALID_TRANSITIONS: Record<GameStatus, GameStatus[]> = {
   conseil: ['nuit', 'terminee'],
   terminee: [],
 };
+
+// Phases that have a timer
+const TIMED_PHASES: GameStatus[] = ['jour', 'conseil'];
 
 export async function POST(
   request: NextRequest,
@@ -49,10 +53,22 @@ export async function POST(
     );
   }
 
+  // Calculate phase_ends_at if this phase has a timer
+  let phaseEndsAt: string | null = null;
+  if (TIMED_PHASES.includes(phase)) {
+    const durationSeconds = PHASE_DURATIONS[phase as keyof typeof PHASE_DURATIONS];
+    if (durationSeconds) {
+      phaseEndsAt = new Date(Date.now() + durationSeconds * 1000).toISOString();
+    }
+  }
+
   // Update game phase
   const { error: updateError } = await supabase
     .from('games')
-    .update({ status: phase })
+    .update({ 
+      status: phase,
+      phase_ends_at: phaseEndsAt,
+    })
     .eq('id', game.id);
 
   if (updateError) {
@@ -67,6 +83,7 @@ export async function POST(
       from: game.status,
       to: phase,
       phase: game.current_phase,
+      phase_ends_at: phaseEndsAt,
     },
   });
 
@@ -74,5 +91,6 @@ export async function POST(
     success: true,
     previousPhase: game.status,
     currentPhase: phase,
+    phaseEndsAt,
   });
 }

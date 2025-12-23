@@ -167,10 +167,13 @@ export async function POST(
 
   // Transition to night
   await supabase
+  // Transition to night (no timer for night - wolves act when ready)
+  await supabase
     .from('games')
     .update({
       status: 'nuit',
       current_phase: currentPhase + 1,
+      phase_ends_at: null, // Clear timer for night phase
     })
     .eq('id', game.id);
 

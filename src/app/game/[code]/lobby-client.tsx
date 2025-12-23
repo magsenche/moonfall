@@ -76,6 +76,9 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   const [isUsingSeerPower, setIsUsingSeerPower] = useState(false);
   const [seerError, setSeerError] = useState<string | null>(null);
 
+  // Timer state
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+
   // Get current player ID from localStorage on mount
   useEffect(() => {
     const playerId = getPlayerIdForGame(initialGame.code);
@@ -172,6 +175,29 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game.id, game.status, supabase]);
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (!game.phase_ends_at) {
+      setTimeRemaining(null);
+      return;
+    }
+
+    const updateTimer = () => {
+      const endTime = new Date(game.phase_ends_at!).getTime();
+      const now = Date.now();
+      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+      setTimeRemaining(remaining);
+    };
+
+    // Update immediately
+    updateTimer();
+
+    // Update every second
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [game.phase_ends_at]);
 
   const copyCode = async () => {
     await navigator.clipboard.writeText(game.code);
@@ -827,6 +853,40 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
         {/* Phase Instructions */}
         <Card className="mb-6">
           <CardContent className="pt-6">
+            {/* Timer Display */}
+            {timeRemaining !== null && (game.status === 'jour' || game.status === 'conseil') && (
+              <div className="mb-4">
+                <div className={cn(
+                  "text-center p-4 rounded-xl",
+                  timeRemaining <= 30 
+                    ? "bg-red-500/20 animate-pulse" 
+                    : timeRemaining <= 60 
+                    ? "bg-amber-500/20" 
+                    : "bg-slate-800/50"
+                )}>
+                  <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">
+                    Temps restant
+                  </p>
+                  <p className={cn(
+                    "text-4xl font-mono font-bold",
+                    timeRemaining <= 30 
+                      ? "text-red-400" 
+                      : timeRemaining <= 60 
+                      ? "text-amber-400" 
+                      : "text-white"
+                  )}>
+                    {Math.floor(timeRemaining / 60).toString().padStart(2, '0')}:
+                    {(timeRemaining % 60).toString().padStart(2, '0')}
+                  </p>
+                  {timeRemaining === 0 && (
+                    <p className="text-sm text-red-400 mt-2">
+                      ⏰ Temps écoulé !
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {game.status === 'nuit' && (
               <div className="text-center">
                 <p className="text-xl mb-2">🌙</p>

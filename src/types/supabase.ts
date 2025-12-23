@@ -74,6 +74,7 @@ export type Database = {
           ended_at: string | null
           id: string
           name: string
+          phase_ends_at: string | null
           settings: Json | null
           started_at: string | null
           status: Database["public"]["Enums"]["game_status"] | null
@@ -86,6 +87,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           name: string
+          phase_ends_at?: string | null
           settings?: Json | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["game_status"] | null
@@ -98,6 +100,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           name?: string
+          phase_ends_at?: string | null
           settings?: Json | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["game_status"] | null
