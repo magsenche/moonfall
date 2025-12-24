@@ -1,0 +1,113 @@
+# 🛠️ Stack Technique
+
+> Vue d'ensemble de la stack et guide d'installation.
+
+## Stack
+
+| Composant | Technologie | Version |
+|-----------|-------------|---------|
+| Framework | Next.js (App Router) | 16.x |
+| React | React + React Compiler | 19.x |
+| Styling | Tailwind CSS | 4.x |
+| Database | Supabase (PostgreSQL) | - |
+| Auth | Supabase Auth (optionnel) | - |
+| Realtime | Supabase Realtime | - |
+| Storage | Supabase Storage | - |
+| Notifications | Web Push (VAPID) | - |
+| Hébergement | Vercel | - |
+| Package Manager | npm | - |
+
+## Installation
+
+```bash
+# Cloner le repo
+git clone https://github.com/magsenche/moonfall.git
+cd moonfall
+
+# Installer les dépendances
+npm install
+
+# Copier les variables d'environnement
+cp .env.example .env.local
+# Remplir les valeurs (voir SUPABASE.md et VERCEL.md)
+
+# Lancer en dev
+npm run dev
+```
+
+## Variables d'environnement
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
+
+# Web Push (VAPID)
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=BPxxx...
+```
+
+## Structure du projet
+
+```
+src/
+├── app/                    # Pages (App Router)
+│   ├── page.tsx           # Accueil
+│   ├── layout.tsx         # Layout racine
+│   ├── api/               # API Routes
+│   │   └── games/         # Endpoints jeu
+│   ├── auth/              # Pages auth
+│   └── game/[code]/       # Page partie
+├── components/
+│   ├── ui/                # Composants génériques (Button, Card, Input)
+│   └── game/              # Composants métier (PlayerAvatar, MissionCard...)
+├── config/                # Configuration (thème, rôles, joueurs)
+├── lib/
+│   ├── auth/              # AuthProvider, hooks
+│   ├── missions/          # Types, templates missions
+│   ├── notifications/     # Web Push hooks
+│   ├── roles/             # Handlers par rôle
+│   ├── supabase/          # Clients Supabase
+│   └── utils/             # Utilitaires (cn, generateCode...)
+└── types/                 # Types TypeScript
+    ├── database.ts        # Types métier
+    ├── supabase.ts        # Types générés Supabase
+    └── game.ts            # Types jeu
+
+supabase/
+├── migrations/            # SQL migrations
+└── functions/             # Edge Functions
+    └── push/              # Notifications push
+
+docs/                      # Documentation
+public/                    # Assets statiques + PWA
+```
+
+## Commandes
+
+```bash
+npm run dev          # Dev server (Turbopack)
+npm run build        # Build production
+npm run start        # Serveur production
+npm run lint         # ESLint
+```
+
+## Fichiers clés
+
+| Fichier | Description |
+|---------|-------------|
+| `src/app/game/[code]/lobby-client.tsx` | Composant principal du jeu |
+| `src/lib/supabase/client.ts` | Client Supabase browser |
+| `src/lib/utils/player-session.ts` | Gestion sessions joueurs |
+| `src/types/supabase.ts` | Types générés depuis DB |
+
+## À faire
+
+- [ ] Ajouter `.env.example` avec toutes les variables
+- [ ] Script de setup automatisé
+- [ ] Tests E2E avec Playwright
+- [ ] Storybook pour les composants UI
+- [ ] PWA offline support complet
+
+---
+
+*Voir aussi: [SUPABASE.md](./SUPABASE.md), [VERCEL.md](./VERCEL.md)*

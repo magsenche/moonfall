@@ -1,6 +1,6 @@
 # Moonfall - Loup-Garou Grandeur Nature
 
-> App web pour jouer au Loup-Garou IRL, inspirée de l'émission Fary x Panayotis (Canal+).
+> App web pour jouer au Loup-Garou IRL avec missions réelles.
 
 🔗 **Production :** https://moonfall.vercel.app
 
@@ -12,10 +12,18 @@ Chaque joueur reçoit un rôle secret. Missions IRL + conseils réguliers avec �
 
 ## 📚 Documentation
 
+Docs centralisées dans [`docs/`](../docs/README.md) :
+
 | Document | Contenu |
 |----------|---------|
-| [MISSIONS_DESIGN.md](../docs/MISSIONS_DESIGN.md) | Game design du système de missions (types, enchères, récompenses, flux) |
-| [AUTH_PUSH_SETUP.md](../docs/AUTH_PUSH_SETUP.md) | Configuration VAPID keys et Web Push notifications |
+| [STACK.md](../docs/STACK.md) | Stack technique, installation, structure projet |
+| [SUPABASE.md](../docs/SUPABASE.md) | Database, Auth, Realtime, Storage, Edge Functions |
+| [VERCEL.md](../docs/VERCEL.md) | Déploiement, CI/CD, environnements |
+| [PUSH_NOTIFICATIONS.md](../docs/PUSH_NOTIFICATIONS.md) | Web Push, VAPID, Service Worker |
+| [ROLES.md](../docs/ROLES.md) | Game design des rôles, pouvoirs, équipes |
+| [MISSIONS_DESIGN.md](../docs/MISSIONS_DESIGN.md) | Système de missions IRL, enchères, récompenses |
+
+> **⚠️ Important :** Avant d'implémenter une fonctionnalité, consulter la doc associée. Après un changement significatif (nouveau système, config, rôle...), **mettre à jour la doc correspondante**.
 
 ---
 
@@ -271,8 +279,8 @@ npm run dev          # Dev server
 npm run build        # Build production
 npm run lint         # Linter
 
-# Types Supabase (via MCP ou CLI)
-# Les types sont dans src/types/supabase.ts
+# Types Supabase (après modification du schéma DB)
+npm run supabase:types
 ```
 
 ---
@@ -284,7 +292,7 @@ npm run lint         # Linter
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
 
-# Web Push (VAPID) - voir docs/AUTH_PUSH_SETUP.md
+# Web Push (VAPID) - voir docs/PUSH_NOTIFICATIONS.md
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=BPxxx...
 VAPID_PRIVATE_KEY=xxx...  # Edge Function uniquement
 ```
@@ -299,9 +307,10 @@ Connecté au projet. Utiliser pour :
 - `list_tables` - Voir schéma et données
 - `execute_sql` - Requêtes SELECT/debug
 - `apply_migration` - DDL (CREATE, ALTER)
-- `generate_typescript_types` - Régénérer types
 - `get_advisors` - Sécurité/perf (RLS manquantes)
 - `get_logs` - Debug (postgres, auth, edge-function)
+
+> **Note :** Pour régénérer les types TypeScript après une migration, utiliser `npm run supabase:types` (pas MCP).
 
 ### Playwright MCP
 

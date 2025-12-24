@@ -382,11 +382,6 @@ export default function HomePage() {
             📱 Ajoute Moonfall à ton écran d&apos;accueil pour recevoir les notifications !
           </p>
         </div>
-
-        {/* Footer */}
-        <p className="text-center text-slate-600 text-sm mt-4">
-          Inspiré de l'émission de Fary & Panayotis sur Canal+
-        </p>
       </div>
     </main>
   );

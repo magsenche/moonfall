@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🐺 Moonfall
 
-## Getting Started
+> App web pour jouer au Loup-Garou IRL avec missions réelles.
 
-First, run the development server:
+🔗 **Production :** https://moonfall.vercel.app
+
+## Concept
+
+Chaque joueur reçoit un rôle secret. Missions IRL + conseils réguliers avec éliminations par vote.
+
+## Quick Start
 
 ```bash
+# Cloner
+git clone https://github.com/magsenche/moonfall.git
+cd moonfall
+
+# Installer
+npm install
+
+# Configurer (copier et remplir les variables)
+cp .env.example .env.local
+
+# Lancer
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrir [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Composant | Technologie |
+|-----------|-------------|
+| Framework | Next.js 16 (App Router, React 19) |
+| Styling | Tailwind CSS 4 |
+| Backend | Supabase (PostgreSQL, Realtime, Auth) |
+| Notifications | Web Push (VAPID) |
+| Hébergement | Vercel |
 
-## Learn More
+## Documentation
 
-To learn more about Next.js, take a look at the following resources:
+Voir [`docs/`](./docs/README.md) pour la documentation technique complète :
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [STACK.md](./docs/STACK.md) - Installation, structure projet
+- [SUPABASE.md](./docs/SUPABASE.md) - Database, Realtime, Edge Functions
+- [VERCEL.md](./docs/VERCEL.md) - Déploiement
+- [PUSH_NOTIFICATIONS.md](./docs/PUSH_NOTIFICATIONS.md) - Web Push
+- [ROLES.md](./docs/ROLES.md) - Game design des rôles
+- [MISSIONS_DESIGN.md](./docs/MISSIONS_DESIGN.md) - Système de missions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Commandes
 
-## Deploy on Vercel
+```bash
+npm run dev           # Dev server
+npm run build         # Build production
+npm run supabase:types # Générer types TypeScript depuis DB
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Licence
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
