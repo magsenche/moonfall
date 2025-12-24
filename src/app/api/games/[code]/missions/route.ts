@@ -193,8 +193,8 @@ export async function POST(
   // For auction missions, all alive players can participate
   let playerIds: string[] = [];
   
-  if (missionType === 'auction') {
-    // For auctions, get all alive players (except MJ)
+  if (missionType === 'auction' || missionType === 'collective') {
+    // For auctions and collective missions, get all alive players (except MJ)
     const { data: alivePlayers } = await supabase
       .from('players')
       .select('id')
@@ -209,8 +209,8 @@ export async function POST(
     playerIds = multipleIds?.length ? multipleIds : (assignedTo ? [assignedTo] : []);
   }
 
-  // Verify assigned players exist (if not auction)
-  if (missionType !== 'auction' && playerIds.length > 0) {
+  // Verify assigned players exist (if not auction or collective)
+  if (missionType !== 'auction' && missionType !== 'collective' && playerIds.length > 0) {
     const { data: assignees } = await supabase
       .from('players')
       .select('id')

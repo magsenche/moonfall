@@ -388,8 +388,8 @@ export function MissionCard({
           {/* MJ standard controls */}
           {isMJ && isActive && !isAuction && (
             <div className="space-y-2 pt-2 border-t border-slate-700">
-              {/* Winner selection for multi-player missions */}
-              {mission.assigned_players.length > 1 && (
+              {/* Winner selection for multi-player non-collective missions */}
+              {mission.assigned_players.length > 1 && mission.mission_type !== 'collective' && (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-400">Gagnant :</span>
                   <select
@@ -408,14 +408,21 @@ export function MissionCard({
                 </div>
               )}
               
+              {/* Collective mission note */}
+              {mission.mission_type === 'collective' && (
+                <p className="text-xs text-slate-400">
+                  👥 Mission collective - le village entier réussit ou échoue ensemble
+                </p>
+              )}
+              
               <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
-                  onClick={() => handleMJAction('validate', selectedWinnerId || mission.assigned_players[0]?.id)}
-                  disabled={isSubmitting || (mission.assigned_players.length > 1 && !selectedWinnerId)}
+                  onClick={() => handleMJAction('validate', mission.mission_type === 'collective' ? undefined : (selectedWinnerId || mission.assigned_players[0]?.id))}
+                  disabled={isSubmitting || (mission.assigned_players.length > 1 && mission.mission_type !== 'collective' && !selectedWinnerId)}
                   className="bg-green-600 hover:bg-green-700"
                 >
-                  ✅ Valider{mission.assigned_players.length > 1 && selectedWinnerId && ` (${mission.assigned_players.find(p => p.id === selectedWinnerId)?.pseudo})`}
+                  ✅ Valider{mission.mission_type !== 'collective' && mission.assigned_players.length > 1 && selectedWinnerId && ` (${mission.assigned_players.find(p => p.id === selectedWinnerId)?.pseudo})`}
                 </Button>
                 <Button
                   size="sm"
