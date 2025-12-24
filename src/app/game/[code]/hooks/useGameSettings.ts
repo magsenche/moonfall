@@ -36,9 +36,11 @@ export function useGameSettings({
         const data = await response.json();
         const settings = data.settings || data;
         setGameSettings({
-          nightDurationMinutes: settings.nightDurationMinutes ?? 30,
-          voteDurationMinutes: settings.voteDurationMinutes ?? 15,
-          councilIntervalMinutes: settings.councilIntervalMinutes ?? 120,
+          minPlayers: settings.minPlayers ?? DEFAULT_GAME_SETTINGS.minPlayers,
+          maxPlayers: settings.maxPlayers ?? DEFAULT_GAME_SETTINGS.maxPlayers,
+          nightDurationMinutes: settings.nightDurationMinutes ?? DEFAULT_GAME_SETTINGS.nightDurationMinutes,
+          voteDurationMinutes: settings.voteDurationMinutes ?? DEFAULT_GAME_SETTINGS.voteDurationMinutes,
+          councilIntervalMinutes: settings.councilIntervalMinutes ?? DEFAULT_GAME_SETTINGS.councilIntervalMinutes,
           rolesDistribution: settings.rolesDistribution ?? {},
         });
       }

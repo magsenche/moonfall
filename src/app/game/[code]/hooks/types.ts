@@ -5,6 +5,10 @@
 
 import type { Database } from '@/types/database';
 
+// Re-export game types for convenience
+export { PHASE_DURATIONS, DEFAULT_GAME_SETTINGS } from '@/types/game';
+export type { GameSettings, GameStatus, Team, VoteType } from '@/types/game';
+
 // Partial player type for what we actually select from DB
 export type PartialPlayer = Pick<
   Database['public']['Tables']['players']['Row'],
@@ -70,17 +74,4 @@ export type Mission = {
   winner?: { id: string; pseudo: string } | null;
 };
 
-// Game settings (MJ configurable)
-export type GameSettings = {
-  nightDurationMinutes: number;
-  voteDurationMinutes: number;
-  councilIntervalMinutes: number;
-  rolesDistribution: Record<string, number>;
-};
-
-export const DEFAULT_GAME_SETTINGS: GameSettings = {
-  nightDurationMinutes: 30,
-  voteDurationMinutes: 15,
-  councilIntervalMinutes: 120,
-  rolesDistribution: {},
-};
+// Note: GameSettings is re-exported from @/types/game above

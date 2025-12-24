@@ -2,4 +2,8 @@
 export * from './theme';
 export * from './roles';
 export * from './players';
-export * from './game';
+
+// Game config is now in @/types/game for consolidation
+// Re-export for backwards compatibility
+export { PHASE_DURATIONS, DEFAULT_GAME_SETTINGS } from '@/types/game';
+export type { GameSettings } from '@/types/game';

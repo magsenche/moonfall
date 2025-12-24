@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
-import { PHASE_DURATIONS } from "@/config/game";
+import { PHASE_DURATIONS } from "@/types/game";
 import type { GameSettings } from "@/types/game";
 
 // GET - Get wolf vote status (for MJ)
