@@ -12,153 +12,195 @@ Les missions sont le cœur de l'expérience IRL. Elles doivent :
 
 ---
 
+## ✅ État d'implémentation
+
+| Fonctionnalité | Status |
+|----------------|--------|
+| Types de missions (individual, collective, competitive, auction) | ✅ Implémenté |
+| Catégories (social, challenge, quiz, external, photo, auction) | ✅ Implémenté |
+| Templates prédéfinis | ✅ Implémenté (`src/lib/missions/types.ts`) |
+| Missions custom MJ | ✅ Implémenté |
+| Système d'enchères (auction) | ✅ Implémenté |
+| Timer avec deadline | ✅ Implémenté |
+| Soumission de score | ✅ Implémenté |
+| Auto-validation (first_wins, best_score) | ✅ Implémenté |
+| Récompenses | ✅ DB prête, attribution manuelle MJ |
+| Missions collectives (succès/échec village) | ⚠️ Partiel (validation MJ uniquement) |
+| Variables dans énoncés ({player_name}) | ❌ À faire |
+
+---
+
 ## 📋 Types de Missions
 
-### 1. Missions Individuelles
-Chaque joueur reçoit une mission personnelle. Le premier à réussir (ou le meilleur) gagne.
+### 1. Missions Individuelles (`individual`)
+Un joueur assigné doit accomplir une tâche.
 
 | Catégorie | Exemples | Validation |
 |-----------|----------|------------|
 | **Social** | "Fais rire 3 personnes différentes" | MJ |
 | **Défi IRL** | "Chante le refrain d'une chanson devant tout le monde" | MJ |
-| **Observation** | "Découvre et annonce publiquement le métier de [X]" | MJ |
-| **Infiltration** | "Vote contre quelqu'un que tu as défendu publiquement" | Auto |
 | **Photo** | "Selfie avec 3 joueurs qui ne sont pas à côté de toi" | Upload |
 
-### 2. Missions Collectives (Village)
+### 2. Missions Collectives (`collective`)
 Le village doit réussir ensemble. Les loups essaient de faire capoter.
 
 | Type | Exemple | Sabotage possible |
 |------|---------|-------------------|
 | **Consensus** | "Tout le monde doit lever la main en même temps" | Loup rate exprès |
 | **Chaîne** | "Chaque joueur dit un mot, formez une phrase cohérente" | Loup casse la logique |
-| **Collaboration** | "Construisez une pyramide de verres" | Sabotage physique discret |
 | **Quiz collectif** | "5 bonnes réponses consécutives" | Mauvaise réponse volontaire |
 
-### 3. Missions Compétitives
-Course contre les autres joueurs.
+### 3. Missions Compétitives (`competitive`)
+Course contre les autres joueurs. Premier validé ou meilleur score gagne.
 
-| Type | Exemple | Anti-triche |
-|------|---------|-------------|
-| **Énigme chronométrée** | Résous en premier | Timer visible, pas de retour |
-| **Mini-jeu externe** | Lien vers jeu web, meilleur score gagne | Screenshot au MJ |
-| **Question perso** | "Quelle est la couleur préférée de [X] ?" | Demander = interaction IRL |
-| **Rapidité** | Premier à trouver [objet] dans la pièce | Physique |
+| Type | Validation | Exemple |
+|------|------------|---------|
+| **first_wins** | Premier à soumettre | "Premier à trouver quelqu'un qui porte du bleu" |
+| **best_score** | Meilleur score | "Mini-jeu externe - meilleur score gagne" |
+| **mj** | MJ décide | "Meilleure imitation" |
+
+### 4. Missions Enchères (`auction`) ⭐ Nouveau
+Les joueurs enchérissent sur un défi. Le plus offrant doit le réaliser.
+
+| Exemple | Fonctionnement |
+|---------|----------------|
+| "Citer X capitales européennes" | Joueurs enchérissent → "Je peux en citer 5!" → "Moi 7!" → Gagnant doit réussir |
+| "Faire X pompes" | Enchères montantes → Gagnant exécute devant tous |
+
+**Flow technique :**
+1. MJ crée mission auction avec min/max enchère
+2. Tous les joueurs vivants sont auto-assignés
+3. Phase d'enchères (POST `/bid`)
+4. MJ ferme les enchères (PATCH `/bid` avec `close_bidding`)
+5. Plus offrant réalise le défi IRL
+6. MJ valide succès ou échec (PATCH `/bid` avec `declare_winner` ou `declare_failure`)
 
 ---
 
 ## 🏆 Récompenses
 
-| Récompense | Effet | Pour qui |
-|------------|-------|----------|
-| **Indice Loup** | MJ révèle "X n'est PAS un loup" ou "Il y a un loup parmi A, B, C" | Village |
-| **Immunité** | Ne peut pas être éliminé au prochain conseil | Tous |
-| **Vote Double** | Compte pour 2 voix au prochain conseil | Tous |
-| **Vision** | Voyante : voir 2 rôles au lieu d'1 cette nuit | Voyante |
-| **Résurrection** | Peut sauver un mort au prochain tour (si Sorcière) | Sorcière |
-| **Silence** | Un joueur au choix ne peut pas parler pendant 2min | Stratégique |
+| Récompense | Enum | Effet |
+|------------|------|-------|
+| **Indice Loup** | `wolf_hint` | MJ révèle "X n'est PAS un loup" ou "Il y a un loup parmi A, B, C" |
+| **Immunité** | `immunity` | Ne peut pas être éliminé au prochain conseil |
+| **Vote Double** | `double_vote` | Compte pour 2 voix au prochain conseil |
+| **Vision Extra** | `extra_vision` | Voyante : voir 2 rôles au lieu d'1 cette nuit |
+| **Silence** | `silence` | Un joueur au choix ne peut pas parler pendant 2min |
+| **Aucune** | `none` | Missions pour le fun |
+
+> Note: Les récompenses sont stockées en DB (`reward_type`, `reward_data`) mais leur **attribution automatique** n'est pas encore implémentée. Le MJ doit les appliquer manuellement.
 
 ---
 
-## 🔧 Architecture Technique
+## 🔧 Architecture Technique (Implémentée)
 
 ### Base de données
 
 ```sql
--- Templates de missions (créés par MJ ou prédéfinis)
-mission_templates (
-  id, game_id, 
-  type: 'individual' | 'collective' | 'competitive',
-  category: 'social' | 'challenge' | 'quiz' | 'external' | 'photo',
-  title, description,
-  validation_type: 'mj' | 'auto' | 'upload' | 'external',
-  external_url,           -- Lien vers mini-jeu externe
-  time_limit_seconds,     -- Temps pour compléter (anti-triche)
-  reward_type,            -- Type de récompense
-  reward_data,            -- JSON avec détails
-  target_players,         -- null = tous, ou liste d'IDs
-  sabotage_allowed,       -- Les loups peuvent saboter
-  created_at
-)
-
--- Missions actives dans une partie
+-- Table missions (étendue)
 missions (
-  id, game_id, template_id,
-  status: 'pending' | 'active' | 'completed' | 'failed' | 'cancelled',
-  started_at, completed_at,
-  winner_player_id,       -- Qui a gagné (individual/competitive)
-  result_data             -- JSON: scores, réponses, etc.
+  id, game_id, title, description, status,
+  
+  -- Nouveaux champs v2
+  mission_type: 'individual' | 'collective' | 'competitive' | 'auction',
+  category: 'social' | 'challenge' | 'quiz' | 'external' | 'photo' | 'auction',
+  validation_type: 'mj' | 'auto' | 'upload' | 'external' | 'first_wins' | 'best_score',
+  
+  external_url,           -- Lien vers mini-jeu externe
+  time_limit_seconds,     -- Temps pour compléter
+  
+  reward_type: 'wolf_hint' | 'immunity' | 'double_vote' | 'extra_vision' | 'silence' | 'none',
+  reward_data,            -- JSON avec détails
+  
+  is_template,            -- Template réutilisable
+  template_id,            -- Référence au template source
+  
+  winner_player_id,       -- Gagnant (competitive/auction)
+  auction_data,           -- JSON: { min_bid, max_bid, current_bid, leading_player_id, bidding_closed }
+  sabotage_allowed,       -- Les loups peuvent saboter (collective)
+  
+  created_at, deadline
 )
 
--- Participation individuelle
+-- Participation individuelle (étendue)
 mission_assignments (
-  mission_id, player_id,
-  status: 'pending' | 'in_progress' | 'success' | 'failed',
+  mission_id, player_id, status,
   submitted_at,
-  submission_data,        -- Réponse, photo URL, score...
+  submission_data,        -- JSON: { score, answer, photoUrl, ... }
+  score,                  -- Score numérique (competitive)
+  bid,                    -- Enchère (auction)
   validated_by_mj
 )
 ```
 
-### API Endpoints
+### API Endpoints (Implémentés)
 
 ```
-GET  /api/games/[code]/missions              -- Liste missions actives
-POST /api/games/[code]/missions              -- MJ crée une mission
-POST /api/games/[code]/missions/[id]/start   -- MJ lance la mission
-POST /api/games/[code]/missions/[id]/submit  -- Joueur soumet sa réponse
-POST /api/games/[code]/missions/[id]/validate -- MJ valide
-POST /api/games/[code]/missions/[id]/complete -- MJ termine et attribue récompense
+GET  /api/games/[code]/missions                    -- Liste missions (+ ?templates=true)
+POST /api/games/[code]/missions                    -- MJ crée mission (depuis template ou custom)
+
+GET  /api/games/[code]/missions/[id]/submit        -- Status soumission joueur
+POST /api/games/[code]/missions/[id]/submit        -- Joueur soumet score/réponse
+
+GET  /api/games/[code]/missions/[id]/bid           -- Status enchères
+POST /api/games/[code]/missions/[id]/bid           -- Joueur enchérit
+PATCH /api/games/[code]/missions/[id]/bid          -- MJ: close_bidding, declare_winner, declare_failure
+
+PATCH /api/games/[code]/missions/[id]              -- MJ valide/annule mission
 ```
 
-### UI Components
+### Fichiers clés
 
 ```
-components/game/
-├── missions/
-│   ├── MissionCard.tsx          -- Affichage d'une mission
-│   ├── MissionTimer.tsx         -- Countdown anti-triche
-│   ├── MissionSubmit.tsx        -- Formulaire de soumission
-│   ├── MissionQuiz.tsx          -- Énigme/Question
-│   ├── MissionExternal.tsx      -- Iframe ou lien externe
-│   ├── MissionPhoto.tsx         -- Upload photo
-│   ├── MissionMJControls.tsx    -- Contrôles MJ
-│   └── MissionReward.tsx        -- Animation récompense
+src/lib/missions/
+├── types.ts              -- Types, templates, labels (MISSION_TEMPLATES, enums)
+└── index.ts              -- Exports
+
+src/components/game/
+├── mission-form.tsx      -- Formulaire MJ (templates + custom)
+└── mission-card.tsx      -- Affichage mission (timer, enchères, soumission, contrôles MJ)
+
+src/app/api/games/[code]/missions/
+├── route.ts              -- GET/POST missions
+└── [missionId]/
+    ├── route.ts          -- PATCH mission
+    ├── submit/route.ts   -- Soumissions joueurs
+    └── bid/route.ts      -- Enchères
 ```
 
 ---
 
 ## 🎮 Flux de jeu
 
-### Mission Individuelle
+### Mission Individuelle/Compétitive
 ```
-1. MJ crée mission depuis template ou custom
-2. MJ lance la mission → notification à tous
-3. Joueurs voient timer + description
-4. Joueur soumet (réponse/photo/score)
-5. MJ valide ou système auto-valide
-6. Premier validé = gagnant → récompense attribuée
-7. Notification à tous du gagnant
+1. MJ crée mission (template ou custom) via MissionForm
+2. MJ assigne à un ou plusieurs joueurs
+3. Joueurs voient la mission avec timer (MissionCard)
+4. Joueur soumet score/réponse (POST /submit)
+5. Auto-validation (first_wins/best_score) ou validation MJ
+6. Gagnant déterminé → winner_player_id renseigné
 ```
 
 ### Mission Collective
 ```
-1. MJ lance mission collective
+1. MJ lance mission collective (sabotage_allowed = true optionnel)
 2. Tous les joueurs voient l'objectif
 3. Déroulement IRL (MJ observe)
-4. MJ marque succès ou échec
-5. Si succès → récompense au village (indice)
-6. Si échec → rien ou avantage loups
+4. MJ marque succès ou échec via MissionCard
+5. Si succès → récompense attribuée manuellement
 ```
 
-### Mission Compétitive avec lien externe
+### Mission Enchères (Auction) ⭐
 ```
-1. MJ crée mission avec URL externe (ex: jeu de rapidité)
-2. Mission lancée → tous reçoivent le lien
-3. Timer démarre (ex: 2 minutes)
-4. Joueurs jouent et screenshot leur score
-5. MJ compare les scores
-6. Meilleur score = gagnant
+1. MJ crée mission auction (min_bid, max_bid optionnels)
+2. Tous les joueurs vivants auto-assignés
+3. Phase d'enchères : joueurs cliquent "Enchérir" (+1 au bid actuel)
+4. UI affiche enchère courante et leader
+5. MJ clique "Fermer enchères" → bidding_closed = true
+6. Plus offrant doit réaliser le défi IRL
+7. MJ clique "Réussi ✓" ou "Échoué ✗"
+8. Mission terminée avec winner ou failed
 ```
 
 ---
@@ -168,62 +210,85 @@ components/game/
 | Problème | Solution |
 |----------|----------|
 | Recherche Google | Questions personnelles sur les joueurs présents |
-| Temps illimité | Timer strict, mission expire |
+| Temps illimité | Timer strict avec deadline, mission expire |
 | Faux screenshot | MJ vérifie visuellement |
-| Copier réponse | Réponses différentes par joueur (variables) |
-| Sabotage trop évident | Les loups doivent être subtils (social) |
+| Enchères infinies | max_bid configurable par MJ |
 
 ---
 
-## 📝 Templates prédéfinis (v1)
+## 📝 Templates prédéfinis
 
-### Individuelles
-1. "Fais deviner un film à quelqu'un sans parler"
-2. "Découvre l'âge exact d'un joueur et annonce-le"
-3. "Convaincs quelqu'un de te donner son verre"
-4. "Fais un compliment sincère à 3 personnes différentes"
+Templates disponibles dans `src/lib/missions/types.ts` → `MISSION_TEMPLATES`
 
-### Collectives
-1. "Le village doit chanter une chanson ensemble sans se tromper"
-2. "Formez une chaîne où chacun dit le prénom de son voisin de droite"
-3. "10 secondes de silence complet"
+### Social
+- "Fais rire 3 personnes différentes"
+- "Fais un compliment sincère à quelqu'un que tu ne connais pas bien"
+- "Convaincs quelqu'un de te donner un objet qu'il possède"
 
-### Compétitives
-1. "Premier à trouver quelqu'un qui porte du bleu"
-2. "Énigme: Résolvez le rébus [image]"
-3. "Mini-jeu: [lien] - meilleur score gagne"
+### Challenge
+- "Chante le refrain d'une chanson devant tout le monde"
+- "Imite un autre joueur, les autres doivent deviner qui"
+- "Raconte une anecdote embarrassante sur toi"
+
+### Quiz
+- "Devine la couleur préférée d'un joueur au choix"
+
+### Auction
+- "Cite X capitales européennes (enchères)"
+- "Fais X pompes (enchères)"
+- "Tiens X secondes en position de planche (enchères)"
+
+### External
+- "Meilleur score sur ce mini-jeu" (avec lien externe)
+
+### Photo
+- "Selfie avec 3 joueurs qui ne sont pas à côté de toi"
+- "Photo de groupe formant une lettre avec vos corps"
 
 ---
 
 ## 🚀 Implémentation par phases
 
-### Phase 1 : Base
-- [ ] Nouveau schéma `mission_templates`
-- [ ] CRUD templates par MJ
-- [ ] UI création mission custom
-- [ ] Validation MJ uniquement
+### Phase 1 : Base ✅
+- [x] Schéma DB missions étendu
+- [x] CRUD missions par MJ
+- [x] UI création mission (MissionForm)
+- [x] Validation MJ
 
-### Phase 2 : Compétitif
-- [ ] Timer missions
-- [ ] Soumission réponse joueur
-- [ ] Auto-validation (premier arrivé)
-- [ ] Lien externe + screenshot
+### Phase 2 : Compétitif ✅
+- [x] Timer missions avec deadline
+- [x] Soumission score joueur
+- [x] Auto-validation (first_wins, best_score)
+- [x] Lien externe
 
-### Phase 3 : Avancé
-- [ ] Templates prédéfinis
-- [ ] Missions collectives
-- [ ] Système de récompenses
-- [ ] Variables dans les énoncés ({player_name}, etc.)
+### Phase 3 : Enchères ✅
+- [x] Type auction avec min/max bid
+- [x] UI enchères joueur
+- [x] Contrôles MJ (fermer, déclarer gagnant/échec)
 
----
-
-## Questions ouvertes
-
-1. **Fréquence** : Une mission par phase ? Par heure ? À la demande du MJ ?
-2. **Visibilité** : Les loups voient-ils les missions collectives avant ?
-3. **Échec** : Que se passe-t-il si personne ne réussit une mission ?
-4. **Stack de récompenses** : Peut-on cumuler plusieurs immunités ?
+### Phase 4 : À faire
+- [ ] Attribution automatique des récompenses
+- [ ] Variables dans énoncés ({player_name})
+- [ ] Historique des missions passées
+- [ ] Statistiques joueur (missions gagnées)
 
 ---
 
-*Document vivant - à mettre à jour selon les retours de playtest*
+## Questions résolues
+
+| Question | Réponse |
+|----------|---------|
+| **Fréquence** | À la demande du MJ, pas de contrainte |
+| **Visibilité** | Missions visibles par tous les joueurs assignés |
+| **Échec** | Mission reste en status pending/in_progress, MJ peut annuler |
+| **Stack récompenses** | Non géré automatiquement, MJ applique manuellement |
+| **Historique** | Pas nécessaire pour l'instant |
+
+## À implémenter
+
+1. **Notifications missions** : Notifier les joueurs quand une mission est créée ou mise à jour ✅ À faire
+2. **Récompenses auto** : Certaines récompenses doivent s'appliquer automatiquement dans le jeu (immunité, double vote, etc.) ✅ À faire
+
+---
+
+*Document vivant - mis à jour le 24/12/2024*

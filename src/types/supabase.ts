@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
@@ -108,25 +110,40 @@ export type Database = {
       }
       mission_assignments: {
         Row: {
+          bid: number | null
           created_at: string | null
           id: string
           mission_id: string
           player_id: string
+          score: number | null
           status: string | null
+          submission_data: Json | null
+          submitted_at: string | null
+          validated_by_mj: boolean | null
         }
         Insert: {
+          bid?: number | null
           created_at?: string | null
           id?: string
           mission_id: string
           player_id: string
+          score?: number | null
           status?: string | null
+          submission_data?: Json | null
+          submitted_at?: string | null
+          validated_by_mj?: boolean | null
         }
         Update: {
+          bid?: number | null
           created_at?: string | null
           id?: string
           mission_id?: string
           player_id?: string
+          score?: number | null
           status?: string | null
+          submission_data?: Json | null
+          submitted_at?: string | null
+          validated_by_mj?: boolean | null
         }
         Relationships: [
           {
@@ -148,48 +165,99 @@ export type Database = {
       missions: {
         Row: {
           assigned_to: string | null
+          auction_data: Json | null
+          category: Database["public"]["Enums"]["mission_category"] | null
+          completed_at: string | null
           created_at: string | null
           deadline: string | null
           description: string
+          external_url: string | null
           game_id: string
           id: string
+          is_template: boolean | null
+          mission_type: Database["public"]["Enums"]["mission_type"] | null
           penalty_description: string | null
+          result_data: Json | null
+          reward_data: Json | null
           reward_description: string | null
+          reward_type: Database["public"]["Enums"]["reward_type"] | null
+          sabotage_allowed: boolean | null
+          started_at: string | null
           status: Database["public"]["Enums"]["mission_status"] | null
+          template_id: string | null
+          time_limit_seconds: number | null
           title: string
           type: string
           validated_at: string | null
           validated_by: string | null
+          validation_type:
+            | Database["public"]["Enums"]["mission_validation_type"]
+            | null
+          winner_player_id: string | null
         }
         Insert: {
           assigned_to?: string | null
+          auction_data?: Json | null
+          category?: Database["public"]["Enums"]["mission_category"] | null
+          completed_at?: string | null
           created_at?: string | null
           deadline?: string | null
           description: string
+          external_url?: string | null
           game_id: string
           id?: string
+          is_template?: boolean | null
+          mission_type?: Database["public"]["Enums"]["mission_type"] | null
           penalty_description?: string | null
+          result_data?: Json | null
+          reward_data?: Json | null
           reward_description?: string | null
+          reward_type?: Database["public"]["Enums"]["reward_type"] | null
+          sabotage_allowed?: boolean | null
+          started_at?: string | null
           status?: Database["public"]["Enums"]["mission_status"] | null
+          template_id?: string | null
+          time_limit_seconds?: number | null
           title: string
           type: string
           validated_at?: string | null
           validated_by?: string | null
+          validation_type?:
+            | Database["public"]["Enums"]["mission_validation_type"]
+            | null
+          winner_player_id?: string | null
         }
         Update: {
           assigned_to?: string | null
+          auction_data?: Json | null
+          category?: Database["public"]["Enums"]["mission_category"] | null
+          completed_at?: string | null
           created_at?: string | null
           deadline?: string | null
           description?: string
+          external_url?: string | null
           game_id?: string
           id?: string
+          is_template?: boolean | null
+          mission_type?: Database["public"]["Enums"]["mission_type"] | null
           penalty_description?: string | null
+          result_data?: Json | null
+          reward_data?: Json | null
           reward_description?: string | null
+          reward_type?: Database["public"]["Enums"]["reward_type"] | null
+          sabotage_allowed?: boolean | null
+          started_at?: string | null
           status?: Database["public"]["Enums"]["mission_status"] | null
+          template_id?: string | null
+          time_limit_seconds?: number | null
           title?: string
           type?: string
           validated_at?: string | null
           validated_by?: string | null
+          validation_type?:
+            | Database["public"]["Enums"]["mission_validation_type"]
+            | null
+          winner_player_id?: string | null
         }
         Relationships: [
           {
@@ -207,8 +275,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "missions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "missions_validated_by_fkey"
             columns: ["validated_by"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "missions_winner_player_id_fkey"
+            columns: ["winner_player_id"]
             isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
@@ -558,13 +640,35 @@ export type Database = {
     }
     Enums: {
       game_status: "lobby" | "jour" | "nuit" | "conseil" | "terminee"
+      mission_category:
+        | "social"
+        | "challenge"
+        | "quiz"
+        | "external"
+        | "photo"
+        | "auction"
       mission_status:
         | "pending"
         | "in_progress"
         | "success"
         | "failed"
         | "cancelled"
+      mission_type: "individual" | "collective" | "competitive" | "auction"
+      mission_validation_type:
+        | "mj"
+        | "auto"
+        | "upload"
+        | "external"
+        | "first_wins"
+        | "best_score"
       power_phase: "nuit" | "jour" | "mort"
+      reward_type:
+        | "wolf_hint"
+        | "immunity"
+        | "double_vote"
+        | "extra_vision"
+        | "silence"
+        | "none"
       team_type: "village" | "loups" | "solo"
       vote_type: "jour" | "nuit_loup" | "pouvoir"
     }
@@ -695,6 +799,14 @@ export const Constants = {
   public: {
     Enums: {
       game_status: ["lobby", "jour", "nuit", "conseil", "terminee"],
+      mission_category: [
+        "social",
+        "challenge",
+        "quiz",
+        "external",
+        "photo",
+        "auction",
+      ],
       mission_status: [
         "pending",
         "in_progress",
@@ -702,7 +814,24 @@ export const Constants = {
         "failed",
         "cancelled",
       ],
+      mission_type: ["individual", "collective", "competitive", "auction"],
+      mission_validation_type: [
+        "mj",
+        "auto",
+        "upload",
+        "external",
+        "first_wins",
+        "best_score",
+      ],
       power_phase: ["nuit", "jour", "mort"],
+      reward_type: [
+        "wolf_hint",
+        "immunity",
+        "double_vote",
+        "extra_vision",
+        "silence",
+        "none",
+      ],
       team_type: ["village", "loups", "solo"],
       vote_type: ["jour", "nuit_loup", "pouvoir"],
     },

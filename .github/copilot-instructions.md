@@ -10,6 +10,15 @@ Chaque joueur reçoit un rôle secret. Missions IRL + conseils réguliers avec �
 
 ---
 
+## 📚 Documentation
+
+| Document | Contenu |
+|----------|---------|
+| [MISSIONS_DESIGN.md](../docs/MISSIONS_DESIGN.md) | Game design du système de missions (types, enchères, récompenses, flux) |
+| [AUTH_PUSH_SETUP.md](../docs/AUTH_PUSH_SETUP.md) | Configuration VAPID keys et Web Push notifications |
+
+---
+
 ## Stack Technique
 
 | Composant | Choix |
@@ -104,15 +113,16 @@ src/
 │           ├── vote/            # POST voter
 │           ├── power/           # POST utiliser pouvoir
 │           ├── wolf-chat/       # GET/POST chat loups
-│           ├── missions/        # GET/POST/PATCH missions
+│           ├── missions/        # GET/POST/PATCH missions + [missionId]/bid, submit
 │           └── settings/        # GET/PATCH settings MJ
 ├── components/
 │   ├── ui/                      # Button, Input, Card
-│   └── game/                    # PlayerAvatar, RoleBadge, GamePhaseBadge, GameOver, NotificationPrompt
+│   └── game/                    # PlayerAvatar, RoleBadge, GamePhaseBadge, GameOver, NotificationPrompt, MissionForm, MissionCard
 ├── config/                      # Thème, rôles, personnalisation joueurs
 ├── lib/
 │   ├── auth/                    # AuthProvider, useAuth hook
 │   ├── notifications/           # useNotifications, subscribeToPush
+│   ├── missions/                # Types missions, templates, labels
 │   ├── supabase/                # Client (browser), Server (SSR), Storage helpers
 │   ├── roles/                   # Handlers par rôle (villageois, loup-garou, voyante)
 │   └── utils/                   # cn(), generateGameCode(), player-session
@@ -213,6 +223,10 @@ supabase/
 - [x] MJ peut forcer résolution vote loups (même si incomplet)
 - [x] Affichage du vote confirmé (pour qui on a voté)
 - [x] Compteur votes loups visible par MJ pendant la nuit
+- [x] Système de missions avancé (types, catégories, templates, enchères)
+- [x] UI MJ : créer mission depuis templates ou libre
+- [x] Missions enchères (auction) : joueurs enchérissent, gagnant réalise le défi
+- [x] API submission/bid pour missions compétitives
 
 ### 🔄 En Cours
 
@@ -227,10 +241,11 @@ supabase/
 **Priorité haute (post-MVP) :**
 - [ ] Valider notifications push en conditions réelles (test multi-appareils iOS)
 - [ ] Tester partie complète avec ~10 joueurs réels
+- [ ] Tester missions enchères en conditions réelles
 
 **Backlog général :**
 - [ ] Rôles avancés (Sorcière, Chasseur, Cupidon...)
-- [ ] Missions avancées (templates, types variés)
+- [ ] Système récompenses missions (immunité, double vote, etc.)
 - [ ] Système Fantôme (morts peuvent aider)
 - [ ] Scoring et classement
 - [ ] PWA offline support

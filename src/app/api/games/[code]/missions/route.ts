@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
+import type { Database, Json } from '@/types/database';
+import type { MissionType, MissionCategory, MissionValidationType, RewardType, AuctionData, RewardData } from '@/lib/missions';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,6 +14,8 @@ export async function GET(
   { params }: { params: Promise<{ code: string }> }
 ) {
   const { code } = await params;
+  const { searchParams } = new URL(request.url);
+  const templatesOnly = searchParams.get('templates') === 'true';
 
   // Get game
   const { data: game, error: gameError } = await supabase
@@ -25,29 +28,45 @@ export async function GET(
     return NextResponse.json({ error: 'Partie non trouvée' }, { status: 404 });
   }
 
-  // Get missions with assigned player info (legacy single player)
-  const { data: missions, error: missionsError } = await supabase
+  // Build query
+  let query = supabase
     .from('missions')
     .select(`
       *,
       assigned_player:players!missions_assigned_to_fkey(id, pseudo),
-      validator:players!missions_validated_by_fkey(id, pseudo)
+      validator:players!missions_validated_by_fkey(id, pseudo),
+      winner:players!missions_winner_player_id_fkey(id, pseudo)
     `)
-    .eq('game_id', game.id)
-    .order('created_at', { ascending: false });
+    .eq('game_id', game.id);
+
+  // Filter templates vs active missions
+  if (templatesOnly) {
+    query = query.eq('is_template', true);
+  } else {
+    query = query.or('is_template.is.null,is_template.eq.false');
+  }
+
+  const { data: missions, error: missionsError } = await query.order('created_at', { ascending: false });
 
   if (missionsError) {
     return NextResponse.json({ error: 'Erreur lors de la récupération des missions' }, { status: 500 });
   }
 
-  // Get multi-player assignments
+  // Get multi-player assignments with extended info
   const missionIds = missions?.map(m => m.id) || [];
-  const assignmentsMap: Record<string, { id: string; pseudo: string; status: string }[]> = {};
+  const assignmentsMap: Record<string, { 
+    id: string; 
+    pseudo: string; 
+    status: string;
+    bid?: number;
+    score?: number;
+    submitted_at?: string;
+  }[]> = {};
   
   if (missionIds.length > 0) {
     const { data: assignments } = await supabase
       .from('mission_assignments')
-      .select('mission_id, player_id, status, player:players(id, pseudo)')
+      .select('mission_id, player_id, status, bid, score, submitted_at, player:players(id, pseudo)')
       .in('mission_id', missionIds);
     
     if (assignments) {
@@ -61,6 +80,9 @@ export async function GET(
             id: player.id,
             pseudo: player.pseudo,
             status: assignment.status || 'assigned',
+            bid: assignment.bid ?? undefined,
+            score: assignment.score ?? undefined,
+            submitted_at: assignment.submitted_at ?? undefined,
           });
         }
       }
@@ -84,25 +106,53 @@ export async function POST(
   const { code } = await params;
   const body = await request.json();
   const { 
+    // Basic fields
     title, 
     description, 
     type = 'custom',
+    // Player assignment
     assignedTo,
-    assignedToMultiple, // NEW: array of player IDs for multi-player missions
-    deadline,
+    assignedToMultiple,
+    // New advanced fields
+    missionType = 'individual' as MissionType,
+    category = 'challenge' as MissionCategory,
+    validationType = 'mj' as MissionValidationType,
+    timeLimitSeconds,
+    rewardType = 'none' as RewardType,
     rewardDescription,
+    rewardData,
     penaltyDescription,
-    creatorId, // MJ's player ID
+    externalUrl,
+    sabotageAllowed = false,
+    // Auction specific
+    auctionData,
+    // Template handling
+    isTemplate = false,
+    templateId,
+    // Creator
+    creatorId,
+    deadline,
   } = body as {
     title: string;
     description: string;
     type?: string;
     assignedTo?: string;
     assignedToMultiple?: string[];
-    deadline?: string;
+    missionType?: MissionType;
+    category?: MissionCategory;
+    validationType?: MissionValidationType;
+    timeLimitSeconds?: number;
+    rewardType?: RewardType;
     rewardDescription?: string;
+    rewardData?: RewardData;
     penaltyDescription?: string;
+    externalUrl?: string;
+    sabotageAllowed?: boolean;
+    auctionData?: AuctionData;
+    isTemplate?: boolean;
+    templateId?: string;
     creatorId: string;
+    deadline?: string;
   };
 
   if (!title || !description) {
@@ -137,10 +187,25 @@ export async function POST(
   }
 
   // Determine assigned players (multi or single)
-  const playerIds = assignedToMultiple?.length ? assignedToMultiple : (assignedTo ? [assignedTo] : []);
+  // For auction missions, all alive players can participate
+  let playerIds: string[] = [];
   
-  // Verify all assigned players exist
-  if (playerIds.length > 0) {
+  if (missionType === 'auction') {
+    // For auctions, get all alive players (except MJ)
+    const { data: alivePlayers } = await supabase
+      .from('players')
+      .select('id')
+      .eq('game_id', game.id)
+      .eq('is_alive', true)
+      .eq('is_mj', false);
+    
+    playerIds = alivePlayers?.map(p => p.id) || [];
+  } else {
+    playerIds = assignedToMultiple?.length ? assignedToMultiple : (assignedTo ? [assignedTo] : []);
+  }
+
+  // Verify assigned players exist (if not auction)
+  if (missionType !== 'auction' && playerIds.length > 0) {
     const { data: assignees } = await supabase
       .from('players')
       .select('id')
@@ -152,33 +217,54 @@ export async function POST(
     }
   }
 
-  // Create mission (keep assigned_to for backward compatibility with single player)
+  // Calculate deadline from time limit if provided
+  let calculatedDeadline = deadline ?? null;
+  if (timeLimitSeconds && !calculatedDeadline && !isTemplate) {
+    const deadlineDate = new Date();
+    deadlineDate.setSeconds(deadlineDate.getSeconds() + timeLimitSeconds);
+    calculatedDeadline = deadlineDate.toISOString();
+  }
+
+  // Create mission with extended fields
   const { data: mission, error: missionError } = await supabase
     .from('missions')
     .insert({
       game_id: game.id,
       title,
       description,
-      type,
-      assigned_to: playerIds.length === 1 ? playerIds[0] : null, // Legacy single-player field
-      deadline: deadline ?? null,
+      type, // Legacy type field
+      mission_type: missionType,
+      category,
+      validation_type: validationType,
+      time_limit_seconds: timeLimitSeconds ?? null,
+      reward_type: rewardType,
       reward_description: rewardDescription ?? null,
+      reward_data: (rewardData ?? null) as Json,
       penalty_description: penaltyDescription ?? null,
-      status: playerIds.length > 0 ? 'in_progress' : 'pending',
+      external_url: externalUrl ?? null,
+      sabotage_allowed: sabotageAllowed,
+      auction_data: (auctionData ?? null) as Json,
+      is_template: isTemplate,
+      template_id: templateId ?? null,
+      assigned_to: !isTemplate && playerIds.length === 1 ? playerIds[0] : null,
+      deadline: calculatedDeadline,
+      status: isTemplate ? 'pending' : (playerIds.length > 0 ? 'in_progress' : 'pending'),
+      started_at: !isTemplate && playerIds.length > 0 ? new Date().toISOString() : null,
     })
     .select()
     .single();
 
   if (missionError) {
+    console.error('Mission creation error:', missionError);
     return NextResponse.json({ error: 'Erreur lors de la création de la mission' }, { status: 500 });
   }
 
-  // Create assignments in junction table for multi-player support
-  if (playerIds.length > 0) {
+  // Create assignments in junction table (if not a template)
+  if (!isTemplate && playerIds.length > 0) {
     const assignments = playerIds.map(playerId => ({
       mission_id: mission.id,
       player_id: playerId,
-      status: 'assigned',
+      status: missionType === 'auction' ? 'pending' : 'assigned', // Auction starts as pending (bidding phase)
     }));
     
     await supabase.from('mission_assignments').insert(assignments);
@@ -189,11 +275,13 @@ export async function POST(
     game_id: game.id,
     actor_id: creatorId,
     target_id: playerIds.length === 1 ? playerIds[0] : null,
-    event_type: 'mission_created',
+    event_type: isTemplate ? 'mission_template_created' : 'mission_created',
     data: {
       mission_id: mission.id,
       title,
       type,
+      mission_type: missionType,
+      category,
       assigned_player_ids: playerIds,
     },
   });

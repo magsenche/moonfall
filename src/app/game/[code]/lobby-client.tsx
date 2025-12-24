@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
-import { PlayerAvatar, GamePhaseBadge, GameOver } from '@/components/game';
+import { PlayerAvatar, GamePhaseBadge, GameOver, MissionForm, MissionCard } from '@/components/game';
 import { NotificationPrompt } from '@/components/game/notification-prompt';
 import { getRoleConfig } from '@/config/roles';
 import { cn } from '@/lib/utils';
@@ -97,10 +97,25 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
     status: string;
     assigned_to: string | null;
     assigned_player: { id: string; pseudo: string } | null;
-    assigned_players: { id: string; pseudo: string; status: string }[]; // Multi-player support
+    assigned_players: { id: string; pseudo: string; status: string; bid?: number; score?: number; submitted_at?: string }[];
     deadline: string | null;
     reward_description: string | null;
     penalty_description: string | null;
+    // Extended mission fields
+    mission_type?: 'individual' | 'collective' | 'competitive' | 'auction' | null;
+    category?: 'social' | 'challenge' | 'quiz' | 'external' | 'photo' | 'auction' | null;
+    validation_type?: 'mj' | 'auto' | 'upload' | 'external' | 'first_wins' | 'best_score' | null;
+    reward_type?: 'wolf_hint' | 'immunity' | 'double_vote' | 'extra_vision' | 'silence' | 'none' | null;
+    time_limit_seconds?: number | null;
+    external_url?: string | null;
+    auction_data?: {
+      min_bid?: number;
+      max_bid?: number;
+      current_highest_bid?: number;
+      current_highest_bidder?: string;
+      bid_phase_ends_at?: string;
+    } | null;
+    winner?: { id: string; pseudo: string } | null;
   };
   const [missions, setMissions] = useState<Mission[]>([]);
   const [showMissionForm, setShowMissionForm] = useState(false);
@@ -1772,83 +1787,37 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-amber-400">
                 <span>📋 Missions</span>
-                {isMJ && (
+                {isMJ && !showMissionForm && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setShowMissionForm(!showMissionForm)}
+                    onClick={() => setShowMissionForm(true)}
                     className="text-amber-400 hover:text-amber-300"
                   >
-                    {showMissionForm ? '✕ Annuler' : '+ Nouvelle'}
+                    + Nouvelle
                   </Button>
                 )}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Mission Creation Form (MJ only) */}
-              {isMJ && showMissionForm && (
-                <div className="mb-4 p-4 bg-slate-800/50 rounded-xl space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Titre de la mission"
-                    value={newMission.title}
-                    onChange={(e) => setNewMission(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder:text-slate-500"
+              {/* Advanced Mission Form (MJ only) */}
+              {isMJ && showMissionForm && currentPlayerId && (
+                <div className="mb-4">
+                  <MissionForm
+                    gameCode={game.code}
+                    players={game.players.map(p => ({
+                      id: p.id,
+                      pseudo: p.pseudo,
+                      is_alive: p.is_alive ?? true,
+                      is_mj: p.is_mj ?? false,
+                    }))}
+                    creatorId={currentPlayerId}
+                    onMissionCreated={() => {
+                      setShowMissionForm(false);
+                      fetchMissions();
+                    }}
+                    onCancel={() => setShowMissionForm(false)}
                   />
-                  <textarea
-                    placeholder="Description de la mission"
-                    value={newMission.description}
-                    onChange={(e) => setNewMission(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 min-h-20"
-                  />
-                  
-                  {/* Multi-select for players */}
-                  <div className="space-y-2">
-                    <label className="text-sm text-slate-400">Assigner à (plusieurs joueurs possibles)</label>
-                    <div className="flex flex-wrap gap-2 p-3 bg-slate-900 border border-slate-700 rounded-lg min-h-12">
-                      {alivePlayers.map((player) => {
-                        const isSelected = newMission.assignedToMultiple.includes(player.id);
-                        return (
-                          <button
-                            key={player.id}
-                            type="button"
-                            onClick={() => {
-                              setNewMission(prev => ({
-                                ...prev,
-                                assignedToMultiple: isSelected
-                                  ? prev.assignedToMultiple.filter(id => id !== player.id)
-                                  : [...prev.assignedToMultiple, player.id]
-                              }));
-                            }}
-                            className={cn(
-                              "px-3 py-1 rounded-full text-sm font-medium transition-colors",
-                              isSelected
-                                ? "bg-amber-600 text-white"
-                                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                            )}
-                          >
-                            {isSelected ? '✓ ' : ''}{player.pseudo}
-                          </button>
-                        );
-                      })}
-                      {alivePlayers.length === 0 && (
-                        <span className="text-slate-500 text-sm">Aucun joueur disponible</span>
-                      )}
-                    </div>
-                    {newMission.assignedToMultiple.length > 0 && (
-                      <p className="text-xs text-slate-400">
-                        {newMission.assignedToMultiple.length} joueur(s) sélectionné(s)
-                      </p>
-                    )}
-                  </div>
-                  
-                  <Button
-                    className="w-full bg-amber-600 hover:bg-amber-700"
-                    onClick={createMission}
-                    disabled={!newMission.title || !newMission.description || isCreatingMission}
-                  >
-                    {isCreatingMission ? '⏳ Création...' : '✓ Créer la mission'}
-                  </Button>
                 </div>
               )}
 
@@ -1858,82 +1827,18 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
                   Aucune mission pour le moment
                 </p>
               ) : (
-                <ul className="space-y-3">
+                <div className="space-y-3">
                   {missions.map((mission) => (
-                    <li
+                    <MissionCard
                       key={mission.id}
-                      className={cn(
-                        "p-3 rounded-xl",
-                        mission.status === 'success' && "bg-green-500/10 border border-green-500/30",
-                        mission.status === 'failed' && "bg-red-500/10 border border-red-500/30",
-                        mission.status === 'cancelled' && "bg-slate-500/10 border border-slate-500/30 opacity-50",
-                        (mission.status === 'pending' || mission.status === 'in_progress') && "bg-amber-500/10 border border-amber-500/30"
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-white">{mission.title}</h4>
-                          <p className="text-sm text-slate-400 mt-1">{mission.description}</p>
-                          {/* Show assigned players (multi-player support) */}
-                          {mission.assigned_players && mission.assigned_players.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                              {mission.assigned_players.map((player) => (
-                                <span 
-                                  key={player.id}
-                                  className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-full"
-                                >
-                                  👤 {player.pseudo}
-                                </span>
-                              ))}
-                            </div>
-                          ) : mission.assigned_player && (
-                            <p className="text-xs text-amber-400 mt-2">
-                              👤 {mission.assigned_player.pseudo}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          {mission.status === 'pending' && (
-                            <span className="text-xs px-2 py-1 bg-slate-500/20 text-slate-400 rounded">⏳ En attente</span>
-                          )}
-                          {mission.status === 'in_progress' && (
-                            <span className="text-xs px-2 py-1 bg-amber-500/20 text-amber-400 rounded">🎯 En cours</span>
-                          )}
-                          {mission.status === 'success' && (
-                            <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded">✅ Réussie</span>
-                          )}
-                          {mission.status === 'failed' && (
-                            <span className="text-xs px-2 py-1 bg-red-500/20 text-red-400 rounded">❌ Échouée</span>
-                          )}
-                          {mission.status === 'cancelled' && (
-                            <span className="text-xs px-2 py-1 bg-slate-500/20 text-slate-500 rounded">🚫 Annulée</span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* MJ Actions */}
-                      {isMJ && mission.status === 'in_progress' && (
-                        <div className="flex gap-2 mt-3 pt-3 border-t border-slate-700">
-                          <Button
-                            size="sm"
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                            onClick={() => updateMissionStatus(mission.id, 'validate')}
-                          >
-                            ✅ Valider
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="flex-1 text-red-400 hover:bg-red-500/20"
-                            onClick={() => updateMissionStatus(mission.id, 'fail')}
-                          >
-                            ❌ Échouer
-                          </Button>
-                        </div>
-                      )}
-                    </li>
+                      mission={mission}
+                      currentPlayerId={currentPlayerId || ''}
+                      isMJ={isMJ}
+                      gameCode={game.code}
+                      onUpdate={fetchMissions}
+                    />
                   ))}
-                </ul>
+                </div>
               )}
             </CardContent>
           </Card>
