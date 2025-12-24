@@ -132,12 +132,15 @@ export async function POST(
     // Creator
     creatorId,
     deadline,
+    // Multi-player assignment (new naming from lib/api)
+    assignedPlayerIds,
   } = body as {
     title: string;
     description: string;
     type?: string;
     assignedTo?: string;
     assignedToMultiple?: string[];
+    assignedPlayerIds?: string[];
     missionType?: MissionType;
     category?: MissionCategory;
     validationType?: MissionValidationType;
@@ -201,7 +204,9 @@ export async function POST(
     
     playerIds = alivePlayers?.map(p => p.id) || [];
   } else {
-    playerIds = assignedToMultiple?.length ? assignedToMultiple : (assignedTo ? [assignedTo] : []);
+    // Support both old naming (assignedToMultiple) and new naming (assignedPlayerIds)
+    const multipleIds = assignedPlayerIds?.length ? assignedPlayerIds : assignedToMultiple;
+    playerIds = multipleIds?.length ? multipleIds : (assignedTo ? [assignedTo] : []);
   }
 
   // Verify assigned players exist (if not auction)
