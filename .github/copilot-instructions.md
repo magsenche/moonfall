@@ -174,7 +174,7 @@ supabase/
 
 1. **Config-driven** : Maximum en DB, pas en dur
 2. **Modulaire** : Chaque rôle = handler indépendant
-3. **Types générés** : `npm run supabase:types` ou MCP
+3. **Types générés** : `npm run supabase:types` après chaque migration
 4. **Extensible** : Prévu pour custom assets/images
 
 ---

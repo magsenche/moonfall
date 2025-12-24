@@ -33,4 +33,4 @@ Chaque doc contient une section "À faire" pour tracker les améliorations. Mett
 
 ---
 
-*Dernière mise à jour: 24/12/2024*
+*Dernière mise à jour: 24/12/2025*

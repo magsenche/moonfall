@@ -247,48 +247,13 @@ Templates disponibles dans `src/lib/missions/types.ts` → `MISSION_TEMPLATES`
 
 ---
 
-## 🚀 Implémentation par phases
+## À faire
 
-### Phase 1 : Base ✅
-- [x] Schéma DB missions étendu
-- [x] CRUD missions par MJ
-- [x] UI création mission (MissionForm)
-- [x] Validation MJ
-
-### Phase 2 : Compétitif ✅
-- [x] Timer missions avec deadline
-- [x] Soumission score joueur
-- [x] Auto-validation (first_wins, best_score)
-- [x] Lien externe
-
-### Phase 3 : Enchères ✅
-- [x] Type auction avec min/max bid
-- [x] UI enchères joueur
-- [x] Contrôles MJ (fermer, déclarer gagnant/échec)
-
-### Phase 4 : À faire
-- [ ] Attribution automatique des récompenses
+- [ ] Notifications missions (quand créée/mise à jour)
+- [ ] Récompenses auto (immunité, double vote appliqués automatiquement)
 - [ ] Variables dans énoncés ({player_name})
-- [ ] Historique des missions passées
 - [ ] Statistiques joueur (missions gagnées)
 
 ---
 
-## Questions résolues
-
-| Question | Réponse |
-|----------|---------|
-| **Fréquence** | À la demande du MJ, pas de contrainte |
-| **Visibilité** | Missions visibles par tous les joueurs assignés |
-| **Échec** | Mission reste en status pending/in_progress, MJ peut annuler |
-| **Stack récompenses** | Non géré automatiquement, MJ applique manuellement |
-| **Historique** | Pas nécessaire pour l'instant |
-
-## À implémenter
-
-1. **Notifications missions** : Notifier les joueurs quand une mission est créée ou mise à jour ✅ À faire
-2. **Récompenses auto** : Certaines récompenses doivent s'appliquer automatiquement dans le jeu (immunité, double vote, etc.) ✅ À faire
-
----
-
-*Document vivant - mis à jour le 24/12/2024*
+*Document vivant - mis à jour le 24/12/2025*

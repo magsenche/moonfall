@@ -62,11 +62,10 @@ Les migrations sont dans `supabase/migrations/`.
 ### Générer les types TypeScript
 
 ```bash
-# Via Supabase CLI
-supabase gen types typescript --local > src/types/supabase.ts
+# Script npm (recommandé)
+npm run supabase:types
 
-# Ou via MCP Supabase
-# → generate_typescript_types
+# Génère src/types/supabase.ts depuis le projet distant
 ```
 
 ---

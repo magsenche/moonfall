@@ -155,12 +155,20 @@ Algorithme actuel dans `/api/games/[code]/start/` :
 
 ---
 
+## ✅ Implémenté
+
+- [x] Distribution des 3 rôles MVP (Villageois, Loup-Garou, Voyante)
+- [x] Handlers de rôles avec interface extensible
+- [x] Pouvoir Voyante (voir un rôle la nuit)
+- [x] Chat privé des loups
+- [x] Vote nuit des loups
+- [x] Distribution custom par MJ (settings partie)
+
 ## À faire
 
 - [ ] Implémenter Sorcière (priorité)
 - [ ] Implémenter Chasseur
 - [ ] Implémenter Salvateur
-- [ ] UI de sélection des rôles pour le MJ avant le lancement
 - [ ] Équilibrage automatique selon le nombre de joueurs
 - [ ] Images/illustrations pour chaque rôle
 - [ ] Animations de révélation de rôle

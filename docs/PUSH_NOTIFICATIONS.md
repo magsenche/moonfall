@@ -195,6 +195,16 @@ iOS 16.4+ supporte les Web Push, mais uniquement si l'app est ajoutée à l'écr
 
 ---
 
+## ✅ Implémenté
+
+- [x] Service Worker avec gestion push events
+- [x] Edge Function pour envoi des notifications
+- [x] Webhook sur game_events
+- [x] UI permission prompt dans le jeu
+- [x] Notifications changement de phase
+- [x] Support iOS PWA (ajout écran d'accueil)
+- [x] Refresh auto au retour foreground (iOS)
+
 ## À faire
 
 - [ ] Notifications pour création/update de missions
@@ -202,7 +212,6 @@ iOS 16.4+ supporte les Web Push, mais uniquement si l'app est ajoutée à l'écr
 - [ ] Son personnalisé par type d'événement
 - [ ] Badge count (nombre de notifications non lues)
 - [ ] Rich notifications avec actions (boutons)
-- [ ] Test automatisé du flow push
 
 ---
 

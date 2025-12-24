@@ -85,10 +85,11 @@ public/                    # Assets statiques + PWA
 ## Commandes
 
 ```bash
-npm run dev          # Dev server (Turbopack)
-npm run build        # Build production
-npm run start        # Serveur production
-npm run lint         # ESLint
+npm run dev            # Dev server (Turbopack)
+npm run build          # Build production
+npm run start          # Serveur production
+npm run lint           # ESLint
+npm run supabase:types # Générer types TS depuis DB
 ```
 
 ## Fichiers clés
