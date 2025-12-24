@@ -29,6 +29,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
 | `powers` | Pouvoirs par rôle (phase, priority, uses_per_game) |
 | `missions` | Missions IRL (type, category, reward, auction_data) |
 | `mission_assignments` | Participation joueurs aux missions |
+| `mission_templates` | Templates de missions réutilisables (globaux) |
 | `votes` | Votes jour/nuit |
 | `wolf_chat` | Chat privé des loups |
 | `power_uses` | Historique pouvoirs utilisés |

@@ -162,6 +162,69 @@ export type Database = {
           },
         ]
       }
+      mission_templates: {
+        Row: {
+          category: Database["public"]["Enums"]["mission_category"]
+          created_at: string | null
+          creator_id: string | null
+          description: string
+          external_url: string | null
+          id: string
+          is_active: boolean | null
+          is_global: boolean | null
+          mission_type: Database["public"]["Enums"]["mission_type"]
+          penalty_description: string | null
+          reward_description: string | null
+          reward_type: Database["public"]["Enums"]["reward_type"] | null
+          sabotage_allowed: boolean | null
+          sort_order: number | null
+          time_limit_seconds: number | null
+          title: string
+          updated_at: string | null
+          validation_type: Database["public"]["Enums"]["mission_validation_type"]
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["mission_category"]
+          created_at?: string | null
+          creator_id?: string | null
+          description: string
+          external_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_global?: boolean | null
+          mission_type?: Database["public"]["Enums"]["mission_type"]
+          penalty_description?: string | null
+          reward_description?: string | null
+          reward_type?: Database["public"]["Enums"]["reward_type"] | null
+          sabotage_allowed?: boolean | null
+          sort_order?: number | null
+          time_limit_seconds?: number | null
+          title: string
+          updated_at?: string | null
+          validation_type?: Database["public"]["Enums"]["mission_validation_type"]
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["mission_category"]
+          created_at?: string | null
+          creator_id?: string | null
+          description?: string
+          external_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_global?: boolean | null
+          mission_type?: Database["public"]["Enums"]["mission_type"]
+          penalty_description?: string | null
+          reward_description?: string | null
+          reward_type?: Database["public"]["Enums"]["reward_type"] | null
+          sabotage_allowed?: boolean | null
+          sort_order?: number | null
+          time_limit_seconds?: number | null
+          title?: string
+          updated_at?: string | null
+          validation_type?: Database["public"]["Enums"]["mission_validation_type"]
+        }
+        Relationships: []
+      }
       missions: {
         Row: {
           assigned_to: string | null

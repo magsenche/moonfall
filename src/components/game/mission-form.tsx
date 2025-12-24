@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { createMission, ApiError } from '@/lib/api';
+import { createMission, getMissionTemplates, ApiError, type MissionTemplate } from '@/lib/api';
 import { 
-  MISSION_TEMPLATES, 
   MISSION_TYPE_LABELS, 
   MISSION_CATEGORY_LABELS,
   VALIDATION_TYPE_LABELS,
@@ -17,7 +16,6 @@ import {
   type MissionValidationType,
   type RewardType,
   type AuctionData,
-  type MissionTemplate
 } from '@/lib/missions';
 
 interface Player {
@@ -48,6 +46,10 @@ export function MissionForm({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<MissionTemplate | null>(null);
   
+  // Templates from DB
+  const [templatesByCategory, setTemplatesByCategory] = useState<Record<string, MissionTemplate[]>>({});
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+  
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -71,15 +73,27 @@ export function MissionForm({
 
   const alivePlayers = players.filter(p => p.is_alive && !p.is_mj);
 
+  // Load templates from DB on mount
+  useEffect(() => {
+    getMissionTemplates()
+      .then(({ byCategory }) => {
+        setTemplatesByCategory(byCategory);
+        setTemplatesLoading(false);
+      })
+      .catch(() => {
+        setTemplatesLoading(false);
+      });
+  }, []);
+
   const handleSelectTemplate = (template: MissionTemplate) => {
     setSelectedTemplate(template);
     setTitle(template.title);
     setDescription(template.description);
-    setMissionType(template.mission_type);
-    setCategory(template.category);
-    setValidationType(template.validation_type);
-    setTimeLimitSeconds(template.time_limit_seconds);
-    setRewardType(template.reward_type ?? 'none');
+    setMissionType(template.mission_type as MissionType);
+    setCategory(template.category as MissionCategory);
+    setValidationType(template.validation_type as MissionValidationType);
+    setTimeLimitSeconds(template.time_limit_seconds ?? undefined);
+    setRewardType((template.reward_type ?? 'none') as RewardType);
     setRewardDescription(template.reward_description ?? '');
     setPenaltyDescription(template.penalty_description ?? '');
     setExternalUrl(template.external_url ?? '');
@@ -165,11 +179,15 @@ export function MissionForm({
         </div>
 
         {/* Category selector */}
-        {!selectedCategory ? (
+        {templatesLoading ? (
+          <div className="text-center py-8 text-slate-400">
+            Chargement des modèles...
+          </div>
+        ) : !selectedCategory ? (
           <div className="space-y-2">
             <p className="text-sm text-slate-400 mb-3">Choisir une catégorie :</p>
             <div className="grid grid-cols-2 gap-2">
-              {Object.entries(MISSION_TEMPLATES).map(([cat, templates]) => (
+              {Object.entries(templatesByCategory).map(([cat, templates]) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
@@ -196,9 +214,9 @@ export function MissionForm({
               </p>
             </div>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {MISSION_TEMPLATES[selectedCategory]?.map((template, idx) => (
+              {templatesByCategory[selectedCategory]?.map((template) => (
                 <button
-                  key={idx}
+                  key={template.id}
                   onClick={() => handleSelectTemplate(template)}
                   className="w-full p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-left transition-colors"
                 >
@@ -206,7 +224,7 @@ export function MissionForm({
                   <div className="text-xs text-slate-400 mt-1 line-clamp-2">{template.description}</div>
                   {template.reward_type && template.reward_type !== 'none' && (
                     <div className="text-xs text-amber-400 mt-1">
-                      {REWARD_TYPE_LABELS[template.reward_type]}
+                      {REWARD_TYPE_LABELS[template.reward_type as RewardType]}
                     </div>
                   )}
                 </button>

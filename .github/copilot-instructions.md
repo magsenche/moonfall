@@ -134,6 +134,7 @@ src/
 │   │       ├── MJOverview       # Vue d'ensemble MJ
 │   │       ├── PhaseTimer       # Timer + badge phase
 │   │       └── ...
+│   ├── api/mission-templates/    # GET templates globaux (depuis DB)
 │   └── api/games/
 │       ├── route.ts             # POST (créer partie)
 │       └── [code]/
@@ -145,8 +146,8 @@ src/
 │           ├── power/           # POST utiliser pouvoir
 │           ├── wolf-chat/       # GET/POST chat loups
 │           ├── missions/        # GET/POST/PATCH missions + [missionId]/bid, submit
-            ├── settings/        # GET/PATCH settings MJ
-            └── bots/            # POST/DELETE ajouter/retirer bots (dev)
+│           ├── settings/        # GET/PATCH settings MJ
+│           └── bots/            # POST/DELETE ajouter/retirer bots (dev)
 ├── components/
 │   ├── ui/                      # Button, Input, Card
 │   └── game/                    # PlayerAvatar, RoleBadge, GamePhaseBadge, GameOver, NotificationPrompt, MissionForm, MissionCard
@@ -155,7 +156,7 @@ src/
 │   ├── api/                     # Client API centralisé (client.ts, games.ts)
 │   ├── auth/                    # AuthProvider, useAuth hook
 │   ├── notifications/           # useNotifications, subscribeToPush
-│   ├── missions/                # Types missions, templates, labels
+│   ├── missions/                # Types missions, labels (templates en DB)
 │   ├── supabase/                # Client (browser), Server (SSR), Storage helpers
 │   ├── roles/                   # Handlers par rôle (villageois, loup-garou, voyante)
 │   └── utils/                   # cn(), generateGameCode(), player-session
@@ -177,6 +178,7 @@ supabase/
 | `players` | Joueurs (pseudo, role_id, is_alive, is_mj, user_id → auth.users) |
 | `missions` | Missions créées par MJ |
 | `mission_assignments` | Assignments multi-joueurs (mission_id, player_id, status) |
+| `mission_templates` | Templates réutilisables (globaux, 14 prédéfinis) |
 | `votes` | Votes jour/nuit (phase, voter_id, target_id, vote_type) |
 | `wolf_chat` | Chat privé des loups-garous |
 | `power_uses` | Historique des pouvoirs utilisés |

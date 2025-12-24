@@ -62,127 +62,26 @@ export interface SubmissionData {
   custom_data?: Record<string, unknown>;
 }
 
-// Mission template for quick creation
+// Mission template interface (data comes from mission_templates table in DB)
+// Note: MissionTemplate type is also exported from lib/api/games.ts for client use
 export interface MissionTemplate {
+  id?: string;
   title: string;
   description: string;
   mission_type: MissionType;
   category: MissionCategory;
   validation_type: MissionValidationType;
-  time_limit_seconds?: number;
-  reward_type?: RewardType;
-  reward_description?: string;
-  penalty_description?: string;
-  external_url?: string;
+  time_limit_seconds?: number | null;
+  reward_type?: RewardType | null;
+  reward_description?: string | null;
+  penalty_description?: string | null;
+  external_url?: string | null;
   sabotage_allowed?: boolean;
 }
 
-// Pre-built mission templates organized by category
-export const MISSION_TEMPLATES: Record<string, MissionTemplate[]> = {
-  social: [
-    {
-      title: 'Compliment sincère',
-      description: 'Faites un compliment sincère à 3 joueurs différents pendant la phase jour.',
-      mission_type: 'individual',
-      category: 'social',
-      validation_type: 'mj',
-      time_limit_seconds: 300, // 5 min
-      reward_type: 'none',
-      reward_description: 'Respect du village +10',
-    },
-    {
-      title: 'Allié improbable',
-      description: 'Passez 5 minutes à discuter avec un joueur avec qui vous n\'avez pas encore parlé.',
-      mission_type: 'individual',
-      category: 'social',
-      validation_type: 'mj',
-      reward_type: 'wolf_hint',
-      reward_description: 'Indice sur l\'équipe d\'un joueur',
-    },
-  ],
-  challenge: [
-    {
-      title: 'Imitation',
-      description: 'Imitez un animal choisi par le MJ pendant 30 secondes.',
-      mission_type: 'individual',
-      category: 'challenge',
-      validation_type: 'mj',
-      time_limit_seconds: 60,
-      reward_type: 'none',
-    },
-    {
-      title: 'Chant du village',
-      description: 'Chantez une chanson en y incluant le mot "loup".',
-      mission_type: 'individual',
-      category: 'challenge',
-      validation_type: 'mj',
-      reward_type: 'immunity',
-      reward_description: 'Protection au prochain vote',
-      sabotage_allowed: true,
-    },
-  ],
-  quiz: [
-    {
-      title: 'Culture générale',
-      description: 'Répondez correctement à 3 questions du MJ.',
-      mission_type: 'competitive',
-      category: 'quiz',
-      validation_type: 'first_wins',
-      reward_type: 'double_vote',
-      reward_description: 'Vote double au prochain conseil',
-    },
-  ],
-  auction: [
-    {
-      title: 'Capitales du monde',
-      description: 'Citez des capitales du monde sans répétition ni erreur. Enchérissez sur le nombre que vous pensez pouvoir citer !',
-      mission_type: 'auction',
-      category: 'auction',
-      validation_type: 'best_score',
-      reward_type: 'extra_vision',
-      reward_description: 'La voyante peut voir 2 rôles cette nuit',
-    },
-    {
-      title: 'Pompes',
-      description: 'Faites des pompes ! Enchérissez sur le nombre que vous pouvez faire.',
-      mission_type: 'auction',
-      category: 'auction',
-      validation_type: 'best_score',
-      reward_type: 'immunity',
-      reward_description: 'Immunité au prochain vote',
-    },
-    {
-      title: 'Apnée',
-      description: 'Retenez votre respiration ! Enchérissez sur le temps en secondes.',
-      mission_type: 'auction',
-      category: 'auction',
-      validation_type: 'best_score',
-      reward_type: 'wolf_hint',
-      reward_description: 'Savoir si un joueur est loup ou villageois',
-    },
-  ],
-  external: [
-    {
-      title: 'Mini-jeu externe',
-      description: 'Jouez au mini-jeu et obtenez le meilleur score !',
-      mission_type: 'competitive',
-      category: 'external',
-      validation_type: 'external',
-      external_url: 'https://example.com/game',
-      reward_type: 'double_vote',
-    },
-  ],
-  photo: [
-    {
-      title: 'Selfie de groupe',
-      description: 'Prenez un selfie avec au moins 3 autres joueurs en faisant une pose ridicule.',
-      mission_type: 'collective',
-      category: 'photo',
-      validation_type: 'upload',
-      reward_type: 'none',
-    },
-  ],
-};
+// Templates are now stored in the `mission_templates` table in the database.
+// To add/edit templates, use Supabase dashboard or migrations.
+// See: supabase/migrations/002_mission_templates.sql
 
 // Labels for UI
 export const MISSION_TYPE_LABELS: Record<MissionType, string> = {

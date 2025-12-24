@@ -18,7 +18,7 @@ Les missions sont le cœur de l'expérience IRL. Elles doivent :
 |----------------|--------|
 | Types de missions (individual, collective, competitive, auction) | ✅ Implémenté |
 | Catégories (social, challenge, quiz, external, photo, auction) | ✅ Implémenté |
-| Templates prédéfinis | ✅ Implémenté (`src/lib/missions/types.ts`) |
+| Templates prédéfinis | ✅ En DB (`mission_templates` table) |
 | Missions custom MJ | ✅ Implémenté |
 | Système d'enchères (auction) | ✅ Implémenté |
 | Timer avec deadline | ✅ Implémenté |
@@ -131,12 +131,24 @@ mission_assignments (
   bid,                    -- Enchère (auction)
   validated_by_mj
 )
+
+-- Templates réutilisables (globaux)
+mission_templates (
+  id, title, description,
+  mission_type, category, validation_type,
+  time_limit_seconds, reward_type, reward_description,
+  external_url, sabotage_allowed,
+  is_global,              -- TRUE = visible par tous les MJ
+  creator_id,             -- Pour templates personnels (futur)
+  sort_order, is_active
+)
 ```
 
 ### API Endpoints (Implémentés)
 
 ```
-GET  /api/games/[code]/missions                    -- Liste missions (+ ?templates=true)
+GET  /api/mission-templates                        -- Liste templates globaux (depuis DB)
+GET  /api/games/[code]/missions                    -- Liste missions d'une partie
 POST /api/games/[code]/missions                    -- MJ crée mission (depuis template ou custom)
 
 GET  /api/games/[code]/missions/[id]/submit        -- Status soumission joueur
@@ -153,11 +165,14 @@ PATCH /api/games/[code]/missions/[id]              -- MJ valide/annule mission
 
 ```
 src/lib/missions/
-├── types.ts              -- Types, templates, labels (MISSION_TEMPLATES, enums)
+├── types.ts              -- Types, labels UI (templates en DB)
 └── index.ts              -- Exports
 
+src/lib/api/
+└── games.ts              -- getMissionTemplates() + autres fonctions API
+
 src/components/game/
-├── mission-form.tsx      -- Formulaire MJ (templates + custom)
+├── mission-form.tsx      -- Formulaire MJ (charge templates depuis API)
 └── mission-card.tsx      -- Affichage mission (timer, enchères, soumission, contrôles MJ)
 
 src/app/api/games/[code]/missions/
@@ -218,32 +233,22 @@ src/app/api/games/[code]/missions/
 
 ## 📝 Templates prédéfinis
 
-Templates disponibles dans `src/lib/missions/types.ts` → `MISSION_TEMPLATES`
+**Templates stockés en base de données** dans la table `mission_templates`.
 
-### Social
-- "Fais rire 3 personnes différentes"
-- "Fais un compliment sincère à quelqu'un que tu ne connais pas bien"
-- "Convaincs quelqu'un de te donner un objet qu'il possède"
+Pour ajouter/modifier : utiliser Supabase Dashboard ou une migration SQL.
 
-### Challenge
-- "Chante le refrain d'une chanson devant tout le monde"
-- "Imite un autre joueur, les autres doivent deviner qui"
-- "Raconte une anecdote embarrassante sur toi"
+Voir : `supabase/migrations/002_mission_templates.sql`
 
-### Quiz
-- "Devine la couleur préférée d'un joueur au choix"
+### Templates actuels (14)
 
-### Auction
-- "Cite X capitales européennes (enchères)"
-- "Fais X pompes (enchères)"
-- "Tiens X secondes en position de planche (enchères)"
-
-### External
-- "Meilleur score sur ce mini-jeu" (avec lien externe)
-
-### Photo
-- "Selfie avec 3 joueurs qui ne sont pas à côté de toi"
-- "Photo de groupe formant une lettre avec vos corps"
+| Catégorie | Templates |
+|-----------|----------|
+| **Social** | Compliment sincère, Allié improbable |
+| **Challenge** | Imitation, Chant du village, Danse du loup |
+| **Quiz** | Culture générale, Devine qui |
+| **Auction** | Capitales du monde, Pompes, Apnée, Équilibre |
+| **External** | Mini-jeu externe |
+| **Photo** | Selfie de groupe, Photo mystère |
 
 ---
 
@@ -256,4 +261,4 @@ Templates disponibles dans `src/lib/missions/types.ts` → `MISSION_TEMPLATES`
 
 ---
 
-*Document vivant - mis à jour le 24/12/2025*
+*Document vivant - mis à jour le 25/12/2025*

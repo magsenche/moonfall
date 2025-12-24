@@ -128,6 +128,26 @@ export interface SubmitMissionResponse {
   status: string;
 }
 
+export interface MissionTemplate {
+  id: string;
+  title: string;
+  description: string;
+  mission_type: string;
+  category: string;
+  validation_type: string;
+  time_limit_seconds?: number | null;
+  reward_type?: string | null;
+  reward_description?: string | null;
+  penalty_description?: string | null;
+  external_url?: string | null;
+  sabotage_allowed?: boolean;
+}
+
+export interface MissionTemplatesResponse {
+  templates: MissionTemplate[];
+  byCategory: Record<string, MissionTemplate[]>;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Join / Create
 // ─────────────────────────────────────────────────────────────────────────────
@@ -215,6 +235,10 @@ export function sendWolfMessage(gameCode: string, playerId: string, message: str
 // ─────────────────────────────────────────────────────────────────────────────
 // Missions
 // ─────────────────────────────────────────────────────────────────────────────
+
+export function getMissionTemplates() {
+  return apiGet<MissionTemplatesResponse>('/api/mission-templates');
+}
 
 export function getMissions(gameCode: string) {
   return apiGet<MissionsResponse>(`/api/games/${gameCode}/missions`);
