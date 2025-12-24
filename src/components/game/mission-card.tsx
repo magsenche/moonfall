@@ -63,6 +63,7 @@ export function MissionCard({
   const [scoreInput, setScoreInput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [selectedWinnerId, setSelectedWinnerId] = useState<string | null>(null);
 
   const isAuction = mission.mission_type === 'auction';
   const isActive = mission.status === 'in_progress';
@@ -139,7 +140,7 @@ export function MissionCard({
     }
   };
 
-  const handleMJAction = async (action: 'validate' | 'fail' | 'cancel' | 'close_bidding' | 'declare_winner' | 'declare_failure') => {
+  const handleMJAction = async (action: 'validate' | 'fail' | 'cancel' | 'close_bidding' | 'declare_winner' | 'declare_failure', winnerId?: string) => {
     setIsSubmitting(true);
     setError(null);
 
@@ -147,8 +148,13 @@ export function MissionCard({
       if (['close_bidding', 'declare_winner', 'declare_failure'].includes(action)) {
         await missionBidAction(gameCode, mission.id, currentPlayerId, action as 'close_bidding' | 'declare_winner' | 'declare_failure');
       } else {
-        await updateMission(gameCode, mission.id, { playerId: currentPlayerId, action });
+        await updateMission(gameCode, mission.id, { 
+          playerId: currentPlayerId, 
+          action,
+          winnerId: action === 'validate' ? winnerId : undefined,
+        });
       }
+      setSelectedWinnerId(null);
       onUpdate();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Erreur');
@@ -293,14 +299,24 @@ export function MissionCard({
               {isMJ && (
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-amber-500/30">
                   {!biddingClosed ? (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleMJAction('close_bidding')}
-                      disabled={isSubmitting || !auctionData?.current_highest_bidder}
-                    >
-                      🔒 Clôturer les enchères
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleMJAction('close_bidding')}
+                        disabled={isSubmitting || !auctionData?.current_highest_bidder}
+                      >
+                        🔒 Clôturer les enchères
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleMJAction('cancel')}
+                        disabled={isSubmitting}
+                      >
+                        🚫 Annuler
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <Button
@@ -371,31 +387,53 @@ export function MissionCard({
 
           {/* MJ standard controls */}
           {isMJ && isActive && !isAuction && (
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-700">
-              <Button
-                size="sm"
-                onClick={() => handleMJAction('validate')}
-                disabled={isSubmitting}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                ✅ Valider
-              </Button>
-              <Button
-                size="sm"
-                variant="danger"
-                onClick={() => handleMJAction('fail')}
-                disabled={isSubmitting}
-              >
-                ❌ Échouer
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleMJAction('cancel')}
-                disabled={isSubmitting}
-              >
-                🚫 Annuler
-              </Button>
+            <div className="space-y-2 pt-2 border-t border-slate-700">
+              {/* Winner selection for multi-player missions */}
+              {mission.assigned_players.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">Gagnant :</span>
+                  <select
+                    value={selectedWinnerId || ''}
+                    onChange={(e) => setSelectedWinnerId(e.target.value || null)}
+                    className="flex-1 bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-white"
+                  >
+                    <option value="">-- Sélectionner --</option>
+                    {mission.assigned_players.map(player => (
+                      <option key={player.id} value={player.id}>
+                        {player.pseudo}
+                        {player.score !== undefined && ` (score: ${player.score})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => handleMJAction('validate', selectedWinnerId || mission.assigned_players[0]?.id)}
+                  disabled={isSubmitting || (mission.assigned_players.length > 1 && !selectedWinnerId)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  ✅ Valider{mission.assigned_players.length > 1 && selectedWinnerId && ` (${mission.assigned_players.find(p => p.id === selectedWinnerId)?.pseudo})`}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => handleMJAction('fail')}
+                  disabled={isSubmitting}
+                >
+                  ❌ Échouer
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleMJAction('cancel')}
+                  disabled={isSubmitting}
+                >
+                  🚫 Annuler
+                </Button>
+              </div>
             </div>
           )}
 

@@ -57,10 +57,12 @@ export async function PATCH(
     playerId,
     action,
     assignTo,
+    winnerId,
   } = body as {
     playerId: string;
     action: 'assign' | 'validate' | 'fail' | 'cancel';
     assignTo?: string;
+    winnerId?: string;
   };
 
   if (!playerId || !action) {
@@ -109,6 +111,7 @@ export async function PATCH(
 
   let updateData: Partial<Database['public']['Tables']['missions']['Update']> = {};
   let newStatus: MissionStatus | undefined;
+  let resolvedWinnerId: string | null = null;
 
   switch (action) {
     case 'assign':
@@ -139,12 +142,37 @@ export async function PATCH(
       if (mission.status !== 'in_progress') {
         return NextResponse.json({ error: 'Mission pas en cours' }, { status: 400 });
       }
+      
+      // Determine winner: explicit winnerId, or assigned_to if single player
+      resolvedWinnerId = winnerId || mission.assigned_to || null;
+      
       updateData = {
         status: 'success',
         validated_by: playerId,
         validated_at: new Date().toISOString(),
+        winner_player_id: resolvedWinnerId,
       };
       newStatus = 'success';
+      
+      // Update mission_assignments for the winner
+      if (resolvedWinnerId) {
+        await supabase
+          .from('mission_assignments')
+          .update({
+            status: 'completed',
+            submitted_at: new Date().toISOString(),
+            validated_by_mj: true,
+          })
+          .eq('mission_id', missionId)
+          .eq('player_id', resolvedWinnerId);
+        
+        // Mark other players as not winning (but not failed)
+        await supabase
+          .from('mission_assignments')
+          .update({ status: 'pending' })
+          .eq('mission_id', missionId)
+          .neq('player_id', resolvedWinnerId);
+      }
       break;
 
     case 'fail':
@@ -157,6 +185,12 @@ export async function PATCH(
         validated_at: new Date().toISOString(),
       };
       newStatus = 'failed';
+      
+      // Update all mission_assignments to failed
+      await supabase
+        .from('mission_assignments')
+        .update({ status: 'failed' })
+        .eq('mission_id', missionId);
       break;
 
     case 'cancel':
@@ -164,6 +198,12 @@ export async function PATCH(
         status: 'cancelled',
       };
       newStatus = 'cancelled';
+      
+      // Update all mission_assignments to cancelled
+      await supabase
+        .from('mission_assignments')
+        .update({ status: 'cancelled' })
+        .eq('mission_id', missionId);
       break;
 
     default:
@@ -186,13 +226,14 @@ export async function PATCH(
   await supabase.from('game_events').insert({
     game_id: game.id,
     actor_id: playerId,
-    target_id: mission.assigned_to,
+    target_id: resolvedWinnerId || mission.assigned_to,
     event_type: `mission_${action}`,
     data: {
       mission_id: missionId,
       title: mission.title,
       previous_status: mission.status,
       new_status: newStatus,
+      winner_id: resolvedWinnerId,
     },
   });
 

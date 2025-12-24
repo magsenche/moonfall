@@ -244,6 +244,7 @@ export function updateMission(gameCode: string, missionId: string, updates: {
   validatorId?: string;
   action?: string;
   playerId?: string;
+  winnerId?: string;
 }) {
   return apiPatch<{ success: boolean }>(`/api/games/${gameCode}/missions/${missionId}`, updates);
 }
