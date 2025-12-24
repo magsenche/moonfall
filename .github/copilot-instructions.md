@@ -2,7 +2,7 @@
 
 > App web pour jouer au Loup-Garou IRL, inspirée de l'émission Fary x Panayotis (Canal+).
 
-🔗 **Production :** https://moonfall-magsenches-projects.vercel.app
+🔗 **Production :** https://moonfall.vercel.app
 
 ## Concept
 
@@ -17,12 +17,66 @@ Chaque joueur reçoit un rôle secret. Missions IRL + conseils réguliers avec �
 | Framework | Next.js 16 (App Router, React 19, React Compiler) |
 | Styling | Tailwind CSS 4 |
 | Database | Supabase (PostgreSQL, Frankfurt) |
-| Auth | Supabase Auth (Magic Link / OTP par email) |
+| Auth | Supabase Auth (optionnel - sessions localStorage suffisent) |
 | Realtime | Supabase Realtime (postgres_changes) |
 | Storage | Supabase Storage (3 buckets) |
 | Notifications | Web Push (VAPID keys) + Edge Functions |
 | Hébergement | Vercel (CD sur push main) |
 | Repo | github.com/magsenche/moonfall |
+
+---
+
+## Architecture Principles (Code Quality)
+
+### 🎯 Maintainability First
+
+Before implementing any new feature, follow these principles:
+
+1. **Search Before Create**
+   - Grep the codebase for similar patterns before writing new code
+   - Check if existing utilities, hooks, or components can be reused or extended
+   - Look for opportunities to extract shared logic into reusable modules
+
+2. **DRY (Don't Repeat Yourself)**
+   - If you find yourself copying code, extract it into a shared function/component
+   - Common patterns should live in `lib/utils/`, `lib/hooks/`, or `components/ui/`
+   - API patterns should be consistent across all routes
+
+3. **Single Responsibility**
+   - Each file should do one thing well
+   - Large components (>300 lines) should be split into smaller focused components
+   - Keep API routes thin: extract business logic into `lib/` modules
+
+4. **Refactor Opportunistically**
+   - When touching existing code, improve it if reasonable
+   - Remove dead code and unused imports
+   - Consolidate duplicate logic discovered during development
+
+5. **State Colocation**
+   - Keep state as close as possible to where it's used
+   - Avoid prop drilling >2 levels; consider context or composition
+   - Reset related states together (see `useEffect` for phase changes)
+
+### 📁 Code Organization
+
+```
+lib/
+├── utils/        # Pure functions (cn, generateCode, player-session)
+├── hooks/        # Reusable React hooks
+├── supabase/     # DB client, queries, helpers
+└── roles/        # Role-specific logic (extensible pattern)
+
+components/
+├── ui/           # Generic, reusable (Button, Card, Input)
+└── game/         # Domain-specific, composable
+```
+
+### ✅ Before Committing
+
+- [ ] No duplicate logic introduced
+- [ ] Related code is colocated
+- [ ] New patterns are documented if non-obvious
+- [ ] Build passes (`npm run build`)
 
 ---
 
@@ -154,6 +208,11 @@ supabase/
 - [x] Sessions multi-jeux (localStorage par gameCode, migration ancien format)
 - [x] Reconnexion simplifiée (rejoin par pseudo via API, sans email auth)
 - [x] Homepage avec "Mes parties" (liste sessions stockées)
+- [x] iOS PWA : refresh auto au retour foreground (visibilitychange)
+- [x] Reset automatique des votes au changement de phase (tous joueurs)
+- [x] MJ peut forcer résolution vote loups (même si incomplet)
+- [x] Affichage du vote confirmé (pour qui on a voté)
+- [x] Compteur votes loups visible par MJ pendant la nuit
 
 ### 🔄 En Cours
 
@@ -166,27 +225,8 @@ supabase/
 ### 📋 Backlog
 
 **Priorité haute (post-MVP) :**
-- [x] Vérifier/corriger chat loups (affichage realtime) ✅ Fonctionnel
-- [ ] Valider notifications push en conditions réelles (test sur plusieurs appareils iOS)
-- [x] Settings partie modifiables par MJ :
-  - [x] Temps des phases (jour, conseil, nuit)
-  - [x] Répartition des rôles présents
-  - [x] Nombre de loups selon joueurs
-
-**Session & Reconnexion (✅ simplifié) :**
-- [x] Multi-game sessions (localStorage avec gameCode comme clé)
-- [x] API rejoin par pseudo (`POST /join` avec `rejoin: true`)
-- [x] Migration automatique ancien format session
-- [x] Homepage affiche parties en cours stockées
-- [x] Prompt de reconnexion si pseudo existe (409 Conflict → "C'est moi!")
-- [x] Auth email optionnel (conservé mais non requis)
-
-**Push Notifications (✅ configuré) :**
-- [x] Table push_subscriptions avec player_id OU user_id
-- [x] Web Push avec VAPID keys (subscribeToPush)
-- [x] Edge Function push (supabase/functions/push) - Déployée
-- [x] Auto-subscribe si permission déjà granted
-- [x] Database webhook sur game_events créé
+- [ ] Valider notifications push en conditions réelles (test multi-appareils iOS)
+- [ ] Tester partie complète avec ~10 joueurs réels
 
 **Backlog général :**
 - [ ] Rôles avancés (Sorcière, Chasseur, Cupidon...)
