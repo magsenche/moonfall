@@ -235,6 +235,39 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
     };
   }, [game.id, supabase, router]);
 
+  // Refresh game data when app returns to foreground (iOS PWA fix)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        // Refetch game data to sync state after app was in background
+        const { data } = await supabase
+          .from('games')
+          .select(`
+            *,
+            players (
+              id,
+              pseudo,
+              is_alive,
+              is_mj,
+              role_id,
+              created_at
+            )
+          `)
+          .eq('id', game.id)
+          .single();
+        
+        if (data) {
+          setGame(data as GameWithPlayers);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [game.id, supabase]);
+
   // Wolf chat realtime subscription
   useEffect(() => {
     // Only subscribe if game is in progress (not lobby or terminee)
