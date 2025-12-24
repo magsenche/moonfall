@@ -78,6 +78,7 @@ Before implementing any new feature, follow these principles:
 
 ```
 lib/
+├── api/          # Centralized API client (apiGet/Post/Patch/Delete, typed functions)
 ├── utils/        # Pure functions (cn, generateCode, player-session)
 ├── hooks/        # Reusable React hooks
 ├── supabase/     # DB client, queries, helpers
@@ -144,12 +145,14 @@ src/
 │           ├── power/           # POST utiliser pouvoir
 │           ├── wolf-chat/       # GET/POST chat loups
 │           ├── missions/        # GET/POST/PATCH missions + [missionId]/bid, submit
-│           └── settings/        # GET/PATCH settings MJ
+            ├── settings/        # GET/PATCH settings MJ
+            └── bots/            # POST/DELETE ajouter/retirer bots (dev)
 ├── components/
 │   ├── ui/                      # Button, Input, Card
 │   └── game/                    # PlayerAvatar, RoleBadge, GamePhaseBadge, GameOver, NotificationPrompt, MissionForm, MissionCard
-├── config/                      # Thème, rôles, personnalisation joueurs, game (PHASE_DURATIONS)
+├── config/                      # Thème, rôles, personnalisation joueurs
 ├── lib/
+│   ├── api/                     # Client API centralisé (client.ts, games.ts)
 │   ├── auth/                    # AuthProvider, useAuth hook
 │   ├── notifications/           # useNotifications, subscribeToPush
 │   ├── missions/                # Types missions, templates, labels

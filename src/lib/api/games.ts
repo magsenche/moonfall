@@ -2,7 +2,7 @@
  * Games API - All game-related API calls
  */
 
-import { apiGet, apiPost, apiPatch } from './client';
+import { apiGet, apiPost, apiPatch, apiDelete } from './client';
 import type { GameSettings } from '@/types/game';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -281,5 +281,29 @@ export function updateSettings(gameCode: string, playerId: string, settings: Par
   return apiPatch<{ success: boolean }>(`/api/games/${gameCode}/settings`, {
     playerId,
     settings,
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bots (dev/test helpers)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface BotsResponse {
+  success: boolean;
+  botsCreated?: number;
+  botsRemoved?: number;
+  bots?: Array<{ id: string; pseudo: string }>;
+}
+
+export function addBots(gameCode: string, mjPlayerId: string, count: number = 5) {
+  return apiPost<BotsResponse>(`/api/games/${gameCode}/bots`, {
+    mjPlayerId,
+    count,
+  });
+}
+
+export function removeBots(gameCode: string, mjPlayerId: string) {
+  return apiDelete<BotsResponse>(`/api/games/${gameCode}/bots`, {
+    mjPlayerId,
   });
 }

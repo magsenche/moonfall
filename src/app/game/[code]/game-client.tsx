@@ -20,7 +20,7 @@ import { GamePhaseBadge, GameOver } from '@/components/game';
 import { getRoleConfig } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/lib/notifications';
-import { startGame as apiStartGame, changePhase as apiChangePhase, ApiError } from '@/lib/api';
+import { startGame as apiStartGame, changePhase as apiChangePhase, addBots, removeBots, ApiError } from '@/lib/api';
 
 // Hooks
 import {
@@ -64,6 +64,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
   const [game, setGame] = useState<GameWithPlayers>(initialGame);
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [isAddingBots, setIsAddingBots] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [gameWinner, setGameWinner] = useState<'village' | 'loups' | null>(null);
   
@@ -191,6 +192,32 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
     }
   }, [game.code]);
 
+  // Add bots to game (MJ, dev helper)
+  const addBotsToGame = useCallback(async () => {
+    if (!currentPlayerId) return;
+    setIsAddingBots(true);
+    try {
+      await addBots(game.code, currentPlayerId, 5);
+    } catch (err) {
+      console.error('Add bots error:', err instanceof ApiError ? err.message : err);
+    } finally {
+      setIsAddingBots(false);
+    }
+  }, [game.code, currentPlayerId]);
+
+  // Remove bots from game (MJ, dev helper)
+  const removeBotsFromGame = useCallback(async () => {
+    if (!currentPlayerId) return;
+    setIsAddingBots(true);
+    try {
+      await removeBots(game.code, currentPlayerId);
+    } catch (err) {
+      console.error('Remove bots error:', err instanceof ApiError ? err.message : err);
+    } finally {
+      setIsAddingBots(false);
+    }
+  }, [game.code, currentPlayerId]);
+
   // Fetch game winner when game ends
   useEffect(() => {
     if (game.status !== 'terminee') return;
@@ -258,6 +285,9 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
         onSettingsChange={settings.setGameSettings}
         onSaveSettings={settings.saveSettings}
         onStartGame={startGame}
+        onAddBots={addBotsToGame}
+        onRemoveBots={removeBotsFromGame}
+        isAddingBots={isAddingBots}
       />
     );
   }

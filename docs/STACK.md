@@ -64,8 +64,9 @@ src/
 ├── components/
 │   ├── ui/                # Composants génériques (Button, Card, Input)
 │   └── game/              # Composants métier (PlayerAvatar, MissionCard...)
-├── config/                # Configuration (thème, rôles, joueurs, game)
+├── config/                # Configuration (thème, rôles, joueurs)
 ├── lib/
+│   ├── api/               # Client API centralisé (typed fetch functions)
 │   ├── auth/              # AuthProvider, hooks
 │   ├── missions/          # Types, templates missions
 │   ├── notifications/     # Web Push hooks
@@ -102,9 +103,12 @@ npm run supabase:types # Générer types TS depuis DB
 |---------|-------------|
 | `src/app/game/[code]/game-client.tsx` | Orchestrateur principal du jeu |
 | `src/app/game/[code]/hooks/` | Custom hooks (useVoting, useTimer, etc.) |
+| `src/lib/api/client.ts` | Client fetch centralisé (ApiError, apiGet/Post/Patch/Delete) |
+| `src/lib/api/games.ts` | Fonctions API typées (~25 endpoints) |
 | `src/lib/supabase/client.ts` | Client Supabase browser |
 | `src/lib/utils/player-session.ts` | Gestion sessions joueurs |
 | `src/types/supabase.ts` | Types générés depuis DB |
+| `src/types/game.ts` | Types jeu (GameSettings, PHASE_DURATIONS) |
 
 ## À faire
 

@@ -26,6 +26,10 @@ interface LobbyViewProps {
   onSettingsChange: (settings: GameSettings) => void;
   onSaveSettings: () => void;
   onStartGame: () => void;
+  // Bots (dev helpers)
+  onAddBots?: () => void;
+  onRemoveBots?: () => void;
+  isAddingBots?: boolean;
 }
 
 export function LobbyView({
@@ -44,6 +48,9 @@ export function LobbyView({
   onSettingsChange,
   onSaveSettings,
   onStartGame,
+  onAddBots,
+  onRemoveBots,
+  isAddingBots,
 }: LobbyViewProps) {
   const router = useRouter();
   
@@ -138,6 +145,35 @@ export function LobbyView({
                 </li>
               )}
             </ul>
+
+            {/* Bots buttons (MJ only, for testing) */}
+            {isMJ && onAddBots && (
+              <div className="mt-4 pt-4 border-t border-slate-700">
+                <p className="text-xs text-slate-500 mb-2">🧪 Mode dev</p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={onAddBots}
+                    disabled={isAddingBots}
+                    className="flex-1"
+                  >
+                    {isAddingBots ? '⏳...' : '🤖 +5 Bots'}
+                  </Button>
+                  {players.some(p => p.pseudo.startsWith('🤖')) && onRemoveBots && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onRemoveBots}
+                      disabled={isAddingBots}
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      🗑️ Retirer bots
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

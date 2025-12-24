@@ -72,13 +72,14 @@ export async function apiPatch<T>(url: string, body?: unknown, options?: Request
   return handleResponse<T>(response);
 }
 
-export async function apiDelete<T>(url: string, options?: RequestOptions): Promise<T> {
+export async function apiDelete<T>(url: string, body?: unknown, options?: RequestOptions): Promise<T> {
   const response = await fetch(url, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
       ...options?.headers,
     },
+    body: body ? JSON.stringify(body) : undefined,
   });
   return handleResponse<T>(response);
 }
