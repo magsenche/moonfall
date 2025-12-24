@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getWolfChat, sendWolfMessage as apiSendWolfMessage, ApiError } from '@/lib/api';
 import type { WolfMessage } from './types';
 
 interface UseWolfChatOptions {
@@ -37,11 +38,8 @@ export function useWolfChat({
     if (!isWolf) return;
     
     try {
-      const response = await fetch(`/api/games/${gameCode}/wolf-chat`);
-      const data = await response.json();
-      if (response.ok && data.messages) {
-        setWolfMessages(data.messages);
-      }
+      const data = await getWolfChat(gameCode);
+      setWolfMessages(data.messages);
     } catch (err) {
       console.error('Fetch wolf messages error:', err);
     }
@@ -53,19 +51,10 @@ export function useWolfChat({
     
     setIsSendingMessage(true);
     try {
-      const response = await fetch(`/api/games/${gameCode}/wolf-chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playerId: currentPlayerId,
-          message: newMessage.trim(),
-        }),
-      });
-      if (response.ok) {
-        setNewMessage('');
-      }
+      await apiSendWolfMessage(gameCode, currentPlayerId, newMessage.trim());
+      setNewMessage('');
     } catch (err) {
-      console.error('Send message error:', err);
+      console.error('Send message error:', err instanceof ApiError ? err.message : err);
     } finally {
       setIsSendingMessage(false);
     }

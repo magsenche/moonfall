@@ -20,6 +20,7 @@ import { GamePhaseBadge, GameOver } from '@/components/game';
 import { getRoleConfig } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/lib/notifications';
+import { startGame as apiStartGame, changePhase as apiChangePhase, ApiError } from '@/lib/api';
 
 // Hooks
 import {
@@ -173,15 +174,9 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
     setStartError(null);
     setIsStarting(true);
     try {
-      const response = await fetch(`/api/games/${game.code}/start`, {
-        method: 'POST',
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors du lancement');
-      }
+      await apiStartGame(game.code);
     } catch (err) {
-      setStartError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setStartError(err instanceof ApiError ? err.message : 'Une erreur est survenue');
     } finally {
       setIsStarting(false);
     }
@@ -190,17 +185,9 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
   // Change phase (MJ)
   const changePhase = useCallback(async (phase: string) => {
     try {
-      const response = await fetch(`/api/games/${game.code}/phase`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phase }),
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erreur lors du changement de phase');
-      }
+      await apiChangePhase(game.code, phase);
     } catch (err) {
-      console.error('Phase change error:', err);
+      console.error('Phase change error:', err instanceof ApiError ? err.message : err);
     }
   }, [game.code]);
 

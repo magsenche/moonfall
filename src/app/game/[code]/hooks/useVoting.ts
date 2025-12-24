@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { submitVote as apiSubmitVote, resolveVote as apiResolveVote, ApiError } from '@/lib/api';
 
 interface UseVotingOptions {
   gameCode: string;
@@ -52,27 +53,13 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
     setVoteError(null);
     
     try {
-      const response = await fetch(`/api/games/${gameCode}/vote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          voterId: currentPlayerId,
-          targetId: selectedTarget,
-          voteType: 'jour',
-        }),
-      });
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors du vote');
-      }
-      
+      const data = await apiSubmitVote(gameCode, currentPlayerId, selectedTarget);
       setConfirmedVoteTarget(selectedTarget);
       setHasVoted(true);
       setVotesCount(data.votesCount);
       setTotalVoters(data.totalPlayers);
     } catch (err) {
-      setVoteError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setVoteError(err instanceof ApiError ? err.message : 'Une erreur est survenue');
     } finally {
       setIsVoting(false);
     }
@@ -83,15 +70,7 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
     setIsChangingPhase(true);
     
     try {
-      const response = await fetch(`/api/games/${gameCode}/vote/resolve`, {
-        method: 'POST',
-      });
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de la résolution');
-      }
-      
+      await apiResolveVote(gameCode);
       router.refresh();
     } catch (err) {
       console.error('Vote resolution error:', err);

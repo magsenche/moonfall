@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getMissions, updateMission, ApiError } from '@/lib/api';
 import type { Mission } from './types';
 
 interface UseMissionsOptions {
@@ -39,11 +40,8 @@ export function useMissions({
   // Fetch missions
   const fetchMissions = useCallback(async () => {
     try {
-      const response = await fetch(`/api/games/${gameCode}/missions`);
-      const data = await response.json();
-      if (response.ok && data.missions) {
-        setMissions(data.missions);
-      }
+      const data = await getMissions(gameCode);
+      setMissions(data.missions as Mission[]);
     } catch (err) {
       console.error('Fetch missions error:', err);
     }
@@ -87,19 +85,13 @@ export function useMissions({
     if (!currentPlayerId) return;
     
     try {
-      const response = await fetch(`/api/games/${gameCode}/missions/${missionId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playerId: currentPlayerId,
-          action,
-        }),
+      await updateMission(gameCode, missionId, {
+        status: action === 'validate' ? 'success' : action === 'fail' ? 'failed' : 'cancelled',
+        validatorId: currentPlayerId,
       });
-      if (response.ok) {
-        fetchMissions();
-      }
+      fetchMissions();
     } catch (err) {
-      console.error('Update mission error:', err);
+      console.error('Update mission error:', err instanceof ApiError ? err.message : err);
     }
   }, [currentPlayerId, gameCode, fetchMissions]);
 

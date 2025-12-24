@@ -10,6 +10,7 @@ import {
   migrateOldSession,
   type PlayerSession 
 } from '@/lib/utils/player-session';
+import { joinGame, rejoinGame, ApiError } from '@/lib/api';
 
 type Mode = 'home' | 'create' | 'join';
 
@@ -76,36 +77,28 @@ export default function HomePage() {
     setShowRejoinPrompt(null);
 
     try {
-      const response = await fetch(`/api/games/${gameCode.toUpperCase()}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pseudo, rejoin: forceRejoin }),
-      });
-
-      const data = await response.json();
-
-      // Handle rejoin prompt (409 Conflict)
-      if (response.status === 409 && data.canRejoin) {
-        setShowRejoinPrompt({ pseudo: data.pseudo, code: gameCode.toUpperCase() });
-        setIsLoading(false);
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de la connexion');
-      }
+      const code = gameCode.toUpperCase();
+      const data = forceRejoin 
+        ? await rejoinGame(code, pseudo)
+        : await joinGame(code, pseudo);
 
       // Save player session
       savePlayerSession({
         playerId: data.player.id,
-        gameCode: gameCode.toUpperCase(),
+        gameCode: code,
         pseudo: data.player.pseudo,
       });
 
       // Redirect to game
-      router.push(`/game/${gameCode.toUpperCase()}`);
+      router.push(`/game/${code}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      if (err instanceof ApiError && err.status === 409) {
+        // Handle rejoin prompt
+        setShowRejoinPrompt({ pseudo, code: gameCode.toUpperCase() });
+        setIsLoading(false);
+        return;
+      }
+      setError(err instanceof ApiError ? err.message : 'Une erreur est survenue');
     } finally {
       setIsLoading(false);
     }
@@ -118,17 +111,7 @@ export default function HomePage() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/games/${showRejoinPrompt.code}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pseudo: showRejoinPrompt.pseudo, rejoin: true }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de la reconnexion');
-      }
+      const data = await rejoinGame(showRejoinPrompt.code, showRejoinPrompt.pseudo);
 
       // Save player session
       savePlayerSession({
@@ -140,7 +123,7 @@ export default function HomePage() {
       // Redirect to game
       router.push(`/game/${showRejoinPrompt.code}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof ApiError ? err.message : 'Une erreur est survenue');
     } finally {
       setIsLoading(false);
       setShowRejoinPrompt(null);

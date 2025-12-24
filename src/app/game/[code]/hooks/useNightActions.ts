@@ -10,6 +10,13 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { 
+  submitNightVote as apiSubmitNightVote, 
+  resolveNightVote as apiResolveNightVote,
+  getNightVoteStatus,
+  useSeerPower as apiUseSeerPower,
+  ApiError 
+} from '@/lib/api';
 import type { SeerResult } from './types';
 
 interface UseNightActionsOptions {
@@ -71,24 +78,11 @@ export function useNightActions({
     setNightVoteError(null);
     
     try {
-      const response = await fetch(`/api/games/${gameCode}/vote/night`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          visitorId: currentPlayerId,
-          targetId: nightTarget,
-        }),
-      });
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors du vote');
-      }
-      
+      await apiSubmitNightVote(gameCode, currentPlayerId, nightTarget);
       setConfirmedNightTarget(nightTarget);
       setHasNightVoted(true);
     } catch (err) {
-      setNightVoteError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setNightVoteError(err instanceof ApiError ? err.message : 'Une erreur est survenue');
     } finally {
       setIsNightVoting(false);
     }
@@ -100,22 +94,7 @@ export function useNightActions({
     setNightVoteResolveError(null);
     
     try {
-      const response = await fetch(`/api/games/${gameCode}/vote/night/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force }),
-      });
-      const data = await response.json();
-      
-      if (!response.ok) {
-        if (data.canForce && !force) {
-          setNightVoteResolveError(`${data.voted}/${data.total} loups ont voté`);
-          setShowForceConfirm(true);
-          return;
-        }
-        throw new Error(data.error || 'Erreur lors de la résolution');
-      }
-      
+      await apiResolveNightVote(gameCode, force);
       // Reset state
       setHasNightVoted(false);
       setNightTarget(null);
@@ -123,8 +102,21 @@ export function useNightActions({
       setShowForceConfirm(false);
       router.refresh();
     } catch (err) {
+      if (err instanceof ApiError && err.status === 400) {
+        // Check if we can force resolve
+        try {
+          const status = await getNightVoteStatus(gameCode);
+          if (!status.canResolve && !force) {
+            setNightVoteResolveError(`${status.voted}/${status.total} loups ont voté`);
+            setShowForceConfirm(true);
+            return;
+          }
+        } catch {
+          // Ignore status check errors
+        }
+      }
       console.error('Night vote resolution error:', err);
-      setNightVoteResolveError(err instanceof Error ? err.message : 'Erreur');
+      setNightVoteResolveError(err instanceof ApiError ? err.message : 'Erreur');
     } finally {
       setIsChangingPhase(false);
     }
@@ -133,11 +125,8 @@ export function useNightActions({
   // Fetch wolf vote count (MJ)
   const fetchWolfVoteCount = useCallback(async () => {
     try {
-      const response = await fetch(`/api/games/${gameCode}/vote/night/resolve`);
-      const data = await response.json();
-      if (response.ok) {
-        setWolfVoteCount({ voted: data.voted, total: data.total });
-      }
+      const data = await getNightVoteStatus(gameCode);
+      setWolfVoteCount({ voted: data.voted, total: data.total });
     } catch (err) {
       console.error('Error fetching wolf vote count:', err);
     }
@@ -160,24 +149,11 @@ export function useNightActions({
     setSeerError(null);
     
     try {
-      const response = await fetch(`/api/games/${gameCode}/power/seer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playerId: currentPlayerId,
-          targetId: seerTarget,
-        }),
-      });
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Erreur lors de l'utilisation du pouvoir");
-      }
-      
+      const data = await apiUseSeerPower(gameCode, currentPlayerId, seerTarget);
       setSeerResult(data.result);
       setHasUsedSeerPower(true);
     } catch (err) {
-      setSeerError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setSeerError(err instanceof ApiError ? err.message : 'Une erreur est survenue');
     } finally {
       setIsUsingSeerPower(false);
     }

@@ -8,6 +8,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { getSettings, updateSettings, ApiError } from '@/lib/api';
 import type { GameSettings } from './types';
 import { DEFAULT_GAME_SETTINGS } from './types';
 
@@ -31,19 +32,16 @@ export function useGameSettings({
   // Load game settings
   const loadSettings = useCallback(async () => {
     try {
-      const response = await fetch(`/api/games/${gameCode}/settings`);
-      if (response.ok) {
-        const data = await response.json();
-        const settings = data.settings || data;
-        setGameSettings({
-          minPlayers: settings.minPlayers ?? DEFAULT_GAME_SETTINGS.minPlayers,
-          maxPlayers: settings.maxPlayers ?? DEFAULT_GAME_SETTINGS.maxPlayers,
-          nightDurationMinutes: settings.nightDurationMinutes ?? DEFAULT_GAME_SETTINGS.nightDurationMinutes,
-          voteDurationMinutes: settings.voteDurationMinutes ?? DEFAULT_GAME_SETTINGS.voteDurationMinutes,
-          councilIntervalMinutes: settings.councilIntervalMinutes ?? DEFAULT_GAME_SETTINGS.councilIntervalMinutes,
-          rolesDistribution: settings.rolesDistribution ?? {},
-        });
-      }
+      const data = await getSettings(gameCode);
+      const settings = data.settings;
+      setGameSettings({
+        minPlayers: settings.minPlayers ?? DEFAULT_GAME_SETTINGS.minPlayers,
+        maxPlayers: settings.maxPlayers ?? DEFAULT_GAME_SETTINGS.maxPlayers,
+        nightDurationMinutes: settings.nightDurationMinutes ?? DEFAULT_GAME_SETTINGS.nightDurationMinutes,
+        voteDurationMinutes: settings.voteDurationMinutes ?? DEFAULT_GAME_SETTINGS.voteDurationMinutes,
+        councilIntervalMinutes: settings.councilIntervalMinutes ?? DEFAULT_GAME_SETTINGS.councilIntervalMinutes,
+        rolesDistribution: settings.rolesDistribution ?? {},
+      });
     } catch (err) {
       console.error('Failed to load settings:', err);
     }
@@ -55,21 +53,10 @@ export function useGameSettings({
     
     setIsSavingSettings(true);
     try {
-      const response = await fetch(`/api/games/${gameCode}/settings`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playerId: currentPlayerId,
-          settings: gameSettings,
-        }),
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erreur lors de la sauvegarde');
-      }
+      await updateSettings(gameCode, currentPlayerId, gameSettings);
       setShowSettings(false);
     } catch (err) {
-      console.error('Save settings error:', err);
+      console.error('Save settings error:', err instanceof ApiError ? err.message : err);
     } finally {
       setIsSavingSettings(false);
     }

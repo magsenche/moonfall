@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { submitMissionBid, submitMissionScore, updateMission, missionBidAction, ApiError } from '@/lib/api';
 import {
   CATEGORY_ICONS,
   MISSION_TYPE_LABELS,
@@ -113,20 +114,10 @@ export function MissionCard({
     setError(null);
 
     try {
-      const res = await fetch(`/api/games/${gameCode}/missions/${mission.id}/bid`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: currentPlayerId, bid: bidAmount }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Erreur');
-      }
-
+      await submitMissionBid(gameCode, mission.id, currentPlayerId, bidAmount);
       onUpdate();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur');
+      setError(err instanceof ApiError ? err.message : 'Erreur');
     } finally {
       setIsSubmitting(false);
     }
@@ -139,20 +130,10 @@ export function MissionCard({
     setError(null);
 
     try {
-      const res = await fetch(`/api/games/${gameCode}/missions/${mission.id}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: currentPlayerId, score }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Erreur');
-      }
-
+      await submitMissionScore(gameCode, mission.id, currentPlayerId, score);
       onUpdate();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur');
+      setError(err instanceof ApiError ? err.message : 'Erreur');
     } finally {
       setIsSubmitting(false);
     }
@@ -163,28 +144,14 @@ export function MissionCard({
     setError(null);
 
     try {
-      let endpoint = `/api/games/${gameCode}/missions/${mission.id}`;
-      let method = 'PATCH';
-      let body: Record<string, unknown> = { playerId: currentPlayerId, action };
-
       if (['close_bidding', 'declare_winner', 'declare_failure'].includes(action)) {
-        endpoint = `/api/games/${gameCode}/missions/${mission.id}/bid`;
+        await missionBidAction(gameCode, mission.id, currentPlayerId, action as 'close_bidding' | 'declare_winner' | 'declare_failure');
+      } else {
+        await updateMission(gameCode, mission.id, { playerId: currentPlayerId, action });
       }
-
-      const res = await fetch(endpoint, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Erreur');
-      }
-
       onUpdate();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur');
+      setError(err instanceof ApiError ? err.message : 'Erreur');
     } finally {
       setIsSubmitting(false);
     }

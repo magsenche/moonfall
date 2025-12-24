@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { createMission, ApiError } from '@/lib/api';
 import { 
   MISSION_TEMPLATES, 
   MISSION_TYPE_LABELS, 
@@ -106,35 +107,25 @@ export function MissionForm({
         };
       }
 
-      const response = await fetch(`/api/games/${gameCode}/missions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          description,
-          missionType,
-          category,
-          validationType,
-          timeLimitSeconds,
-          rewardType,
-          rewardDescription: rewardDescription || undefined,
-          penaltyDescription: penaltyDescription || undefined,
-          externalUrl: externalUrl || undefined,
-          sabotageAllowed,
-          auctionData,
-          assignedToMultiple: missionType === 'auction' ? [] : assignedToMultiple, // Auction auto-assigns all
-          creatorId,
-        }),
+      await createMission(gameCode, {
+        creatorId,
+        title,
+        description,
+        missionType,
+        category,
+        validationType,
+        timeLimitSeconds,
+        rewardType,
+        rewardDescription: rewardDescription || undefined,
+        penaltyDescription: penaltyDescription || undefined,
+        externalUrl: externalUrl || undefined,
+        auctionData,
+        assignedPlayerIds: missionType === 'auction' ? [] : assignedToMultiple, // Auction auto-assigns all
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erreur lors de la création');
-      }
 
       onMissionCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur inconnue');
+      setError(err instanceof ApiError ? err.message : 'Erreur inconnue');
     } finally {
       setIsSubmitting(false);
     }
