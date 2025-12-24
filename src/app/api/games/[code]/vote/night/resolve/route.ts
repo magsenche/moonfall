@@ -3,6 +3,53 @@ import { NextRequest, NextResponse } from "next/server";
 import { PHASE_DURATIONS } from "@/config/game";
 import type { GameSettings } from "@/types/game";
 
+// GET - Get wolf vote status (for MJ)
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ code: string }> }
+) {
+  const { code } = await params;
+  const supabase = createClient();
+
+  const { data: game } = await supabase
+    .from("games")
+    .select("id, current_phase")
+    .eq("code", code)
+    .single();
+
+  if (!game) {
+    return NextResponse.json({ error: "Partie non trouvée" }, { status: 404 });
+  }
+
+  // Get all wolves alive
+  const { data: wolves } = await supabase
+    .from("players")
+    .select("id, role:roles(team)")
+    .eq("game_id", game.id)
+    .eq("is_alive", true);
+
+  const aliveWolves = wolves?.filter(
+    (p) => (p.role as { team: string } | null)?.team === "loups"
+  ) || [];
+
+  // Get night votes
+  const { data: votes } = await supabase
+    .from("votes")
+    .select("voter_id, target_id")
+    .eq("game_id", game.id)
+    .eq("vote_type", "nuit_loup")
+    .eq("phase", game.current_phase ?? 1);
+
+  const wolfVotes = votes?.filter((v) =>
+    aliveWolves.some((w) => w.id === v.voter_id)
+  ) || [];
+
+  return NextResponse.json({
+    voted: wolfVotes.length,
+    total: aliveWolves.length,
+  });
+}
+
 // POST - Resolve night vote (wolf attack)
 export async function POST(
   request: NextRequest,
@@ -10,6 +57,15 @@ export async function POST(
 ) {
   const { code } = await params;
   const supabase = createClient();
+
+  // Check if force parameter is passed
+  let force = false;
+  try {
+    const body = await request.json();
+    force = body.force === true;
+  } catch {
+    // No body or invalid JSON - that's fine, force defaults to false
+  }
 
   // Get game with settings
   const { data: game, error: gameError } = await supabase
@@ -57,15 +113,37 @@ export async function POST(
     aliveWolves.some((w) => w.id === v.voter_id)
   ) || [];
 
-  if (wolfVotes.length < aliveWolves.length) {
+  // If not all wolves voted and not forcing, return error with count
+  if (wolfVotes.length < aliveWolves.length && !force) {
     return NextResponse.json(
       { 
         error: "Tous les loups n'ont pas voté",
         voted: wolfVotes.length,
-        total: aliveWolves.length
+        total: aliveWolves.length,
+        canForce: true
       },
       { status: 400 }
     );
+  }
+
+  // If no votes at all, just change phase without killing anyone
+  if (wolfVotes.length === 0) {
+    const phaseEndsAt = new Date(Date.now() + jourDurationSeconds * 1000).toISOString();
+    await supabase
+      .from("games")
+      .update({ status: "jour", phase_ends_at: phaseEndsAt })
+      .eq("id", game.id);
+
+    await supabase.from("game_events").insert({
+      game_id: game.id,
+      event_type: "phase_change",
+      data: { from: "nuit", to: "jour", noVictim: true },
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: "Aucun vote - passage au jour sans victime" 
+    });
   }
 
   // Count votes for each target

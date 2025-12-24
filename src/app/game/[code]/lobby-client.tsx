@@ -44,6 +44,7 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   
   // Vote state
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
+  const [confirmedVoteTarget, setConfirmedVoteTarget] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
   const [voteError, setVoteError] = useState<string | null>(null);
@@ -66,9 +67,11 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
 
   // Night vote state (wolves)
   const [nightTarget, setNightTarget] = useState<string | null>(null);
+  const [confirmedNightTarget, setConfirmedNightTarget] = useState<string | null>(null);
   const [hasNightVoted, setHasNightVoted] = useState(false);
   const [isNightVoting, setIsNightVoting] = useState(false);
   const [nightVoteError, setNightVoteError] = useState<string | null>(null);
+  const [wolfVoteCount, setWolfVoteCount] = useState({ voted: 0, total: 0 });
 
   // Voyante power state
   type SeerResult = {
@@ -163,9 +166,12 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
       // Phase changed - reset vote state
       setHasVoted(false);
       setSelectedTarget(null);
+      setConfirmedVoteTarget(null);
       setVotesCount(0);
       setHasNightVoted(false);
       setNightTarget(null);
+      setConfirmedNightTarget(null);
+      setWolfVoteCount({ voted: 0, total: 0 });
       previousGameStatusRef.current = game.status;
     }
   }, [game.status]);
@@ -519,6 +525,7 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
       if (!response.ok) {
         throw new Error(data.error || 'Erreur lors du vote');
       }
+      setConfirmedVoteTarget(selectedTarget);
       setHasVoted(true);
       setVotesCount(data.votesCount);
       setTotalVoters(data.totalPlayers);
@@ -568,6 +575,7 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
       if (!response.ok) {
         throw new Error(data.error || 'Erreur lors du vote');
       }
+      setConfirmedNightTarget(nightTarget);
       setHasNightVoted(true);
     } catch (err) {
       setNightVoteError(err instanceof Error ? err.message : 'Une erreur est survenue');
@@ -577,22 +585,37 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   };
 
   // Resolve night vote (MJ only)
-  const resolveNightVote = async () => {
+  const [nightVoteResolveError, setNightVoteResolveError] = useState<string | null>(null);
+  const [showForceConfirm, setShowForceConfirm] = useState(false);
+
+  const resolveNightVote = async (force = false) => {
     setIsChangingPhase(true);
+    setNightVoteResolveError(null);
     try {
       const response = await fetch(`/api/games/${game.code}/vote/night/resolve`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force }),
       });
       const data = await response.json();
       if (!response.ok) {
+        if (data.canForce && !force) {
+          // Show confirmation to force
+          setNightVoteResolveError(`${data.voted}/${data.total} loups ont voté`);
+          setShowForceConfirm(true);
+          return;
+        }
         throw new Error(data.error || 'Erreur lors de la résolution');
       }
-      // Reset night vote state
+      // Reset state
       setHasNightVoted(false);
       setNightTarget(null);
+      setConfirmedNightTarget(null);
+      setShowForceConfirm(false);
       router.refresh();
     } catch (err) {
       console.error('Night vote resolution error:', err);
+      setNightVoteResolveError(err instanceof Error ? err.message : 'Erreur');
     } finally {
       setIsChangingPhase(false);
     }
@@ -729,6 +752,28 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   const players = game.players.filter(p => !p.is_mj);
   const alivePlayers = players.filter(p => p.is_alive !== false);
   const isMJ = currentPlayerId === mj?.id;
+
+  // Fetch wolf vote count (for MJ during night)
+  const fetchWolfVoteCount = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/games/${game.code}/vote/night/resolve`);
+      const data = await response.json();
+      if (response.ok) {
+        setWolfVoteCount({ voted: data.voted, total: data.total });
+      }
+    } catch (err) {
+      console.error('Error fetching wolf vote count:', err);
+    }
+  }, [game.code]);
+
+  // Poll wolf vote count during night for MJ
+  useEffect(() => {
+    if (!isMJ || game.status !== 'nuit') return;
+    
+    fetchWolfVoteCount();
+    const interval = setInterval(fetchWolfVoteCount, 5000); // Poll every 5s
+    return () => clearInterval(interval);
+  }, [isMJ, game.status, fetchWolfVoteCount]);
 
   // Recover session by pseudo
   const recoverSession = async () => {
@@ -1291,7 +1336,14 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
                 <div className="text-center py-4">
                   <p className="text-2xl mb-2">✅</p>
                   <p className="text-red-300">Vote enregistré</p>
-                  <p className="text-sm text-slate-500 mt-2">
+                  {confirmedNightTarget && (
+                    <p className="text-sm text-red-400 mt-2">
+                      🩸 Vous avez voté pour : <span className="font-bold">
+                        {alivePlayers.find(p => p.id === confirmedNightTarget)?.pseudo || 'Inconnu'}
+                      </span>
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-500 mt-2">
                     En attente de la meute...
                   </p>
                 </div>
@@ -1578,8 +1630,15 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
                 <div className="text-center py-4">
                   <p className="text-2xl mb-2">✅</p>
                   <p className="text-slate-300">Vote enregistré</p>
-                  <p className="text-sm text-slate-500 mt-2">
-                    En attente des autres joueurs...
+                  {confirmedVoteTarget && (
+                    <p className="text-sm text-amber-400 mt-2">
+                      🗳️ Vous avez voté contre : <span className="font-bold">
+                        {alivePlayers.find(p => p.id === confirmedVoteTarget)?.pseudo || 'Inconnu'}
+                      </span>
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-500 mt-2">
+                    En attente des autres joueurs... ({votesCount}/{totalVoters})
                   </p>
                 </div>
               ) : (
@@ -1636,15 +1695,45 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
             <CardContent className="space-y-3">
               {game.status === 'nuit' && (
                 <>
+                  <div className="text-sm text-slate-400 mb-2 text-center">
+                    🐺 Votes des loups : {wolfVoteCount.voted}/{wolfVoteCount.total}
+                  </div>
+                  {showForceConfirm ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-amber-400 text-center">
+                        ⚠️ {nightVoteResolveError}
+                      </p>
+                      <Button
+                        className="w-full bg-red-600 hover:bg-red-700"
+                        onClick={() => resolveNightVote(true)}
+                        disabled={isChangingPhase}
+                      >
+                        ⚡ Forcer la résolution
+                      </Button>
+                      <Button
+                        className="w-full"
+                        variant="ghost"
+                        onClick={() => setShowForceConfirm(false)}
+                      >
+                        Annuler
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <Button
+                        className="w-full bg-red-600 hover:bg-red-700"
+                        onClick={() => resolveNightVote()}
+                        disabled={isChangingPhase}
+                      >
+                        🐺 Résoudre l&apos;attaque des loups
+                      </Button>
+                      {nightVoteResolveError && !showForceConfirm && (
+                        <p className="text-sm text-red-400 text-center mt-2">{nightVoteResolveError}</p>
+                      )}
+                    </>
+                  )}
                   <Button
-                    className="w-full bg-red-600 hover:bg-red-700"
-                    onClick={resolveNightVote}
-                    disabled={isChangingPhase}
-                  >
-                    🐺 Résoudre l&apos;attaque des loups
-                  </Button>
-                  <Button
-                    className="w-full"
+                    className="w-full mt-2"
                     onClick={() => changePhase('jour')}
                     disabled={isChangingPhase}
                   >
