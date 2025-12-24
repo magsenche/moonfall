@@ -3,59 +3,37 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
-import { savePlayerSession } from '@/lib/utils/player-session';
-import { useAuth } from '@/lib/auth';
-import { createClient } from '@/lib/supabase/client';
+import { 
+  savePlayerSession, 
+  getAllSessions, 
+  clearSessionForGame,
+  migrateOldSession,
+  type PlayerSession 
+} from '@/lib/utils/player-session';
 
 type Mode = 'home' | 'create' | 'join';
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, isLoading: authLoading, signOut } = useAuth();
   const [mode, setMode] = useState<Mode>('home');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeGame, setActiveGame] = useState<{ code: string; name: string } | null>(null);
-  const [checkingGame, setCheckingGame] = useState(false);
+  const [sessions, setSessions] = useState<PlayerSession[]>([]);
+  const [showRejoinPrompt, setShowRejoinPrompt] = useState<{ pseudo: string; code: string } | null>(null);
   
   // Form states
   const [pseudo, setPseudo] = useState('');
   const [gameName, setGameName] = useState('');
   const [gameCode, setGameCode] = useState('');
 
-  // Vérifier si l'utilisateur a une partie en cours
+  // Load stored sessions on mount
   useEffect(() => {
-    if (user) {
-      checkActiveGame();
-    }
-  }, [user]);
-
-  const checkActiveGame = async () => {
-    if (!user) return;
+    // Migrate old format if needed
+    migrateOldSession();
     
-    setCheckingGame(true);
-    try {
-      const supabase = createClient();
-      
-      // Chercher une partie active où le joueur participe
-      const { data: player } = await supabase
-        .from('players')
-        .select('game_id, games!inner(code, name, status)')
-        .eq('user_id', user.id)
-        .in('games.status', ['lobby', 'jour', 'nuit', 'conseil'])
-        .single();
-      
-      if (player && player.games) {
-        const game = player.games as { code: string; name: string };
-        setActiveGame({ code: game.code, name: game.name });
-      }
-    } catch (err) {
-      // Pas de partie active, c'est OK
-      console.log('No active game found');
-    } finally {
-      setCheckingGame(false);
-    }
-  };
+    // Load all stored sessions
+    setSessions(getAllSessions());
+  }, []);
 
   const handleCreateGame = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,19 +69,27 @@ export default function HomePage() {
     }
   };
 
-  const handleJoinGame = async (e: React.FormEvent) => {
+  const handleJoinGame = async (e: React.FormEvent, forceRejoin = false) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
+    setShowRejoinPrompt(null);
 
     try {
       const response = await fetch(`/api/games/${gameCode.toUpperCase()}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pseudo }),
+        body: JSON.stringify({ pseudo, rejoin: forceRejoin }),
       });
 
       const data = await response.json();
+
+      // Handle rejoin prompt (409 Conflict)
+      if (response.status === 409 && data.canRejoin) {
+        setShowRejoinPrompt({ pseudo: data.pseudo, code: gameCode.toUpperCase() });
+        setIsLoading(false);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Erreur lors de la connexion');
@@ -113,16 +99,61 @@ export default function HomePage() {
       savePlayerSession({
         playerId: data.player.id,
         gameCode: gameCode.toUpperCase(),
-        pseudo,
+        pseudo: data.player.pseudo,
       });
 
-      // Redirect to lobby
+      // Redirect to game
       router.push(`/game/${gameCode.toUpperCase()}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRejoin = async () => {
+    if (!showRejoinPrompt) return;
+    
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/games/${showRejoinPrompt.code}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pseudo: showRejoinPrompt.pseudo, rejoin: true }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors de la reconnexion');
+      }
+
+      // Save player session
+      savePlayerSession({
+        playerId: data.player.id,
+        gameCode: showRejoinPrompt.code,
+        pseudo: data.player.pseudo,
+      });
+
+      // Redirect to game
+      router.push(`/game/${showRejoinPrompt.code}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } finally {
+      setIsLoading(false);
+      setShowRejoinPrompt(null);
+    }
+  };
+
+  const handleResumeGame = (session: PlayerSession) => {
+    router.push(`/game/${session.gameCode}`);
+  };
+
+  const handleForgetGame = (session: PlayerSession) => {
+    clearSessionForGame(session.gameCode);
+    setSessions(getAllSessions());
   };
 
   return (
@@ -134,32 +165,6 @@ export default function HomePage() {
       </div>
 
       <div className="w-full max-w-md">
-        {/* User status bar */}
-        {!authLoading && (
-          <div className="absolute top-4 right-4 flex items-center gap-3">
-            {user ? (
-              <>
-                <span className="text-sm text-slate-400">
-                  {user.email}
-                </span>
-                <button
-                  onClick={() => signOut()}
-                  className="text-sm text-slate-500 hover:text-red-400 transition-colors"
-                >
-                  Déconnexion
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => router.push('/auth/login')}
-                className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
-                Se connecter
-              </button>
-            )}
-          </div>
-        )}
-
         {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold mb-2">
@@ -169,35 +174,75 @@ export default function HomePage() {
           <p className="text-slate-400">Loup-Garou Grandeur Nature</p>
         </div>
 
-        {/* Active game banner */}
-        {activeGame && (
+        {/* Active sessions banner */}
+        {sessions.length > 0 && mode === 'home' && !showRejoinPrompt && (
           <Card variant="glass" className="mb-6 border-indigo-500/50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Partie en cours</p>
-                  <p className="font-semibold">{activeGame.name}</p>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => router.push(`/game/${activeGame.code}`)}
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">🎮 Mes parties</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {sessions.slice(0, 3).map((session) => (
+                <div 
+                  key={session.gameCode}
+                  className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg"
                 >
-                  Rejoindre →
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{session.pseudo}</p>
+                    <p className="text-xs text-slate-500 font-mono">{session.gameCode}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleResumeGame(session)}
+                    >
+                      Reprendre →
+                    </Button>
+                    <button
+                      onClick={() => handleForgetGame(session)}
+                      className="text-slate-500 hover:text-red-400 p-1"
+                      title="Oublier cette partie"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Rejoin prompt modal */}
+        {showRejoinPrompt && (
+          <Card variant="glass" className="mb-6 border-amber-500/50">
+            <CardContent className="p-4">
+              <p className="text-amber-200 mb-3">
+                Le pseudo <strong>{showRejoinPrompt.pseudo}</strong> existe déjà dans cette partie.
+              </p>
+              <p className="text-slate-400 text-sm mb-4">
+                Est-ce toi ? Tu peux te reconnecter à ta partie.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => setShowRejoinPrompt(null)}
+                >
+                  Non, annuler
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleRejoin}
+                  isLoading={isLoading}
+                >
+                  Oui, c&apos;est moi !
                 </Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Loading state */}
-        {(authLoading || checkingGame) && (
-          <div className="text-center py-8">
-            <div className="animate-pulse text-slate-400">Chargement...</div>
-          </div>
-        )}
-
         {/* Home - Choice buttons */}
-        {mode === 'home' && !authLoading && !checkingGame && (
+        {mode === 'home' && !showRejoinPrompt && (
           <div className="space-y-4">
             <Button 
               className="w-full text-lg py-6" 
@@ -283,7 +328,7 @@ export default function HomePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleJoinGame} className="space-y-4">
+              <form onSubmit={(e) => handleJoinGame(e, false)} className="space-y-4">
                 <Input
                   label="Code de la partie"
                   placeholder="Ex: ABC123"
@@ -331,8 +376,15 @@ export default function HomePage() {
           </Card>
         )}
 
+        {/* PWA Install hint */}
+        <div className="mt-8 text-center">
+          <p className="text-slate-600 text-sm">
+            📱 Ajoute Moonfall à ton écran d&apos;accueil pour recevoir les notifications !
+          </p>
+        </div>
+
         {/* Footer */}
-        <p className="text-center text-slate-600 text-sm mt-8">
+        <p className="text-center text-slate-600 text-sm mt-4">
           Inspiré de l'émission de Fary & Panayotis sur Canal+
         </p>
       </div>

@@ -385,6 +385,7 @@ export type Database = {
           endpoint: string
           id: string
           p256dh: string
+          player_id: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -394,6 +395,7 @@ export type Database = {
           endpoint: string
           id?: string
           p256dh: string
+          player_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -403,10 +405,19 @@ export type Database = {
           endpoint?: string
           id?: string
           p256dh?: string
+          player_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       roles: {
         Row: {

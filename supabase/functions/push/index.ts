@@ -1,5 +1,6 @@
 // Supabase Edge Function pour envoyer des Web Push Notifications
 // Cette fonction est déclenchée par un webhook quand la phase change
+// v4 - Fixed subscription query to use two separate queries
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -73,7 +74,7 @@ const EVENT_NOTIFICATIONS: Record<string, { emoji: string; title: string; body: 
 function getNotificationInfo(event_type: string, data: Record<string, unknown>): { emoji: string; title: string; body: string } | null {
   // For phase changes, read the new phase from data
   if (event_type === 'phase_changed') {
-    const newPhase = (data?.new_phase || data?.phase) as string
+    const newPhase = (data?.to || data?.new_phase || data?.phase) as string
     return PHASE_NOTIFICATIONS[newPhase] || null
   }
   
@@ -121,27 +122,47 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Get all players in the game with their user_ids
+    // Get all players in the game
     const { data: players } = await supabase
       .from('players')
-      .select('user_id, pseudo')
+      .select('id, user_id, pseudo')
       .eq('game_id', game_id)
-      .not('user_id', 'is', null)
 
     if (!players || players.length === 0) {
-      console.log('[Push] No players with user_id found')
+      console.log('[Push] No players found')
       return new Response(JSON.stringify({ message: 'No players to notify' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
     }
 
-    // Get push subscriptions for all players
-    const userIds = players.map(p => p.user_id).filter(Boolean)
-    const { data: subscriptions } = await supabase
+    // Get push subscriptions - by user_id OR player_id
+    const playerIds = players.map(p => p.id)
+    const userIds = players.map(p => p.user_id).filter(Boolean) as string[]
+    
+    // Query subscriptions by player_id
+    const { data: subsByPlayer } = await supabase
       .from('push_subscriptions')
       .select('*')
-      .in('user_id', userIds)
+      .in('player_id', playerIds)
+    
+    // Query subscriptions by user_id (if any)
+    let subsByUser: typeof subsByPlayer = []
+    if (userIds.length > 0) {
+      const { data } = await supabase
+        .from('push_subscriptions')
+        .select('*')
+        .in('user_id', userIds)
+      subsByUser = data || []
+    }
+    
+    // Combine and dedupe by endpoint
+    const allSubs = [...(subsByPlayer || []), ...subsByUser]
+    const subscriptions = allSubs.filter((sub, index, self) => 
+      index === self.findIndex(s => s.endpoint === sub.endpoint)
+    )
+
+    console.log(`[Push] Found ${subscriptions.length} subscriptions (${subsByPlayer?.length || 0} by player, ${subsByUser?.length || 0} by user)`)
 
     if (!subscriptions || subscriptions.length === 0) {
       console.log('[Push] No push subscriptions found')

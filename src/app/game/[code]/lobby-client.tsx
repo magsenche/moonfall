@@ -8,7 +8,7 @@ import { PlayerAvatar, GamePhaseBadge, GameOver } from '@/components/game';
 import { NotificationPrompt } from '@/components/game/notification-prompt';
 import { getRoleConfig } from '@/config/roles';
 import { cn } from '@/lib/utils';
-import { getPlayerIdForGame } from '@/lib/utils/player-session';
+import { getPlayerIdForGame, savePlayerSession, migrateOldSession } from '@/lib/utils/player-session';
 import { useNotifications, GAME_NOTIFICATIONS } from '@/lib/notifications';
 import type { Database } from '@/types/database';
 
@@ -37,6 +37,10 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [recoveryPseudo, setRecoveryPseudo] = useState('');
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const [isRecovering, setIsRecovering] = useState(false);
   
   // Vote state
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
@@ -154,9 +158,18 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
 
   // Get current player ID from localStorage on mount
   useEffect(() => {
+    // Migrate old session format if present
+    migrateOldSession();
+    
     const playerId = getPlayerIdForGame(initialGame.code);
-    setCurrentPlayerId(playerId);
-  }, [initialGame.code]);
+    if (playerId) {
+      setCurrentPlayerId(playerId);
+      setShowRecovery(false);
+    } else if (initialGame.status !== 'lobby') {
+      // Game is in progress but no session - need recovery
+      setShowRecovery(true);
+    }
+  }, [initialGame.code, initialGame.status]);
 
   // Real-time subscription for players
   useEffect(() => {
@@ -276,13 +289,47 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
     return () => clearInterval(interval);
   }, [game.phase_ends_at]);
 
-  // Fetch missions when game is in progress
+  // Fetch missions when game is in progress + realtime subscription
   useEffect(() => {
-    if (game.status !== 'lobby') {
-      fetchMissions();
-    }
+    if (game.status === 'lobby') return;
+    
+    // Initial fetch
+    fetchMissions();
+
+    // Subscribe to mission changes (both missions and assignments)
+    const missionChannel = supabase
+      .channel(`missions:${game.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'missions',
+          filter: `game_id=eq.${game.id}`,
+        },
+        () => {
+          fetchMissions();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'mission_assignments',
+        },
+        () => {
+          // Refetch when any assignment changes
+          fetchMissions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(missionChannel);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.status, game.code]);
+  }, [game.status, game.id, supabase]);
 
   // Fetch game winner when game is over
   useEffect(() => {
@@ -636,6 +683,104 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
   const alivePlayers = players.filter(p => p.is_alive !== false);
   const isMJ = currentPlayerId === mj?.id;
 
+  // Recover session by pseudo
+  const recoverSession = async () => {
+    if (!recoveryPseudo.trim()) {
+      setRecoveryError('Entre ton pseudo');
+      return;
+    }
+    
+    setIsRecovering(true);
+    setRecoveryError(null);
+    
+    // Find player by pseudo (case-insensitive)
+    const foundPlayer = game.players.find(
+      p => p.pseudo.toLowerCase() === recoveryPseudo.trim().toLowerCase()
+    );
+    
+    if (!foundPlayer) {
+      setRecoveryError(`Aucun joueur "${recoveryPseudo}" dans cette partie`);
+      setIsRecovering(false);
+      return;
+    }
+    
+    // Save session and restore
+    savePlayerSession({
+      playerId: foundPlayer.id,
+      gameCode: game.code,
+      pseudo: foundPlayer.pseudo,
+    });
+    
+    setCurrentPlayerId(foundPlayer.id);
+    setShowRecovery(false);
+    setIsRecovering(false);
+  };
+
+  // Show recovery screen if needed
+  if (showRecovery && !currentPlayerId) {
+    return (
+      <main className="min-h-screen p-4 flex items-center justify-center">
+        <div className="fixed inset-0 -z-10 overflow-hidden">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        </div>
+        
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center">🔄 Retrouver ma partie</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-slate-400 text-center text-sm">
+              Tu as changé d'appareil ou de navigateur ?<br />
+              Entre ton pseudo pour retrouver ta partie.
+            </p>
+            
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={recoveryPseudo}
+                onChange={(e) => setRecoveryPseudo(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && recoverSession()}
+                placeholder="Ton pseudo"
+                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                autoFocus
+              />
+              
+              {recoveryError && (
+                <p className="text-red-400 text-sm text-center">{recoveryError}</p>
+              )}
+              
+              <Button
+                onClick={recoverSession}
+                disabled={isRecovering || !recoveryPseudo.trim()}
+                className="w-full"
+              >
+                {isRecovering ? 'Recherche...' : 'Retrouver ma session'}
+              </Button>
+            </div>
+            
+            <div className="pt-4 border-t border-slate-700/50">
+              <p className="text-slate-500 text-xs text-center mb-3">
+                Joueurs dans cette partie :
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {game.players.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => setRecoveryPseudo(p.pseudo)}
+                    className="px-3 py-1 bg-slate-700/50 hover:bg-slate-600/50 rounded-full text-sm text-slate-300 transition-colors"
+                  >
+                    {p.pseudo}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
   // Load settings on mount (MJ only, lobby only)
   useEffect(() => {
     if (isMJ && game.status === 'lobby') {
@@ -680,7 +825,7 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
 
           {/* Notification Prompt */}
           <div className="mb-6">
-            <NotificationPrompt />
+            <NotificationPrompt playerId={currentPlayerId || undefined} />
           </div>
 
           {/* Players List */}

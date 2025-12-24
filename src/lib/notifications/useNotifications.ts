@@ -25,7 +25,11 @@ export interface UseNotificationsReturn {
   requestPermission: () => Promise<NotificationPermission>;
   sendNotification: (options: NotificationOptions) => void;
   registerServiceWorker: () => Promise<ServiceWorkerRegistration | null>;
-  subscribeToPush: () => Promise<boolean>;
+  subscribeToPush: (playerId?: string) => Promise<boolean>;
+}
+
+export interface UseNotificationsOptions {
+  playerId?: string;
 }
 
 // VAPID public key - must match the private key on server
@@ -44,8 +48,9 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-export function useNotifications(): UseNotificationsReturn {
+export function useNotifications(options?: UseNotificationsOptions): UseNotificationsReturn {
   const { user } = useAuth();
+  const playerId = options?.playerId;
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSupported, setIsSupported] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
@@ -157,9 +162,11 @@ export function useNotifications(): UseNotificationsReturn {
   }, [isSupported, permission, swRegistration]);
 
   // Subscribe to push notifications and save to database
-  const subscribeToPush = useCallback(async (): Promise<boolean> => {
-    if (!user) {
-      console.warn('[Push] User not authenticated');
+  const subscribeToPush = useCallback(async (overridePlayerId?: string): Promise<boolean> => {
+    const effectivePlayerId = overridePlayerId || playerId;
+    
+    if (!user && !effectivePlayerId) {
+      console.warn('[Push] No user or player ID available');
       return false;
     }
 
@@ -206,14 +213,17 @@ export function useNotifications(): UseNotificationsReturn {
 
       // Save to database
       const supabase = createClient();
+      
+      // Build the upsert - use insert with explicit types
       const { error } = await supabase
         .from('push_subscriptions')
         .upsert({
-          user_id: user.id,
           endpoint: subscription.endpoint,
           p256dh,
           auth: authKey,
           updated_at: new Date().toISOString(),
+          user_id: user?.id ?? null,
+          player_id: !user && effectivePlayerId ? effectivePlayerId : null,
         }, {
           onConflict: 'endpoint',
         });
@@ -230,7 +240,7 @@ export function useNotifications(): UseNotificationsReturn {
       console.error('[Push] Subscription failed:', error);
       return false;
     }
-  }, [user, swRegistration, registerServiceWorker]);
+  }, [user, playerId, swRegistration, registerServiceWorker]);
 
   return {
     permission,

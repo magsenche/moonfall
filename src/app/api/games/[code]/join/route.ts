@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-// POST /api/games/[code]/join - Join a game
+// POST /api/games/[code]/join - Join a game or rejoin by pseudo
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
   try {
     const { code } = await params;
-    const { pseudo } = await request.json();
+    const { pseudo, rejoin } = await request.json();
 
     if (!pseudo) {
       return NextResponse.json(
@@ -20,7 +20,7 @@ export async function POST(
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Find the game
+    // Find the game (allow joining games in any status for rejoin)
     const { data: gameData, error: gameError } = await supabase
       .from('games')
       .select('id, status')
@@ -42,24 +42,64 @@ export async function POST(
       );
     }
 
-    if (gameData.status !== 'lobby') {
-      return NextResponse.json(
-        { error: 'Cette partie a déjà commencé' },
-        { status: 400 }
-      );
-    }
-
-    // Check if pseudo is already taken in this game
+    // Check if pseudo exists in this game
     const { data: existingPlayer } = await supabase
       .from('players')
-      .select('id')
+      .select('id, pseudo, is_mj, is_alive, role_id')
       .eq('game_id', gameData.id)
-      .eq('pseudo', pseudo)
+      .ilike('pseudo', pseudo.trim())
       .maybeSingle();
 
+    // REJOIN: If player exists and rejoin is requested
+    if (existingPlayer && rejoin) {
+      // Link user_id if authenticated and not already linked
+      if (user && !existingPlayer.role_id) {
+        await supabase
+          .from('players')
+          .update({ user_id: user.id })
+          .eq('id', existingPlayer.id);
+      }
+
+      // Log the rejoin
+      await supabase.from('game_events').insert({
+        game_id: gameData.id,
+        event_type: 'player_rejoined',
+        actor_id: existingPlayer.id,
+        data: { pseudo: existingPlayer.pseudo },
+      });
+
+      return NextResponse.json({
+        success: true,
+        rejoined: true,
+        player: {
+          id: existingPlayer.id,
+          pseudo: existingPlayer.pseudo,
+          is_mj: existingPlayer.is_mj,
+        },
+      });
+    }
+
+    // If player exists but no rejoin flag - check game status
     if (existingPlayer) {
+      // If game is still in lobby, this is an error
+      if (gameData.status === 'lobby') {
+        return NextResponse.json(
+          { error: 'Ce pseudo est déjà pris dans cette partie' },
+          { status: 400 }
+        );
+      }
+      // Game in progress - suggest rejoin
+      return NextResponse.json({
+        error: 'Ce pseudo existe dans cette partie. Veux-tu te reconnecter ?',
+        canRejoin: true,
+        pseudo: existingPlayer.pseudo,
+      }, { status: 409 });
+    }
+
+    // NEW JOIN: Only allowed in lobby
+    if (gameData.status !== 'lobby') {
       return NextResponse.json(
-        { error: 'Ce pseudo est déjà pris dans cette partie' },
+        { error: 'Cette partie a déjà commencé. Tu ne peux pas rejoindre.' },
         { status: 400 }
       );
     }
@@ -70,7 +110,7 @@ export async function POST(
       .insert({
         game_id: gameData.id,
         user_id: user?.id || null,
-        pseudo,
+        pseudo: pseudo.trim(),
         is_mj: false,
         is_alive: true,
       })

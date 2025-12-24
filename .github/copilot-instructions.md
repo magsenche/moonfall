@@ -151,6 +151,9 @@ supabase/
 - [x] Écran de fin de partie festif (message victoire, confettis)
 - [x] Missions multi-joueurs (assigner à plusieurs personnes via mission_assignments)
 - [x] Settings partie MJ (temps des phases personnalisables via UI)
+- [x] Sessions multi-jeux (localStorage par gameCode, migration ancien format)
+- [x] Reconnexion simplifiée (rejoin par pseudo via API, sans email auth)
+- [x] Homepage avec "Mes parties" (liste sessions stockées)
 
 ### 🔄 En Cours
 
@@ -164,22 +167,25 @@ supabase/
 
 **Priorité haute (post-MVP) :**
 - [x] Vérifier/corriger chat loups (affichage realtime) ✅ Fonctionnel
-- [ ] Valider notifications push en conditions réelles (test sur plusieurs appareils)
+- [ ] Valider notifications push en conditions réelles (test sur plusieurs appareils iOS)
 - [x] Settings partie modifiables par MJ :
   - [x] Temps des phases (jour, conseil, nuit)
   - [x] Répartition des rôles présents
   - [x] Nombre de loups selon joueurs
 
-**Auth & Notifications (✅ implémenté et configuré) :**
-- [x] Auth Supabase (Magic Link / OTP par email)
-- [x] AuthProvider + useAuth hook
-- [x] Page /auth/login (email → code 6 chiffres)
-- [x] Liaison players ↔ auth.users (user_id)
-- [x] Détection partie en cours sur la page d'accueil
-- [x] Table push_subscriptions
+**Session & Reconnexion (✅ simplifié) :**
+- [x] Multi-game sessions (localStorage avec gameCode comme clé)
+- [x] API rejoin par pseudo (`POST /join` avec `rejoin: true`)
+- [x] Migration automatique ancien format session
+- [x] Homepage affiche parties en cours stockées
+- [x] Prompt de reconnexion si pseudo existe (409 Conflict → "C'est moi!")
+- [x] Auth email optionnel (conservé mais non requis)
+
+**Push Notifications (✅ configuré) :**
+- [x] Table push_subscriptions avec player_id OU user_id
 - [x] Web Push avec VAPID keys (subscribeToPush)
 - [x] Edge Function push (supabase/functions/push) - Déployée
-- [x] VAPID keys configurées (.env.local + Supabase secrets)
+- [x] Auto-subscribe si permission déjà granted
 - [x] Database webhook sur game_events créé
 
 **Backlog général :**
@@ -187,7 +193,7 @@ supabase/
 - [ ] Missions avancées (templates, types variés)
 - [ ] Système Fantôme (morts peuvent aider)
 - [ ] Scoring et classement
-- [ ] PWA complète (manifest, offline support)
+- [ ] PWA offline support
 - [ ] Custom assets (images rôles, avatars)
 
 ---
