@@ -156,6 +156,20 @@ export function LobbyClient({ initialGame, roles }: LobbyClientProps) {
     notifyPhaseChangeRef.current = notifyPhaseChange;
   }, [notifyPhaseChange]);
 
+  // Reset vote state when phase changes (for all players, not just MJ)
+  const previousGameStatusRef = useRef<string>(initialGame.status);
+  useEffect(() => {
+    if (game.status !== previousGameStatusRef.current) {
+      // Phase changed - reset vote state
+      setHasVoted(false);
+      setSelectedTarget(null);
+      setVotesCount(0);
+      setHasNightVoted(false);
+      setNightTarget(null);
+      previousGameStatusRef.current = game.status;
+    }
+  }, [game.status]);
+
   // Get current player ID from localStorage on mount
   useEffect(() => {
     // Migrate old session format if present
