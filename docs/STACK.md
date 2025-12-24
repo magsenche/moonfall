@@ -57,10 +57,14 @@ src/
 │   │   └── games/         # Endpoints jeu
 │   ├── auth/              # Pages auth
 │   └── game/[code]/       # Page partie
+│       ├── page.tsx       # Server component
+│       ├── game-client.tsx # Orchestrateur client
+│       ├── hooks/         # Custom hooks (useVoting, useTimer, etc.)
+│       └── components/    # Composants UI spécifiques au jeu
 ├── components/
 │   ├── ui/                # Composants génériques (Button, Card, Input)
 │   └── game/              # Composants métier (PlayerAvatar, MissionCard...)
-├── config/                # Configuration (thème, rôles, joueurs)
+├── config/                # Configuration (thème, rôles, joueurs, game)
 ├── lib/
 │   ├── auth/              # AuthProvider, hooks
 │   ├── missions/          # Types, templates missions
@@ -96,7 +100,8 @@ npm run supabase:types # Générer types TS depuis DB
 
 | Fichier | Description |
 |---------|-------------|
-| `src/app/game/[code]/lobby-client.tsx` | Composant principal du jeu |
+| `src/app/game/[code]/game-client.tsx` | Orchestrateur principal du jeu |
+| `src/app/game/[code]/hooks/` | Custom hooks (useVoting, useTimer, etc.) |
 | `src/lib/supabase/client.ts` | Client Supabase browser |
 | `src/lib/utils/player-session.ts` | Gestion sessions joueurs |
 | `src/types/supabase.ts` | Types générés depuis DB |

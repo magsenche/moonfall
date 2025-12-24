@@ -109,8 +109,30 @@ src/
 │   ├── auth/
 │   │   └── login/page.tsx       # Login (email → OTP)
 │   ├── game/[code]/
-│   │   ├── page.tsx             # Page serveur
-│   │   └── lobby-client.tsx     # Client (lobby/jeu complet)
+│   │   ├── page.tsx             # Page serveur (fetch initial)
+│   │   ├── game-client.tsx      # Client principal (orchestrateur)
+│   │   ├── hooks/               # Hooks spécialisés (refactorisé 24/12/2025)
+│   │   │   ├── types.ts         # Types partagés pour le game
+│   │   │   ├── useGameRealtime  # Subscriptions Supabase
+│   │   │   ├── usePlayerSession # Session localStorage + recovery
+│   │   │   ├── useVoting        # Vote jour
+│   │   │   ├── useNightActions  # Vote loups + Voyante
+│   │   │   ├── useWolfChat      # Chat loups
+│   │   │   ├── useMissions      # Fetch/soumission missions
+│   │   │   ├── useGameSettings  # Settings MJ
+│   │   │   └── useTimer         # Countdown phase
+│   │   └── components/          # Composants UI game
+│   │       ├── LobbyView        # Écran d'attente
+│   │       ├── PlayersList      # Liste joueurs
+│   │       ├── PlayerRoleCard   # Carte rôle perso
+│   │       ├── VotingPanel      # Vote jour
+│   │       ├── WolfNightVote    # Vote nuit loups
+│   │       ├── WolfChatPanel    # Chat loups
+│   │       ├── SeerPowerPanel   # Pouvoir voyante
+│   │       ├── MJControls       # Contrôles MJ
+│   │       ├── MJOverview       # Vue d'ensemble MJ
+│   │       ├── PhaseTimer       # Timer + badge phase
+│   │       └── ...
 │   └── api/games/
 │       ├── route.ts             # POST (créer partie)
 │       └── [code]/
@@ -126,7 +148,7 @@ src/
 ├── components/
 │   ├── ui/                      # Button, Input, Card
 │   └── game/                    # PlayerAvatar, RoleBadge, GamePhaseBadge, GameOver, NotificationPrompt, MissionForm, MissionCard
-├── config/                      # Thème, rôles, personnalisation joueurs
+├── config/                      # Thème, rôles, personnalisation joueurs, game (PHASE_DURATIONS)
 ├── lib/
 │   ├── auth/                    # AuthProvider, useAuth hook
 │   ├── notifications/           # useNotifications, subscribeToPush

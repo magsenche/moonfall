@@ -270,7 +270,7 @@ export function MissionForm({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description détaillée..."
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white text-sm min-h-[80px]"
+            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white text-sm min-h-20"
           />
         </div>
 

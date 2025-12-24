@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { LobbyClient } from './lobby-client';
+import { GameClient } from './game-client';
 
 interface GamePageProps {
   params: Promise<{ code: string }>;
@@ -38,7 +38,7 @@ export default async function GamePage({ params }: GamePageProps) {
     .eq('is_active', true);
 
   return (
-    <LobbyClient 
+    <GameClient 
       initialGame={game} 
       roles={roles || []} 
     />

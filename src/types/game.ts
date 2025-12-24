@@ -7,7 +7,20 @@ export type VoteType = 'jour' | 'nuit_loup' | 'pouvoir';
 export type MissionStatus = 'pending' | 'in_progress' | 'success' | 'failed' | 'cancelled';
 export type PowerPhase = 'nuit' | 'jour' | 'mort';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase Durations (in seconds) - used by API routes
+// ─────────────────────────────────────────────────────────────────────────────
+export const PHASE_DURATIONS = {
+  jour: 5 * 60,    // 5 minutes for discussion
+  nuit: 2 * 60,    // 2 minutes for night actions
+  conseil: 3 * 60, // 3 minutes for voting
+} as const;
+
+export type PhaseDurations = typeof PHASE_DURATIONS;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Role definition
+// ─────────────────────────────────────────────────────────────────────────────
 export interface Role {
   id: string;
   name: string;

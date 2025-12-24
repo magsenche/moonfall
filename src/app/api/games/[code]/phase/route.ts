@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
-import { PHASE_DURATIONS } from '@/config/game';
+import { PHASE_DURATIONS } from '@/types/game';
 import type { GameSettings } from '@/types/game';
 
 const supabase = createClient<Database>(
