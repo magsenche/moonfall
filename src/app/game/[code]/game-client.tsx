@@ -604,9 +604,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
       )}
 
       {/* Floating Rules Button - Always accessible */}
-      <div className="fixed bottom-4 right-4 z-40">
-        <RulesButton size="sm" />
-      </div>
+      <RulesButton variant="floating" />
     </main>
   );
 }

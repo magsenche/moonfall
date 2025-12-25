@@ -1,11 +1,11 @@
 'use client';
 
 /**
- * PhaseHelpTooltip - Contextual help tooltip for game phases
- * Shows explanation when clicking the ? icon next to phase badge
+ * PhaseHelpTooltip - Contextual help for game phases
+ * Opens as a bottom sheet modal on mobile (more reliable than popover)
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getPhaseDescription } from '@/lib/help/phase-descriptions';
 
 interface PhaseHelpTooltipProps {
@@ -14,86 +14,87 @@ interface PhaseHelpTooltipProps {
 
 export function PhaseHelpTooltip({ phase }: PhaseHelpTooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const tooltipRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const phaseDesc = getPhaseDescription(phase);
 
-  // Close on click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        tooltipRef.current && 
-        !tooltipRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
+  // Handle escape key to close
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') setIsOpen(false);
+  }, []);
 
+  useEffect(() => {
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
     }
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
     };
-  }, [isOpen]);
+  }, [isOpen, handleKeyDown]);
 
   if (!phaseDesc) return null;
 
   return (
-    <div className="relative inline-block">
+    <>
+      {/* Trigger button - touch-friendly size (44px) */}
       <button
-        ref={buttonRef}
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-6 h-6 flex items-center justify-center text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded-full transition-colors text-sm"
+        onClick={() => setIsOpen(true)}
+        className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 active:bg-zinc-700 rounded-full transition-colors text-sm font-medium touch-manipulation"
         aria-label="Aide sur cette phase"
       >
         ?
       </button>
 
+      {/* Bottom sheet modal - works great on mobile */}
       {isOpen && (
-        <div
-          ref={tooltipRef}
-          className="absolute right-0 top-full mt-2 w-72 p-4 bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+        <div 
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setIsOpen(false)}
         >
-          {/* Header */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xl">{phaseDesc.icon}</span>
-            <h4 className="font-semibold text-zinc-100">{phaseDesc.name}</h4>
-          </div>
-
-          {/* Description */}
-          <p className="text-sm text-zinc-400 mb-3">{phaseDesc.longDescription}</p>
-
-          {/* What to do */}
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Que faire ?</p>
-            {phaseDesc.whatToDo.map((item, index) => (
-              <p key={index} className="text-sm text-zinc-300 pl-2 border-l-2 border-zinc-700">
-                {item}
-              </p>
-            ))}
-          </div>
-
-          {/* Duration */}
-          <p className="mt-3 text-xs text-zinc-600">
-            Durée : {phaseDesc.duration}
-          </p>
-
-          {/* Close button */}
-          <button
-            onClick={() => setIsOpen(false)}
-            className="absolute top-2 right-2 p-1 text-zinc-600 hover:text-zinc-400 transition-colors"
-            aria-label="Fermer"
+          <div
+            className="w-full sm:max-w-sm bg-zinc-900 border-t sm:border border-zinc-700 rounded-t-2xl sm:rounded-2xl shadow-xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+            {/* Drag indicator (mobile) */}
+            <div className="sm:hidden flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 bg-zinc-700 rounded-full" />
+            </div>
+
+            <div className="p-4 sm:p-5">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">{phaseDesc.icon}</span>
+                <div>
+                  <h4 className="font-semibold text-zinc-100 text-lg">{phaseDesc.name}</h4>
+                  <p className="text-xs text-zinc-500">Durée : {phaseDesc.duration}</p>
+                </div>
+              </div>
+
+              {/* Description */}
+              <p className="text-sm text-zinc-400 mb-4 leading-relaxed">{phaseDesc.longDescription}</p>
+
+              {/* What to do */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Que faire ?</p>
+                {phaseDesc.whatToDo.map((item, index) => (
+                  <p key={index} className="text-sm text-zinc-300 pl-3 border-l-2 border-zinc-700">
+                    {item}
+                  </p>
+                ))}
+              </div>
+
+              {/* Close button */}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="mt-5 w-full py-3 text-sm font-medium text-zinc-400 hover:text-zinc-200 bg-zinc-800 hover:bg-zinc-750 rounded-xl transition-colors touch-manipulation"
+              >
+                Compris !
+              </button>
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

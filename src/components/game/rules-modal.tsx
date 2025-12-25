@@ -45,13 +45,18 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div 
-        className="w-full max-w-lg max-h-[90vh] flex flex-col bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200"
+        className="w-full sm:max-w-lg h-[95vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-zinc-900 border-t sm:border border-zinc-700 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Drag indicator (mobile) */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 bg-zinc-700 rounded-full" />
+        </div>
+        
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-zinc-800">
           <h2 className="text-xl font-bold text-zinc-100 flex items-center gap-2">
@@ -317,20 +322,46 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
 
 /**
  * Self-contained button that opens the rules modal
+ * - 'default': Text button "📖 Règles"  
+ * - 'icon': Icon-only button
+ * - 'floating': Fixed floating action button for mobile
  */
-export function RulesButton({ variant = 'default', size = 'md' }: { variant?: 'default' | 'icon'; size?: 'sm' | 'md' }) {
+export function RulesButton({ 
+  variant = 'default', 
+  size = 'md' 
+}: { 
+  variant?: 'default' | 'icon' | 'floating'; 
+  size?: 'sm' | 'md' 
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   const sizeClasses = size === 'sm' 
     ? 'py-1.5 px-3 text-xs' 
     : 'py-2 px-4 text-sm';
 
+  // Floating action button (for mobile)
+  if (variant === 'floating') {
+    return (
+      <>
+        <button
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-20 right-4 z-30 w-12 h-12 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 border border-zinc-700 rounded-full shadow-lg transition-colors touch-manipulation text-xl"
+          aria-label="Règles du jeu"
+          title="Règles du jeu"
+        >
+          📖
+        </button>
+        <RulesModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      </>
+    );
+  }
+
   if (variant === 'icon') {
     return (
       <>
         <button
           onClick={() => setIsOpen(true)}
-          className="p-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
+          className="p-2.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 active:bg-zinc-700 rounded-lg transition-colors touch-manipulation text-lg"
           aria-label="Règles du jeu"
           title="Règles du jeu"
         >
@@ -345,7 +376,7 @@ export function RulesButton({ variant = 'default', size = 'md' }: { variant?: 'd
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className={`${sizeClasses} text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-2`}
+        className={`${sizeClasses} text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 active:bg-zinc-700 rounded-lg transition-colors flex items-center gap-2 touch-manipulation`}
       >
         <span>📖</span> Règles
       </button>

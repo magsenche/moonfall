@@ -99,10 +99,8 @@ export function LobbyView({
           <NotificationPrompt playerId={currentPlayerId || undefined} />
         </div>
 
-        {/* Rules Button */}
-        <div className="mb-6">
-          <RulesButton />
-        </div>
+        {/* Rules Button - Floating on mobile */}
+        <RulesButton variant="floating" />
 
         {/* Players List */}
         <Card>
