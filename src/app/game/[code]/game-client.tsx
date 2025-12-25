@@ -576,6 +576,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
           isMJ={isMJ && !isAutoMode}
           isWolf={isWolf}
           wolves={wolves}
+          isAutoMode={isAutoMode}
         />
 
         {/* MJ Overview Panel - Hidden in Auto-Garou mode */}

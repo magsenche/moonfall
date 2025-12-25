@@ -17,6 +17,7 @@ interface PlayersListProps {
   isMJ: boolean;
   isWolf: boolean;
   wolves: PartialPlayer[];
+  isAutoMode?: boolean;
 }
 
 export function PlayersList({
@@ -26,8 +27,11 @@ export function PlayersList({
   isMJ,
   isWolf,
   wolves,
+  isAutoMode = false,
 }: PlayersListProps) {
-  const alivePlayers = players.filter(p => !p.is_mj && p.is_alive !== false);
+  // In Auto-Garou mode, MJ plays too - include them in the list
+  const playersToShow = isAutoMode ? players : players.filter(p => !p.is_mj);
+  const alivePlayers = playersToShow.filter(p => p.is_alive !== false);
 
   return (
     <Card>
@@ -41,9 +45,7 @@ export function PlayersList({
       </CardHeader>
       <CardContent>
         <ul className="space-y-2">
-          {players
-            .filter(p => !p.is_mj)
-            .map((player) => {
+          {playersToShow.map((player) => {
               const isCurrentPlayer = player.id === currentPlayerId;
               const playerRole = roles.find(r => r.id === player.role_id);
               const pRoleConfig = playerRole ? getRoleConfig(playerRole.name) : null;

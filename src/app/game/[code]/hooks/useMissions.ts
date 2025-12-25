@@ -111,8 +111,17 @@ export function useMissions({
           table: 'missions',
           filter: `game_id=eq.${gameId}`,
         },
-        () => fetchMissions()
+        () => {
+          console.log('[Realtime] missions table changed');
+          fetchMissions();
+        }
       )
+      .subscribe();
+
+    // Separate channel for mission_assignments (no direct game_id filter available)
+    // We refetch all missions when any assignment changes - the API filters by game
+    const assignmentChannel = supabase
+      .channel(`mission-assignments:${gameId}`)
       .on(
         'postgres_changes',
         {
@@ -120,12 +129,16 @@ export function useMissions({
           schema: 'public',
           table: 'mission_assignments',
         },
-        () => fetchMissions()
+        () => {
+          console.log('[Realtime] mission_assignments changed');
+          fetchMissions();
+        }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(missionChannel);
+      supabase.removeChannel(assignmentChannel);
     };
   }, [gameStatus, gameId, supabase, fetchMissions]);
 
