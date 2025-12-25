@@ -122,6 +122,66 @@ export type Database = {
         }
         Relationships: []
       }
+      lovers: {
+        Row: {
+          created_at: string | null
+          game_id: string
+          id: string
+          player1_id: string
+          player2_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          game_id: string
+          id?: string
+          player1_id: string
+          player2_id: string
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string
+          id?: string
+          player1_id?: string
+          player2_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lovers_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: true
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lovers_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "lovers_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lovers_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "lovers_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mission_assignments: {
         Row: {
           bid: number | null
@@ -991,7 +1051,7 @@ export type Database = {
         | "external"
         | "first_wins"
         | "best_score"
-      power_phase: "nuit" | "jour" | "mort"
+      power_phase: "nuit" | "jour" | "mort" | "debut"
       reward_type:
         | "wolf_hint"
         | "immunity"
@@ -1162,7 +1222,7 @@ export const Constants = {
         "first_wins",
         "best_score",
       ],
-      power_phase: ["nuit", "jour", "mort"],
+      power_phase: ["nuit", "jour", "mort", "debut"],
       reward_type: [
         "wolf_hint",
         "immunity",

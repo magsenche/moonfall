@@ -36,3 +36,5 @@ export * from './LobbyView';
 export * from './PlayerWallet';
 export * from './Shop';
 export * from './VoteResults';
+export * from './HunterDeathModal';
+export * from './WitchNightPanel';

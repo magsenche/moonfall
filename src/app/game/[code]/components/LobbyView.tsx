@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, Button } from '@/components/ui';
 import { PlayerAvatar } from '@/components/game';
 import { NotificationPrompt } from '@/components/game/notification-prompt';
+import { getRoleConfig } from '@/config/roles';
 import type { GameWithPlayers, Role, GameSettings } from '../hooks/types';
 
 interface LobbyViewProps {
@@ -56,6 +57,9 @@ export function LobbyView({
   
   const mj = game.players.find(p => p.is_mj);
   const players = game.players.filter(p => !p.is_mj);
+  
+  // In Auto-Garou mode, MJ plays too so count all players for role distribution
+  const playersForRoles = gameSettings.autoMode ? game.players.length : players.length;
 
   return (
     <main className="min-h-screen p-4">
@@ -316,17 +320,14 @@ export function LobbyView({
                   <div className="space-y-3">
                     {roles.filter(r => r.is_active).map(role => {
                       const count = gameSettings.rolesDistribution[role.id] ?? 0;
-                      const emoji = role.team === 'loups' ? '🐺' : role.name === 'voyante' ? '🔮' : '👤';
-                      const teamColor = role.team === 'loups' ? 'text-red-400' : 'text-blue-400';
+                      const roleConfig = getRoleConfig(role.name);
 
                       return (
                         <div key={role.id} className="flex items-center justify-between gap-3 p-2 bg-slate-800 rounded-lg">
                           <div className="flex items-center gap-2">
-                            <span>{emoji}</span>
-                            <span className={`text-sm font-medium ${teamColor}`}>
-                              {role.name === 'loup_garou' ? 'Loup-Garou' :
-                               role.name === 'villageois' ? 'Villageois' :
-                               role.name === 'voyante' ? 'Voyante' : role.name}
+                            <span>{roleConfig.assets.icon}</span>
+                            <span className={`text-sm font-medium ${roleConfig.assets.color}`}>
+                              {roleConfig.displayName}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -377,10 +378,10 @@ export function LobbyView({
                       <div className="flex justify-between text-sm mt-1">
                         <span className="text-slate-400">Joueurs dans le lobby:</span>
                         <span className="text-white font-medium">
-                          {players.length} joueurs
+                          {playersForRoles} joueurs
                         </span>
                       </div>
-                      {Object.values(gameSettings.rolesDistribution).reduce((a, b) => a + b, 0) !== players.length && (
+                      {Object.values(gameSettings.rolesDistribution).reduce((a, b) => a + b, 0) !== playersForRoles && (
                         <p className="text-xs text-yellow-400 mt-2">
                           ⚠️ Le nombre de rôles doit correspondre au nombre de joueurs
                         </p>

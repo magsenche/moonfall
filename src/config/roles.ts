@@ -121,8 +121,8 @@ export const roleConfigs: Record<string, RoleConfig> = {
     name: 'petite_fille',
     displayName: 'Petite Fille',
     team: 'village',
-    description: 'Peut espionner les loups-garous pendant la nuit, mais risque d\'être découverte.',
-    shortDescription: 'Espionne les loups',
+    description: 'Peut lire le chat des loups-garous la nuit sans pouvoir écrire. Doit rester discrète.',
+    shortDescription: 'Lit le chat des loups',
     assets: {
       icon: '👧',
       color: 'text-rose-400',

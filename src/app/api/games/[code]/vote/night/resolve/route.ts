@@ -170,7 +170,176 @@ export async function POST(
   // In case of tie, pick randomly
   const victimId = victims[Math.floor(Math.random() * victims.length)];
 
-  // Kill the victim
+  // Get victim info including role
+  const { data: victimInfo } = await supabase
+    .from("players")
+    .select("id, pseudo, role:roles(id, name)")
+    .eq("id", victimId)
+    .single();
+
+  if (!victimInfo) {
+    return NextResponse.json(
+      { error: "Victime non trouvée" },
+      { status: 500 }
+    );
+  }
+
+  const victimRole = victimInfo.role as { id: string; name: string } | null;
+  
+  // Check if victim is Ancien (Elder) and hasn't used their protection yet
+  let elderSaved = false;
+  if (victimRole?.name === 'ancien') {
+    // Get the survie_ancienne power
+    const { data: elderPower } = await supabase
+      .from("powers")
+      .select("id")
+      .eq("role_id", victimRole.id)
+      .eq("name", "survie_ancienne")
+      .single();
+
+    if (elderPower) {
+      // Check if already used
+      const { data: powerUse } = await supabase
+        .from("power_uses")
+        .select("id")
+        .eq("game_id", game.id)
+        .eq("player_id", victimId)
+        .eq("power_id", elderPower.id)
+        .maybeSingle();
+
+      if (!powerUse) {
+        // Ancien survives! Mark power as used
+        elderSaved = true;
+        await supabase.from("power_uses").insert({
+          game_id: game.id,
+          player_id: victimId,
+          power_id: elderPower.id,
+          phase: game.current_phase ?? 1,
+          result: { saved: true },
+        });
+
+        // Log the event
+        await supabase.from("game_events").insert({
+          game_id: game.id,
+          event_type: "elder_saved",
+          data: {
+            player_id: victimId,
+            player_name: victimInfo.pseudo,
+          },
+        });
+      }
+    }
+  }
+
+  // If Ancien was saved, transition to day without killing
+  if (elderSaved) {
+    const phaseEndsAt = new Date(Date.now() + jourDurationSeconds * 1000).toISOString();
+    await supabase
+      .from("games")
+      .update({ status: "jour", phase_ends_at: phaseEndsAt })
+      .eq("id", game.id);
+
+    await supabase.from("game_events").insert({
+      game_id: game.id,
+      event_type: "phase_change",
+      data: { from: "nuit", to: "jour", elderSaved: true },
+    });
+
+    return NextResponse.json({
+      success: true,
+      elderSaved: true,
+      message: `${victimInfo.pseudo} (l'Ancien) a survécu à l'attaque des loups !`,
+    });
+  }
+
+  // Check if Witch used life potion this phase
+  const { data: witchLifePotion } = await supabase
+    .from("power_uses")
+    .select("id")
+    .eq("game_id", game.id)
+    .eq("phase", game.current_phase ?? 1)
+    .like("result->>'action'", "saved_wolf_target")
+    .maybeSingle();
+
+  let witchSaved = false;
+  if (witchLifePotion) {
+    witchSaved = true;
+    
+    // Log the event
+    await supabase.from("game_events").insert({
+      game_id: game.id,
+      event_type: "witch_saved_victim",
+      data: {
+        saved_id: victimId,
+        saved_name: victimInfo.pseudo,
+      },
+    });
+  }
+
+  // Check if Witch used death potion this phase
+  const { data: witchDeathPotion } = await supabase
+    .from("power_uses")
+    .select("target_id, result")
+    .eq("game_id", game.id)
+    .eq("phase", game.current_phase ?? 1)
+    .like("result->>'action'", "poisoned")
+    .maybeSingle();
+
+  // If witch saved the wolf target, skip killing them
+  if (witchSaved) {
+    // But still process death potion if used
+    if (witchDeathPotion?.target_id) {
+      const { data: poisonVictim } = await supabase
+        .from("players")
+        .update({
+          is_alive: false,
+          death_reason: "empoisonne",
+          death_at: new Date().toISOString(),
+        })
+        .eq("id", witchDeathPotion.target_id)
+        .select("pseudo, role:roles(name)")
+        .single();
+
+      if (poisonVictim) {
+        await supabase.from("game_events").insert({
+          game_id: game.id,
+          event_type: "witch_poison_kill",
+          data: {
+            victim_id: witchDeathPotion.target_id,
+            victim_name: poisonVictim.pseudo,
+            victim_role: (poisonVictim.role as { name: string } | null)?.name,
+          },
+        });
+      }
+    }
+
+    // Transition to day
+    const phaseEndsAt = new Date(Date.now() + jourDurationSeconds * 1000).toISOString();
+    await supabase
+      .from("games")
+      .update({ status: "jour", phase_ends_at: phaseEndsAt })
+      .eq("id", game.id);
+
+    await supabase.from("game_events").insert({
+      game_id: game.id,
+      event_type: "phase_change",
+      data: { 
+        from: "nuit", 
+        to: "jour", 
+        witchSaved: true,
+        poisonVictim: witchDeathPotion?.target_id ? true : false,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      witchSaved: true,
+      message: `La sorcière a sauvé ${victimInfo.pseudo} avec sa potion de vie !`,
+      poisonVictim: witchDeathPotion?.target_id ? true : false,
+    });
+  }
+
+  // Kill the wolf victim
   const { data: victim, error: killError } = await supabase
     .from("players")
     .update({
@@ -199,6 +368,34 @@ export async function POST(
       victim_role: (victim.role as { name: string } | null)?.name,
     },
   });
+
+  // Also process witch death potion if used (and not the same target as wolves)
+  let poisonVictimName: string | null = null;
+  if (witchDeathPotion?.target_id && witchDeathPotion.target_id !== victimId) {
+    const { data: poisonVictim } = await supabase
+      .from("players")
+      .update({
+        is_alive: false,
+        death_reason: "empoisonne",
+        death_at: new Date().toISOString(),
+      })
+      .eq("id", witchDeathPotion.target_id)
+      .select("pseudo, role:roles(name)")
+      .single();
+
+    if (poisonVictim) {
+      poisonVictimName = poisonVictim.pseudo;
+      await supabase.from("game_events").insert({
+        game_id: game.id,
+        event_type: "witch_poison_kill",
+        data: {
+          victim_id: witchDeathPotion.target_id,
+          victim_name: poisonVictim.pseudo,
+          victim_role: (poisonVictim.role as { name: string } | null)?.name,
+        },
+      });
+    }
+  }
 
   // Check victory conditions
   const { data: alivePlayers } = await supabase

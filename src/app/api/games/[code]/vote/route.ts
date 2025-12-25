@@ -30,7 +30,7 @@ export async function POST(
   // Get game and validate
   const { data: game, error: gameError } = await supabase
     .from('games')
-    .select('id, status, current_phase')
+    .select('id, status, current_phase, settings')
     .eq('code', code)
     .single();
 
@@ -45,6 +45,10 @@ export async function POST(
     );
   }
 
+  // Parse settings for autoMode
+  const settings = game.settings as { autoMode?: boolean } | null;
+  const isAutoMode = settings?.autoMode ?? false;
+
   // Validate voter is alive
   const { data: voter, error: voterError } = await supabase
     .from('players')
@@ -57,7 +61,8 @@ export async function POST(
     return NextResponse.json({ error: 'Joueur non trouvé' }, { status: 404 });
   }
 
-  if (voter.is_mj) {
+  // En mode Auto-Garou, le MJ joue aussi et peut voter
+  if (voter.is_mj && !isAutoMode) {
     return NextResponse.json({ error: 'Le MJ ne vote pas' }, { status: 403 });
   }
 

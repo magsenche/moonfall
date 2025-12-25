@@ -1,5 +1,6 @@
 /**
  * WolfChatPanel - Wolf pack private chat
+ * Supports read-only mode for Petite Fille role
  */
 
 'use client';
@@ -16,6 +17,7 @@ interface WolfChatPanelProps {
   isAlive: boolean;
   onMessageChange: (message: string) => void;
   onSendMessage: () => void;
+  readOnly?: boolean; // For Petite Fille - can read but not write
 }
 
 export function WolfChatPanel({
@@ -26,11 +28,25 @@ export function WolfChatPanel({
   isAlive,
   onMessageChange,
   onSendMessage,
+  readOnly = false,
 }: WolfChatPanelProps) {
   return (
-    <Card className="mb-6 border border-red-500/20">
+    <Card className={cn(
+      "mb-6 border",
+      readOnly ? "border-rose-500/20" : "border-red-500/20"
+    )}>
       <CardHeader>
-        <CardTitle className="text-red-400 text-lg">💬 Chat de la Meute</CardTitle>
+        <CardTitle className={cn(
+          "text-lg",
+          readOnly ? "text-rose-400" : "text-red-400"
+        )}>
+          {readOnly ? '👧 Écoute de la Meute' : '💬 Chat de la Meute'}
+        </CardTitle>
+        {readOnly && (
+          <p className="text-xs text-rose-300/70 mt-1">
+            Tu espionnes les loups... reste discrète !
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         {/* Messages */}
@@ -64,8 +80,8 @@ export function WolfChatPanel({
           )}
         </div>
 
-        {/* Input */}
-        {isAlive && (
+        {/* Input - Hidden for readOnly (Petite Fille) */}
+        {isAlive && !readOnly && (
           <form
             onSubmit={(e) => { e.preventDefault(); onSendMessage(); }}
             className="flex gap-2"

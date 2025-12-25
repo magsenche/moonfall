@@ -56,6 +56,8 @@ import {
   MissionsSection,
   PlayerWallet,
   Shop,
+  HunterDeathModal,
+  WitchNightPanel,
 } from './components';
 
 interface GameClientProps {
@@ -72,6 +74,8 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
   const [startError, setStartError] = useState<string | null>(null);
   const [gameWinner, setGameWinner] = useState<'village' | 'loups' | null>(null);
   const [shopRefreshKey, setShopRefreshKey] = useState(0);
+  const [showHunterModal, setShowHunterModal] = useState(false);
+  const [hunterModalProcessed, setHunterModalProcessed] = useState(false);
   
   // Notifications
   const { permission, isSupported, registerServiceWorker } = useNotifications();
@@ -124,6 +128,9 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
   
   const isWolf = currentRole?.team === 'loups';
   const isSeer = currentRole?.name === 'voyante';
+  const isLittleGirl = currentRole?.name === 'petite_fille';
+  const isHunter = currentRole?.name === 'chasseur';
+  const isWitch = currentRole?.name === 'sorciere';
   const wolves = isWolf
     ? game.players.filter(p => {
         const pRole = roles.find(r => r.id === p.role_id);
@@ -240,6 +247,34 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
       setIsAddingBots(false);
     }
   }, [game.code, currentPlayerId]);
+
+  // Detect when Hunter dies and show the modal
+  useEffect(() => {
+    // Only show if: is hunter, is dead, game not ended, and modal not yet processed
+    if (
+      isHunter &&
+      currentPlayer?.is_alive === false &&
+      game.status !== 'terminee' &&
+      !hunterModalProcessed
+    ) {
+      setShowHunterModal(true);
+    }
+  }, [isHunter, currentPlayer?.is_alive, game.status, hunterModalProcessed]);
+
+  // Handler when hunter shot is complete
+  const handleHunterShotComplete = useCallback((
+    targetName: string,
+    targetRole: string | undefined,
+    gameOver: boolean,
+    winner?: string
+  ) => {
+    setShowHunterModal(false);
+    setHunterModalProcessed(true);
+    
+    if (gameOver && winner) {
+      setGameWinner(winner as 'village' | 'loups');
+    }
+  }, []);
 
   // Fetch game winner when game ends
   useEffect(() => {
@@ -409,8 +444,8 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
           />
         )}
 
-        {/* Wolf Chat */}
-        {game.status === 'nuit' && isWolf && (
+        {/* Wolf Chat - Also visible to Petite Fille (read-only) */}
+        {game.status === 'nuit' && (isWolf || isLittleGirl) && (
           <WolfChatPanel
             messages={wolfChat.wolfMessages}
             newMessage={wolfChat.newMessage}
@@ -419,6 +454,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
             isAlive={currentPlayer?.is_alive !== false}
             onMessageChange={wolfChat.setNewMessage}
             onSendMessage={wolfChat.sendWolfMessage}
+            readOnly={isLittleGirl}
           />
         )}
 
@@ -434,6 +470,16 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
             seerError={nightActions.seerError}
             onSelectTarget={nightActions.setSeerTarget}
             onUsePower={nightActions.useSeerPower}
+          />
+        )}
+
+        {/* Witch Power */}
+        {game.status === 'nuit' && isWitch && currentPlayer?.is_alive !== false && (
+          <WitchNightPanel
+            alivePlayers={alivePlayers}
+            currentPlayerId={currentPlayerId}
+            gameCode={game.code}
+            gamePhase={game.current_phase ?? 1}
           />
         )}
 
@@ -531,6 +577,16 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
           />
         )}
       </div>
+
+      {/* Hunter Death Modal */}
+      {showHunterModal && currentPlayerId && (
+        <HunterDeathModal
+          alivePlayers={alivePlayers}
+          hunterId={currentPlayerId}
+          gameCode={game.code}
+          onShotComplete={handleHunterShotComplete}
+        />
+      )}
     </main>
   );
 }

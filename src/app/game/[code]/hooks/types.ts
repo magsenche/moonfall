@@ -74,4 +74,9 @@ export type Mission = {
   winner?: { id: string; pseudo: string } | null;
 };
 
+// Player with role info for UI components
+export type PlayerWithRole = PartialPlayer & {
+  role?: Role | null;
+};
+
 // Note: GameSettings is re-exported from @/types/game above
