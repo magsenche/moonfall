@@ -273,9 +273,10 @@ supabase/
 - [x] UI Shop (acheter avec points)
 - [x] Intégration pouvoirs dans vote (immunité, double_vote auto)
 - [x] Filtres missions MJ (En cours / Terminées / Toutes)
-- [x] **Mode Auto-Garou** : partie sans MJ dédié (tout le monde joue, phases auto)
+- [x] **Mode Auto-Garou** : partie sans MJ dédié (phases auto, MJ peut accélérer)
 - [x] **Minimum 3 joueurs** (réduit de 6 à 3)
 - [x] **Missions en mode Auto-Garou** : collectives, compétitives, enchères (auto-assignation)
+- [x] **Durées de phase personnalisables** : min 30s pour tests rapides
 
 ### 🔄 En Cours
 
