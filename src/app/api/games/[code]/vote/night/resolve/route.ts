@@ -258,7 +258,7 @@ export async function POST(
     .select("id")
     .eq("game_id", game.id)
     .eq("phase", game.current_phase ?? 1)
-    .like("result->>'action'", "saved_wolf_target")
+    .filter("result->>action", "eq", "saved_wolf_target")
     .maybeSingle();
 
   let witchSaved = false;
@@ -282,7 +282,7 @@ export async function POST(
     .select("target_id, result")
     .eq("game_id", game.id)
     .eq("phase", game.current_phase ?? 1)
-    .like("result->>'action'", "poisoned")
+    .filter("result->>action", "eq", "poisoned")
     .maybeSingle();
 
   // If witch saved the wolf target, skip killing them
