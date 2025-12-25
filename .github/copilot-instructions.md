@@ -121,7 +121,8 @@ src/
 │   │   │   ├── useWolfChat      # Chat loups
 │   │   │   ├── useMissions      # Fetch/soumission missions
 │   │   │   ├── useGameSettings  # Settings MJ
-│   │   │   └── useTimer         # Countdown phase
+│   │   │   ├── useTimer         # Countdown phase
+│   │   │   └── useAutoGarou     # Auto mode (no MJ) progression
 │   │   └── components/          # Composants UI game
 │   │       ├── LobbyView        # Écran d'attente
 │   │       ├── PlayersList      # Liste joueurs
@@ -272,6 +273,8 @@ supabase/
 - [x] UI Shop (acheter avec points)
 - [x] Intégration pouvoirs dans vote (immunité, double_vote auto)
 - [x] Filtres missions MJ (En cours / Terminées / Toutes)
+- [x] **Mode Auto-Garou** : partie sans MJ dédié (tout le monde joue, phases auto)
+- [x] **Minimum 3 joueurs** (réduit de 6 à 3)
 
 ### 🔄 En Cours
 
