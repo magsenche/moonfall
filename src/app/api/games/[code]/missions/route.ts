@@ -169,16 +169,19 @@ export async function POST(
     return NextResponse.json({ error: 'ID du créateur requis' }, { status: 400 });
   }
 
-  // Get game
+  // Get game with settings
   const { data: game, error: gameError } = await supabase
     .from('games')
-    .select('id, status')
+    .select('id, status, settings')
     .eq('code', code)
     .single();
 
   if (gameError || !game) {
     return NextResponse.json({ error: 'Partie non trouvée' }, { status: 404 });
   }
+
+  // Check if Auto-Garou mode is enabled
+  const isAutoMode = (game.settings as Record<string, unknown>)?.autoMode === true;
 
   // Verify creator is MJ
   const { data: creator } = await supabase
@@ -197,13 +200,20 @@ export async function POST(
   let playerIds: string[] = [];
   
   if (missionType === 'auction' || missionType === 'collective') {
-    // For auctions and collective missions, get all alive players (except MJ)
-    const { data: alivePlayers } = await supabase
+    // For auctions and collective missions, get all alive players
+    // In Auto-Garou mode, MJ plays too so include them
+    let query = supabase
       .from('players')
       .select('id')
       .eq('game_id', game.id)
-      .eq('is_alive', true)
-      .eq('is_mj', false);
+      .eq('is_alive', true);
+    
+    // Only exclude MJ if NOT in Auto-Garou mode
+    if (!isAutoMode) {
+      query = query.eq('is_mj', false);
+    }
+    
+    const { data: alivePlayers } = await query;
     
     playerIds = alivePlayers?.map(p => p.id) || [];
   } else {

@@ -70,6 +70,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
   const [isAddingBots, setIsAddingBots] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [gameWinner, setGameWinner] = useState<'village' | 'loups' | null>(null);
+  const [shopRefreshKey, setShopRefreshKey] = useState(0);
   
   // Notifications
   const { permission, isSupported, registerServiceWorker } = useNotifications();
@@ -177,6 +178,12 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
     isExpired,
     currentPlayerId,
   });
+
+  // Callback to refresh missions AND shop (when points may have changed)
+  const handleMissionUpdate = useCallback(() => {
+    missions.fetchMissions();
+    setShopRefreshKey(k => k + 1);
+  }, [missions]);
 
   // Copy game code
   const copyCode = useCallback(async () => {
@@ -370,13 +377,15 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
               gameCode={game.code}
               playerId={currentPlayerId}
               gameStatus={game.status || 'lobby'}
-              onPointsChange={missions.fetchMissions}
+              onPointsChange={handleMissionUpdate}
+              refreshKey={shopRefreshKey}
             />
             <Shop
               gameCode={game.code}
               playerId={currentPlayerId}
               gameStatus={game.status || 'lobby'}
-              onPurchase={missions.fetchMissions}
+              onPurchase={handleMissionUpdate}
+              refreshKey={shopRefreshKey}
             />
           </>
         )}
@@ -489,8 +498,8 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
             showMissionForm={missions.showMissionForm}
             gameCode={game.code}
             onShowMissionForm={missions.setShowMissionForm}
-            onMissionCreated={missions.fetchMissions}
-            onMissionUpdate={missions.fetchMissions}
+            onMissionCreated={handleMissionUpdate}
+            onMissionUpdate={handleMissionUpdate}
           />
         )}
 

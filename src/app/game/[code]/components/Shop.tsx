@@ -13,9 +13,10 @@ interface ShopProps {
   playerId: string;
   gameStatus: string;
   onPurchase?: () => void;
+  refreshKey?: number;
 }
 
-export function Shop({ gameCode, playerId, gameStatus, onPurchase }: ShopProps) {
+export function Shop({ gameCode, playerId, gameStatus, onPurchase, refreshKey }: ShopProps) {
   const [items, setItems] = useState<ShopItem[]>([]);
   const [playerData, setPlayerData] = useState<ShopPlayerData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +38,7 @@ export function Shop({ gameCode, playerId, gameStatus, onPurchase }: ShopProps) 
 
   useEffect(() => {
     fetchShop();
-  }, [fetchShop, gameStatus]);
+  }, [fetchShop, gameStatus, refreshKey]);
 
   const handlePurchase = async (itemId: string) => {
     setPurchasingItem(itemId);

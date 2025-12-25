@@ -48,7 +48,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .single();
 
     if (player) {
-      // Get player's purchases in this game
+      // Get player's purchases in this game with item details
       const { data: purchases } = await supabase
         .from('player_purchases')
         .select(`
@@ -58,7 +58,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           purchased_at,
           used_at,
           phase_used,
-          target_player_id
+          target_player_id,
+          shop_items (
+            name,
+            icon,
+            effect_type
+          )
         `)
         .eq('game_id', game.id)
         .eq('player_id', playerId);
@@ -80,13 +85,30 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         playerPurchaseCounts[p.shop_item_id] = (playerPurchaseCounts[p.shop_item_id] || 0) + 1;
       });
 
+      // Flatten purchases with item info
+      const enrichedPurchases = purchases?.map(p => {
+        const shopItem = p.shop_items as { name: string; icon: string; effect_type: string } | null;
+        return {
+          id: p.id,
+          shop_item_id: p.shop_item_id,
+          cost_paid: p.cost_paid,
+          purchased_at: p.purchased_at,
+          used_at: p.used_at,
+          phase_used: p.phase_used,
+          target_player_id: p.target_player_id,
+          item_name: shopItem?.name ?? 'Pouvoir',
+          item_icon: shopItem?.icon ?? '⚡',
+          effect_type: shopItem?.effect_type ?? null,
+        };
+      }) ?? [];
+
       playerData = {
         id: player.id,
         pseudo: player.pseudo,
         points: player.mission_points ?? 0,
-        purchases: purchases ?? [],
+        purchases: enrichedPurchases,
         purchaseCounts: playerPurchaseCounts,
-        unusedPowers: purchases?.filter(p => !p.used_at) ?? [],
+        unusedPowers: enrichedPurchases.filter(p => !p.used_at),
       };
 
       // Enrich items with availability for this player

@@ -9,12 +9,10 @@ import {
   MISSION_TYPE_LABELS, 
   MISSION_CATEGORY_LABELS,
   VALIDATION_TYPE_LABELS,
-  REWARD_TYPE_LABELS,
   CATEGORY_ICONS,
   type MissionType,
   type MissionCategory,
   type MissionValidationType,
-  type RewardType,
   type AuctionData,
 } from '@/lib/missions';
 
@@ -63,11 +61,8 @@ export function MissionForm({
   const [category, setCategory] = useState<MissionCategory>('challenge');
   const [validationType, setValidationType] = useState<MissionValidationType>('mj');
   const [timeLimitSeconds, setTimeLimitSeconds] = useState<number | undefined>(undefined);
-  const [rewardType, setRewardType] = useState<RewardType>('none');
-  const [rewardDescription, setRewardDescription] = useState('');
   const [penaltyDescription, setPenaltyDescription] = useState('');
   const [externalUrl, setExternalUrl] = useState('');
-  const [sabotageAllowed, setSabotageAllowed] = useState(false);
   const [assignedToMultiple, setAssignedToMultiple] = useState<string[]>([]);
   
   // Auction state
@@ -94,6 +89,16 @@ export function MissionForm({
       });
   }, []);
 
+  // In Auto-Garou mode, ensure default type is allowed
+  useEffect(() => {
+    if (isAutoMode && !AUTO_MODE_ALLOWED_TYPES.includes(missionType)) {
+      setMissionType('collective');
+    }
+    if (isAutoMode && !AUTO_MODE_ALLOWED_VALIDATIONS.includes(validationType)) {
+      setValidationType('mj');
+    }
+  }, [isAutoMode, missionType, validationType]);
+
   const handleSelectTemplate = (template: MissionTemplate) => {
     setSelectedTemplate(template);
     setTitle(template.title);
@@ -102,11 +107,8 @@ export function MissionForm({
     setCategory(template.category as MissionCategory);
     setValidationType(template.validation_type as MissionValidationType);
     setTimeLimitSeconds(template.time_limit_seconds ?? undefined);
-    setRewardType((template.reward_type ?? 'none') as RewardType);
-    setRewardDescription(template.reward_description ?? '');
     setPenaltyDescription(template.penalty_description ?? '');
     setExternalUrl(template.external_url ?? '');
-    setSabotageAllowed(template.sabotage_allowed ?? false);
     // Set difficulty from template or infer from reward type
     const templateDifficulty = (template as unknown as { difficulty?: number }).difficulty;
     setDifficulty(templateDifficulty ?? 1);
@@ -159,8 +161,7 @@ export function MissionForm({
         category,
         validationType,
         timeLimitSeconds,
-        rewardType,
-        rewardDescription: rewardDescription || undefined,
+        rewardType: 'none',
         penaltyDescription: penaltyDescription || undefined,
         externalUrl: externalUrl || undefined,
         auctionData,
@@ -253,11 +254,6 @@ export function MissionForm({
                 >
                   <div className="font-medium text-white text-sm">{template.title}</div>
                   <div className="text-xs text-slate-400 mt-1 line-clamp-2">{template.description}</div>
-                  {template.reward_type && template.reward_type !== 'none' && (
-                    <div className="text-xs text-amber-400 mt-1">
-                      {REWARD_TYPE_LABELS[template.reward_type as RewardType]}
-                    </div>
-                  )}
                 </button>
               ))}
             </div>
@@ -331,11 +327,19 @@ export function MissionForm({
               onChange={(e) => setMissionType(e.target.value as MissionType)}
               className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-sm"
             >
-              {Object.entries(MISSION_TYPE_LABELS)
-                .filter(([value]) => !isAutoMode || AUTO_MODE_ALLOWED_TYPES.includes(value as MissionType))
-                .map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
+              {Object.entries(MISSION_TYPE_LABELS).map(([value, label]) => {
+                const isDisabled = isAutoMode && !AUTO_MODE_ALLOWED_TYPES.includes(value as MissionType);
+                return (
+                  <option 
+                    key={value} 
+                    value={value} 
+                    disabled={isDisabled}
+                    className={isDisabled ? 'text-slate-500' : ''}
+                  >
+                    {label}{isDisabled ? ' (indisponible)' : ''}
+                  </option>
+                );
+              })}
             </select>
           </div>
           <div>
@@ -352,34 +356,28 @@ export function MissionForm({
           </div>
         </div>
 
-        {/* Validation & Reward */}
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-xs text-slate-400 mb-1 block">Validation</label>
-            <select
-              value={validationType}
-              onChange={(e) => setValidationType(e.target.value as MissionValidationType)}
-              className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-            >
-              {Object.entries(VALIDATION_TYPE_LABELS)
-                .filter(([value]) => !isAutoMode || AUTO_MODE_ALLOWED_VALIDATIONS.includes(value as MissionValidationType))
-                .map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-slate-400 mb-1 block">Récompense</label>
-            <select
-              value={rewardType}
-              onChange={(e) => setRewardType(e.target.value as RewardType)}
-              className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-            >
-              {Object.entries(REWARD_TYPE_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </div>
+        {/* Validation */}
+        <div>
+          <label className="text-xs text-slate-400 mb-1 block">Validation</label>
+          <select
+            value={validationType}
+            onChange={(e) => setValidationType(e.target.value as MissionValidationType)}
+            className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+          >
+            {Object.entries(VALIDATION_TYPE_LABELS).map(([value, label]) => {
+              const isDisabled = isAutoMode && !AUTO_MODE_ALLOWED_VALIDATIONS.includes(value as MissionValidationType);
+              return (
+                <option 
+                  key={value} 
+                  value={value}
+                  disabled={isDisabled}
+                  className={isDisabled ? 'text-slate-500' : ''}
+                >
+                  {label}{isDisabled ? ' (indisponible)' : ''}
+                </option>
+              );
+            })}
+          </select>
         </div>
 
         {/* Time limit */}
@@ -471,19 +469,6 @@ export function MissionForm({
           </div>
         )}
 
-        {/* Reward description */}
-        {rewardType !== 'none' && (
-          <div>
-            <label className="text-xs text-slate-400 mb-1 block">Description récompense</label>
-            <Input
-              value={rewardDescription}
-              onChange={(e) => setRewardDescription(e.target.value)}
-              placeholder="Détail de la récompense..."
-              className="bg-slate-700 border-slate-600"
-            />
-          </div>
-        )}
-
         {/* Player assignment (not for auction, not in auto mode) */}
         {missionType !== 'auction' && !isAutoMode && (
           <div>
@@ -519,17 +504,6 @@ export function MissionForm({
             ℹ️ En mode Auto-Garou, la mission sera assignée à tous les joueurs vivants.
           </div>
         )}
-
-        {/* Sabotage toggle */}
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={sabotageAllowed}
-            onChange={(e) => setSabotageAllowed(e.target.checked)}
-            className="rounded border-slate-600"
-          />
-          <span className="text-sm text-slate-300">🎭 Sabotage autorisé</span>
-        </label>
 
         {/* Submit */}
         <div className="flex gap-2 pt-2">

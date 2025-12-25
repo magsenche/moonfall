@@ -8,12 +8,10 @@ import { submitMissionBid, submitMissionScore, updateMission, missionBidAction, 
 import {
   CATEGORY_ICONS,
   MISSION_TYPE_LABELS,
-  REWARD_TYPE_LABELS,
   type AuctionData,
   type MissionType,
   type MissionCategory,
   type MissionValidationType,
-  type RewardType,
 } from '@/lib/missions';
 
 interface AssignedPlayer {
@@ -34,8 +32,6 @@ interface MissionCardProps {
     mission_type?: MissionType | null;
     category?: MissionCategory | null;
     validation_type?: MissionValidationType | null;
-    reward_type?: RewardType | null;
-    reward_description?: string | null;
     penalty_description?: string | null;
     external_url?: string | null;
     time_limit_seconds?: number | null;
@@ -227,14 +223,6 @@ export function MissionCard({
       {isExpanded && (
         <div className="mt-3 pt-3 border-t border-slate-700 space-y-3">
           <p className="text-sm text-slate-300">{mission.description}</p>
-          
-          {/* Reward */}
-          {mission.reward_type && mission.reward_type !== 'none' && (
-            <div className="text-sm text-amber-400">
-              🏆 {REWARD_TYPE_LABELS[mission.reward_type]}
-              {mission.reward_description && ` - ${mission.reward_description}`}
-            </div>
-          )}
 
           {/* External URL */}
           {mission.external_url && isActive && (

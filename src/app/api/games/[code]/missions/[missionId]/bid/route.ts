@@ -263,6 +263,16 @@ export async function PATCH(
       .eq('mission_id', missionId)
       .eq('player_id', winnerId);
 
+    // Award points based on difficulty (1-5 stars = 2-10 points)
+    const difficulty = mission.difficulty ?? 1;
+    const pointsAwarded = difficulty * 2;
+    
+    await supabase.rpc('award_mission_points', {
+      p_player_id: winnerId,
+      p_points: pointsAwarded,
+      p_reason: 'auction_win',
+    });
+
     await supabase.from('game_events').insert({
       game_id: game.id,
       actor_id: winnerId,
@@ -272,12 +282,15 @@ export async function PATCH(
         title: mission.title,
         validation_type: 'auction',
         winning_bid: auctionData?.current_highest_bid,
+        points_awarded: pointsAwarded,
+        difficulty,
       },
     });
 
     return NextResponse.json({ 
       success: true,
-      message: 'Mission réussie ! Le gagnant reçoit sa récompense.',
+      pointsAwarded,
+      message: `Mission réussie ! +${pointsAwarded} points`,
     });
   }
 

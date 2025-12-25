@@ -13,9 +13,10 @@ interface PlayerWalletProps {
   playerId: string;
   gameStatus: string;
   onPointsChange?: () => void;
+  refreshKey?: number;
 }
 
-export function PlayerWallet({ gameCode, playerId, gameStatus, onPointsChange }: PlayerWalletProps) {
+export function PlayerWallet({ gameCode, playerId, gameStatus, onPointsChange, refreshKey }: PlayerWalletProps) {
   const [playerData, setPlayerData] = useState<ShopPlayerData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,9 +36,9 @@ export function PlayerWallet({ gameCode, playerId, gameStatus, onPointsChange }:
 
   useEffect(() => {
     fetchWallet();
-  }, [fetchWallet, gameStatus]);
+  }, [fetchWallet, gameStatus, refreshKey]);
 
-  const handleUsePower = async (purchase: PlayerPurchase & { item_name?: string; effect_type?: string }) => {
+  const handleUsePower = async (purchase: PlayerPurchase) => {
     if (!purchase.id) return;
     
     setUsingPower(purchase.id);
@@ -87,31 +88,25 @@ export function PlayerWallet({ gameCode, playerId, gameStatus, onPointsChange }:
         <CardContent className="pt-2">
           <p className="text-xs text-slate-400 mb-2">Pouvoirs disponibles :</p>
           <div className="space-y-2">
-            {unusedPowers.map((purchase) => {
-              // Get power info from active_powers if available
-              const powerInfo = (playerData as { active_powers?: Array<{ purchase_id: string; item_name: string; effect_type: string; icon: string }> })
-                .active_powers?.find(p => p.purchase_id === purchase.id);
-              
-              return (
-                <div 
-                  key={purchase.id}
-                  className="flex items-center justify-between bg-slate-800/50 rounded p-2"
+            {unusedPowers.map((purchase) => (
+              <div 
+                key={purchase.id}
+                className="flex items-center justify-between bg-slate-800/50 rounded p-2"
+              >
+                <span className="text-sm text-white">
+                  {purchase.item_icon || '⚡'} {purchase.item_name || 'Pouvoir'}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleUsePower(purchase)}
+                  disabled={usingPower === purchase.id}
+                  className="text-purple-400 hover:text-purple-300 text-xs"
                 >
-                  <span className="text-sm text-white">
-                    {powerInfo?.icon || '⚡'} {powerInfo?.item_name || 'Pouvoir'}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleUsePower({ ...purchase, ...powerInfo })}
-                    disabled={usingPower === purchase.id}
-                    className="text-purple-400 hover:text-purple-300 text-xs"
-                  >
-                    {usingPower === purchase.id ? '...' : 'Utiliser'}
-                  </Button>
-                </div>
-              );
-            })}
+                  {usingPower === purchase.id ? '...' : 'Utiliser'}
+                </Button>
+              </div>
+            ))}
           </div>
           
           {powerResult && (

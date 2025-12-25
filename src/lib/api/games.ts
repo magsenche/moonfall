@@ -339,6 +339,9 @@ export interface PlayerPurchase {
   used_at: string | null;
   phase_used: number | null;
   target_player_id: string | null;
+  item_name?: string;
+  item_icon?: string;
+  effect_type?: string | null;
 }
 
 export interface ShopPlayerData {
