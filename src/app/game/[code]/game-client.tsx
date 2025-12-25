@@ -363,8 +363,8 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
           <PlayerRoleCard role={currentRole} roleConfig={roleConfig} />
         )}
 
-        {/* Player Wallet & Shop (only for non-MJ alive players) */}
-        {currentPlayerId && !isMJ && currentPlayer?.is_alive !== false && (
+        {/* Player Wallet & Shop (for all alive players, including MJ in auto mode) */}
+        {currentPlayerId && (!isMJ || isAutoMode) && currentPlayer?.is_alive !== false && (
           <>
             <PlayerWallet
               gameCode={game.code}
@@ -446,7 +446,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
         </Card>
 
         {/* Voting Panel */}
-        {game.status === 'conseil' && currentPlayer && currentPlayer.is_alive !== false && !isMJ && (
+        {game.status === 'conseil' && currentPlayer && currentPlayer.is_alive !== false && (!isMJ || isAutoMode) && (
           <VotingPanel
             alivePlayers={alivePlayers}
             currentPlayerId={currentPlayerId}

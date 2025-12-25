@@ -171,6 +171,7 @@ export function MissionsSection({
                 mission={mission}
                 currentPlayerId={currentPlayerId || ''}
                 isMJ={isMJ}
+                isAutoMode={isAutoMode}
                 gameCode={gameCode}
                 onUpdate={onMissionUpdate}
               />

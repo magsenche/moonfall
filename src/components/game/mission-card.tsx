@@ -47,6 +47,7 @@ interface MissionCardProps {
   };
   currentPlayerId: string;
   isMJ: boolean;
+  isAutoMode?: boolean;
   gameCode: string;
   onUpdate: () => void;
 }
@@ -55,6 +56,7 @@ export function MissionCard({
   mission,
   currentPlayerId,
   isMJ,
+  isAutoMode = false,
   gameCode,
   onUpdate,
 }: MissionCardProps) {
@@ -272,8 +274,8 @@ export function MissionCard({
                 )}
               </div>
 
-              {/* Player bidding interface (not MJ) */}
-              {!isMJ && isAssigned && !biddingClosed && (
+              {/* Player bidding interface (MJ can bid in auto mode) */}
+              {(!isMJ || isAutoMode) && isAssigned && !biddingClosed && (
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
@@ -296,7 +298,7 @@ export function MissionCard({
               )}
 
               {/* Bidding closed - awaiting execution */}
-              {biddingClosed && !isMJ && amHighestBidder && (
+              {biddingClosed && (!isMJ || isAutoMode) && amHighestBidder && (
                 <div className="text-sm text-amber-300">
                   🎯 C'est à vous ! Réalisez votre défi de {auctionData?.current_highest_bid}.
                 </div>
