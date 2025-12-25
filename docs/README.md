@@ -12,6 +12,7 @@
 | [PUSH_NOTIFICATIONS.md](./PUSH_NOTIFICATIONS.md) | Web Push, VAPID, Service Worker |
 | [ROLES.md](./ROLES.md) | Game design des rôles, pouvoirs, équipes |
 | [MISSIONS_DESIGN.md](./MISSIONS_DESIGN.md) | Système de missions IRL, enchères, récompenses |
+| [INFINITE_MODE.md](./INFINITE_MODE.md) | 🆕 Mode Loup-Garou Infini (respawn + points) |
 
 ## Liens rapides
 

@@ -278,10 +278,17 @@ supabase/
 - [x] **Missions en mode Auto-Garou** : collectives, compétitives, enchères (auto-assignation)
 - [x] **Durées de phase personnalisables** : min 30s pour tests rapides
 - [x] **Auto-refresh Wallet/Shop** : mise à jour automatique après gain de points
+- [x] **Affichage résultats vote** : qui a voté qui (avec anonymat)
+- [x] **Vote Anonyme fonctionnel** : votes masqués comme "???"
 
 ### 🔄 En Cours
 
-(rien en cours)
+**Nouveaux rôles IRL :**
+- [ ] Petite Fille (lecture seule chat loups)
+- [ ] Chasseur (emporte quelqu'un à sa mort)
+- [ ] Ancien (survit 1x attaque loups)
+- [ ] Sorcière (potions vie/mort)
+- [ ] Cupidon (amoureux liés)
 
 ### ⏳ À Faire - MVP
 
@@ -292,13 +299,15 @@ supabase/
 **Priorité haute (post-MVP) :**
 - [ ] Valider notifications push en conditions réelles (test multi-appareils iOS)
 - [ ] Tester partie complète avec ~10 joueurs réels
-- [ ] Tester missions enchères en conditions réelles
 - [ ] Pouvoirs ciblés UI (wolf_vision, silence avec sélection cible)
+- [ ] **Mode Loup-Garou Infini** (voir docs/INFINITE_MODE.md)
+  - [ ] Respawn des morts avec nouveau rôle
+  - [ ] Système de points individuels
+  - [ ] Leaderboard temps réel
+  - [ ] Conditions de victoire (timer/score/tours)
 
 **Backlog général :**
-- [ ] Rôles avancés (Sorcière, Chasseur, Cupidon...)
 - [ ] Système Fantôme (morts peuvent aider)
-- [ ] Scoring et classement
 - [ ] PWA offline support
 - [ ] Custom assets (images rôles, avatars)
 
