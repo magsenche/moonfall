@@ -6,16 +6,27 @@
  * - Vote submission
  * - Vote resolution (MJ)
  * - State reset on phase change
+ * - Vote results display (who voted for whom)
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { submitVote as apiSubmitVote, resolveVote as apiResolveVote, ApiError } from '@/lib/api';
+import { submitVote as apiSubmitVote, resolveVote as apiResolveVote, ApiError, VoteDetail, VoteResolveResponse } from '@/lib/api';
 
 interface UseVotingOptions {
   gameCode: string;
   currentPlayerId: string | null;
   gameStatus: string;
+}
+
+export interface VoteResults {
+  eliminated: { id: string; pseudo: string; role: string; team: string } | null;
+  voteDetails: VoteDetail[];
+  voteCounts: Record<string, number>;
+  immunityUsed?: boolean;
+  tie?: boolean;
+  gameOver?: boolean;
+  winner?: string;
 }
 
 export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOptions) {
@@ -30,6 +41,9 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
   const [votesCount, setVotesCount] = useState(0);
   const [totalVoters, setTotalVoters] = useState(0);
 
+  // Vote results (after resolution)
+  const [voteResults, setVoteResults] = useState<VoteResults | null>(null);
+
   // Phase change state
   const [isChangingPhase, setIsChangingPhase] = useState(false);
 
@@ -41,6 +55,10 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
       setSelectedTarget(null);
       setConfirmedVoteTarget(null);
       setVotesCount(0);
+      // Clear vote results when leaving conseil phase
+      if (previousStatusRef.current === 'conseil' || gameStatus === 'conseil') {
+        setVoteResults(null);
+      }
       previousStatusRef.current = gameStatus;
     }
   }, [gameStatus]);
@@ -70,7 +88,17 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
     setIsChangingPhase(true);
     
     try {
-      await apiResolveVote(gameCode);
+      const result = await apiResolveVote(gameCode);
+      // Store vote results for display
+      setVoteResults({
+        eliminated: result.eliminated,
+        voteDetails: result.voteDetails,
+        voteCounts: result.voteCounts,
+        immunityUsed: result.immunityUsed,
+        tie: result.tie,
+        gameOver: result.gameOver,
+        winner: result.winner,
+      });
       router.refresh();
     } catch (err) {
       console.error('Vote resolution error:', err);
@@ -78,6 +106,11 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
       setIsChangingPhase(false);
     }
   }, [gameCode, router]);
+
+  // Clear vote results (called when transitioning away)
+  const clearVoteResults = useCallback(() => {
+    setVoteResults(null);
+  }, []);
 
   return {
     // State
@@ -89,10 +122,12 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
     votesCount,
     totalVoters,
     isChangingPhase,
+    voteResults,
     
     // Actions
     setSelectedTarget,
     submitVote,
     resolveVote,
+    clearVoteResults,
   };
 }

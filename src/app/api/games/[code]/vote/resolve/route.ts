@@ -58,9 +58,16 @@ export async function POST(
 
   // Build map of players with double vote
   const doubleVoters = new Set<string>();
+  // Build map of players with anonymous vote
+  const anonymousVoters = new Set<string>();
+  
   doubleVotePowers?.forEach(p => {
-    if ((p.shop_items as unknown as { effect_type: string })?.effect_type === 'double_vote') {
+    const effectType = (p.shop_items as unknown as { effect_type: string })?.effect_type;
+    if (effectType === 'double_vote') {
       doubleVoters.add(p.player_id);
+    }
+    if (effectType === 'anonymous_vote') {
+      anonymousVoters.add(p.player_id);
     }
   });
 
@@ -73,9 +80,28 @@ export async function POST(
     }
   }
 
-  // Mark double_vote powers as used
+  // Get player pseudos for vote details
+  const { data: allPlayers } = await supabase
+    .from('players')
+    .select('id, pseudo')
+    .eq('game_id', game.id);
+  
+  const playerMap = new Map(allPlayers?.map(p => [p.id, p.pseudo]) ?? []);
+  
+  // Build vote details for display
+  const voteDetails = (votes ?? []).map(vote => ({
+    voterId: vote.voter_id,
+    voterPseudo: playerMap.get(vote.voter_id) ?? 'Inconnu',
+    targetId: vote.target_id!,
+    targetPseudo: playerMap.get(vote.target_id!) ?? 'Inconnu',
+    isAnonymous: anonymousVoters.has(vote.voter_id),
+    isDouble: doubleVoters.has(vote.voter_id),
+  }));
+
+  // Mark double_vote and anonymous_vote powers as used
   for (const power of doubleVotePowers ?? []) {
-    if ((power.shop_items as unknown as { effect_type: string })?.effect_type === 'double_vote') {
+    const effectType = (power.shop_items as unknown as { effect_type: string })?.effect_type;
+    if (effectType === 'double_vote' || effectType === 'anonymous_vote') {
       // Check if this player actually voted
       const playerVoted = votes?.some(v => v.voter_id === power.player_id);
       if (playerVoted) {
@@ -84,7 +110,7 @@ export async function POST(
           .update({
             used_at: new Date().toISOString(),
             phase_used: currentPhase,
-            result: { effect: 'vote counted as 2' },
+            result: { effect: effectType === 'double_vote' ? 'vote counted as 2' : 'vote hidden' },
           })
           .eq('id', power.id);
       }
@@ -251,6 +277,7 @@ export async function POST(
       gameOver: true,
       winner,
       voteCounts,
+      voteDetails,
     });
   }
 
@@ -281,6 +308,7 @@ export async function POST(
     immunityUsed,
     gameOver: false,
     voteCounts,
+    voteDetails,
     nextPhase: 'nuit',
   });
 }

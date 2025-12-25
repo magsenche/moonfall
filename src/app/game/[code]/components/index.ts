@@ -35,3 +35,4 @@ export * from './MissionsSection';
 export * from './LobbyView';
 export * from './PlayerWallet';
 export * from './Shop';
+export * from './VoteResults';

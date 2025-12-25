@@ -23,9 +23,24 @@ export interface VoteResponse {
   totalPlayers: number;
 }
 
+export interface VoteDetail {
+  voterId: string;
+  voterPseudo: string;
+  targetId: string;
+  targetPseudo: string;
+  isAnonymous: boolean;
+  isDouble: boolean;
+}
+
 export interface VoteResolveResponse {
-  eliminated: string | null;
+  success: boolean;
+  eliminated: { id: string; pseudo: string; role: string; team: string } | null;
   voteCounts: Record<string, number>;
+  voteDetails: VoteDetail[];
+  immunityUsed?: boolean;
+  tie?: boolean;
+  gameOver?: boolean;
+  winner?: string;
 }
 
 export interface NightVoteResponse {

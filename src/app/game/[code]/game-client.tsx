@@ -49,6 +49,7 @@ import {
   WolfChatPanel,
   SeerPowerPanel,
   VotingPanel,
+  VoteResults,
   MJControls,
   MJOverview,
   PlayersList,
@@ -468,6 +469,14 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
             totalVoters={voting.totalVoters}
             onSelectTarget={voting.setSelectedTarget}
             onSubmitVote={voting.submitVote}
+          />
+        )}
+
+        {/* Vote Results - Show after resolution */}
+        {voting.voteResults && (
+          <VoteResults
+            results={voting.voteResults}
+            onDismiss={voting.clearVoteResults}
           />
         )}
 
