@@ -24,7 +24,8 @@ Les missions sont le cœur de l'expérience IRL. Elles doivent :
 | Timer avec deadline | ✅ Implémenté |
 | Soumission de score | ✅ Implémenté |
 | Auto-validation (first_wins, best_score) | ✅ Implémenté |
-| Récompenses | ✅ DB prête, attribution manuelle MJ |
+| **Système de points** | ✅ **Implémenté** (difficulté 1-5⭐ = 2-10 pts) |
+| **Shop de pouvoirs** | ✅ **Implémenté** (6 pouvoirs achetables) |
 | Missions collectives (succès/échec village) | ⚠️ Partiel (validation MJ uniquement) |
 | Variables dans énoncés ({player_name}) | ❌ À faire |
 
@@ -77,18 +78,58 @@ Les joueurs enchérissent sur un défi. Le plus offrant doit le réaliser.
 
 ---
 
-## 🏆 Récompenses
+## 🏆 Système de Points & Shop
 
-| Récompense | Enum | Effet |
-|------------|------|-------|
-| **Indice Loup** | `wolf_hint` | MJ révèle "X n'est PAS un loup" ou "Il y a un loup parmi A, B, C" |
-| **Immunité** | `immunity` | Ne peut pas être éliminé au prochain conseil |
-| **Vote Double** | `double_vote` | Compte pour 2 voix au prochain conseil |
-| **Vision Extra** | `extra_vision` | Voyante : voir 2 rôles au lieu d'1 cette nuit |
-| **Silence** | `silence` | Un joueur au choix ne peut pas parler pendant 2min |
-| **Aucune** | `none` | Missions pour le fun |
+### Économie de points
 
-> Note: Les récompenses sont stockées en DB (`reward_type`, `reward_data`) mais leur **attribution automatique** n'est pas encore implémentée. Le MJ doit les appliquer manuellement.
+Les missions récompensent les joueurs avec des **points** basés sur leur difficulté :
+
+| Difficulté | Étoiles | Points gagnés |
+|------------|---------|---------------|
+| 1 | ⭐ | 2 pts |
+| 2 | ⭐⭐ | 4 pts |
+| 3 | ⭐⭐⭐ | 6 pts |
+| 4 | ⭐⭐⭐⭐ | 8 pts |
+| 5 | ⭐⭐⭐⭐⭐ | 10 pts |
+
+Le MJ choisit la difficulté lors de la création de la mission.
+
+### Shop de pouvoirs
+
+Les joueurs peuvent dépenser leurs points dans le **Shop** pour acheter des pouvoirs :
+
+| Pouvoir | Coût | Effet | Limite |
+|---------|------|-------|--------|
+| 🛡️ **Immunité** | 20 pts | Ne peut pas être éliminé au prochain conseil | 1x/joueur |
+| ✌️ **Vote Double** | 10 pts | Ton vote compte double au prochain conseil | 2x/joueur |
+| 👁️ **Vision Loup** | 15 pts | Découvre si un joueur est loup ou villageois | 3x/joueur |
+| 🎭 **Vote Anonyme** | 8 pts | Ton vote reste secret au prochain conseil | 2x/joueur |
+| ❓ **Question MJ** | 5 pts | Pose une question oui/non au MJ | Illimité |
+| 🤫 **Silence** | 12 pts | Un joueur ne peut plus parler pendant 2 min | 1x/joueur |
+
+**Pouvoirs actifs automatiquement :**
+- `immunity` et `double_vote` sont vérifiés lors de la résolution du vote conseil
+- `wolf_vision` révèle immédiatement si la cible est loup ou non
+
+### Tables DB
+
+```sql
+-- Items disponibles dans le shop (config globale)
+shop_items (id, name, description, cost, effect_type, icon, max_per_player, ...)
+
+-- Achats des joueurs
+player_purchases (game_id, player_id, shop_item_id, cost_paid, used_at, result, ...)
+
+-- Points sur les joueurs
+players.mission_points INTEGER DEFAULT 0
+
+-- Difficulté sur les missions
+missions.difficulty INTEGER (1-5)
+```
+
+### Anciennes récompenses (deprecated)
+
+L'ancien système `reward_type` (wolf_hint, immunity, etc.) est conservé en DB pour compatibilité mais **remplacé par le système de points + shop**.
 
 ---
 
@@ -255,9 +296,9 @@ Voir : `supabase/migrations/002_mission_templates.sql`
 ## À faire
 
 - [ ] Notifications missions (quand créée/mise à jour)
-- [ ] Récompenses auto (immunité, double vote appliqués automatiquement)
 - [ ] Variables dans énoncés ({player_name})
-- [ ] Statistiques joueur (missions gagnées)
+- [ ] Statistiques joueur (missions gagnées, points totaux)
+- [ ] Pouvoirs ciblés dans l'UI (wolf_vision, silence avec sélection de cible)
 
 ---
 

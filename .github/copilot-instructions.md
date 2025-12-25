@@ -147,6 +147,7 @@ src/
 │           ├── wolf-chat/       # GET/POST chat loups
 │           ├── missions/        # GET/POST/PATCH missions + [missionId]/bid, submit
 │           ├── settings/        # GET/PATCH settings MJ
+│           ├── shop/            # GET/POST shop items + [purchaseId]/use
 │           └── bots/            # POST/DELETE ajouter/retirer bots (dev)
 ├── components/
 │   ├── ui/                      # Button, Input, Card
@@ -168,17 +169,19 @@ supabase/
     └── push/                    # Edge Function pour Web Push
 ```
 
-### Base de Données (12 tables)
+### Base de Données (14 tables)
 
 | Table | Description |
 |-------|-------------|
 | `roles` | Rôles disponibles (name, team, description, icon, image_url) |
 | `powers` | Pouvoirs par rôle (phase, priority, uses_per_game) |
 | `games` | Parties (code, status, settings JSON, phase_ends_at, winner) |
-| `players` | Joueurs (pseudo, role_id, is_alive, is_mj, user_id → auth.users) |
-| `missions` | Missions créées par MJ |
+| `players` | Joueurs (pseudo, role_id, is_alive, is_mj, mission_points) |
+| `missions` | Missions créées par MJ (+ difficulty 1-5) |
 | `mission_assignments` | Assignments multi-joueurs (mission_id, player_id, status) |
 | `mission_templates` | Templates réutilisables (globaux, 14 prédéfinis) |
+| `shop_items` | Items achetables (name, cost, effect_type, limits) |
+| `player_purchases` | Achats joueurs (shop_item_id, used_at, result) |
 | `votes` | Votes jour/nuit (phase, voter_id, target_id, vote_type) |
 | `wolf_chat` | Chat privé des loups-garous |
 | `power_uses` | Historique des pouvoirs utilisés |
@@ -191,6 +194,7 @@ supabase/
 - `vote_type`: jour, nuit_loup, pouvoir
 - `power_phase`: nuit, jour, mort
 - `mission_status`: pending, in_progress, success, failed, cancelled
+- `shop_effect_type`: immunity, double_vote, wolf_vision, anonymous_vote, mj_question, silence
 
 **Storage Buckets :**
 - `role-assets` - Illustrations rôles (5MB, public)
@@ -262,6 +266,12 @@ supabase/
 - [x] UI MJ : créer mission depuis templates ou libre
 - [x] Missions enchères (auction) : joueurs enchérissent, gagnant réalise le défi
 - [x] API submission/bid pour missions compétitives
+- [x] Système de points missions (difficulté 1-5⭐ = 2-10 pts)
+- [x] Shop de pouvoirs (6 pouvoirs : immunité, vote double, vision loup...)
+- [x] UI Wallet joueur (points + pouvoirs actifs)
+- [x] UI Shop (acheter avec points)
+- [x] Intégration pouvoirs dans vote (immunité, double_vote auto)
+- [x] Filtres missions MJ (En cours / Terminées / Toutes)
 
 ### 🔄 En Cours
 
@@ -277,10 +287,10 @@ supabase/
 - [ ] Valider notifications push en conditions réelles (test multi-appareils iOS)
 - [ ] Tester partie complète avec ~10 joueurs réels
 - [ ] Tester missions enchères en conditions réelles
+- [ ] Pouvoirs ciblés UI (wolf_vision, silence avec sélection cible)
 
 **Backlog général :**
 - [ ] Rôles avancés (Sorcière, Chasseur, Cupidon...)
-- [ ] Système récompenses missions (immunité, double vote, etc.)
 - [ ] Système Fantôme (morts peuvent aider)
 - [ ] Scoring et classement
 - [ ] PWA offline support
