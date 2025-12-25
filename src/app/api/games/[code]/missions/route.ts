@@ -134,6 +134,8 @@ export async function POST(
     deadline,
     // Multi-player assignment (new naming from lib/api)
     assignedPlayerIds,
+    // Difficulty (1-5 stars = 2-10 points reward)
+    difficulty = 1,
   } = body as {
     title: string;
     description: string;
@@ -156,6 +158,7 @@ export async function POST(
     templateId?: string;
     creatorId: string;
     deadline?: string;
+    difficulty?: number;
   };
 
   if (!title || !description) {
@@ -255,6 +258,7 @@ export async function POST(
       deadline: calculatedDeadline,
       status: isTemplate ? 'pending' : (playerIds.length > 0 ? 'in_progress' : 'pending'),
       started_at: !isTemplate && playerIds.length > 0 ? new Date().toISOString() : null,
+      difficulty: Math.max(1, Math.min(5, difficulty)), // Clamp 1-5
     })
     .select()
     .single();

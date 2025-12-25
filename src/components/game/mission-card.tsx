@@ -43,6 +43,7 @@ interface MissionCardProps {
     auction_data?: AuctionData | null;
     winner?: { id: string; pseudo: string } | null;
     assigned_players: AssignedPlayer[];
+    difficulty?: number | null;
   };
   currentPlayerId: string;
   isMJ: boolean;
@@ -187,6 +188,12 @@ export function MissionCard({
             {mission.mission_type && (
               <span className="text-xs bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">
                 {MISSION_TYPE_LABELS[mission.mission_type]}
+              </span>
+            )}
+            {/* Difficulty stars */}
+            {mission.difficulty && mission.difficulty > 0 && (
+              <span className="text-xs text-amber-400" title={`${mission.difficulty * 2} points`}>
+                {'⭐'.repeat(mission.difficulty)}
               </span>
             )}
           </div>

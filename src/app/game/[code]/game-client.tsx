@@ -52,6 +52,8 @@ import {
   MJOverview,
   PlayersList,
   MissionsSection,
+  PlayerWallet,
+  Shop,
 } from './components';
 
 interface GameClientProps {
@@ -346,6 +348,24 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
         {/* Player's Role Card */}
         {currentRole && roleConfig && (
           <PlayerRoleCard role={currentRole} roleConfig={roleConfig} />
+        )}
+
+        {/* Player Wallet & Shop (only for non-MJ alive players) */}
+        {currentPlayerId && !isMJ && currentPlayer?.is_alive !== false && (
+          <>
+            <PlayerWallet
+              gameCode={game.code}
+              playerId={currentPlayerId}
+              gameStatus={game.status || 'lobby'}
+              onPointsChange={missions.fetchMissions}
+            />
+            <Shop
+              gameCode={game.code}
+              playerId={currentPlayerId}
+              gameStatus={game.status || 'lobby'}
+              onPurchase={missions.fetchMissions}
+            />
+          </>
         )}
 
         {/* Wolf teammates (only shown to wolves) */}

@@ -172,6 +172,29 @@ export async function PATCH(
           .update({ status: 'pending' })
           .eq('mission_id', missionId)
           .neq('player_id', resolvedWinnerId);
+        
+        // Award points based on difficulty (1-5 stars = 2-10 points)
+        const difficulty = mission.difficulty ?? 1;
+        const pointsAwarded = difficulty * 2;
+        
+        await supabase.rpc('award_mission_points', {
+          p_player_id: resolvedWinnerId,
+          p_points: pointsAwarded,
+          p_reason: 'mission_complete',
+        });
+        
+        // Log points awarded
+        await supabase.from('game_events').insert({
+          game_id: game.id,
+          actor_id: resolvedWinnerId,
+          event_type: 'points_earned',
+          data: {
+            mission_id: missionId,
+            mission_title: mission.title,
+            difficulty,
+            points: pointsAwarded,
+          },
+        });
       }
       break;
 

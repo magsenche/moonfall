@@ -259,6 +259,7 @@ export function createMission(gameCode: string, missionData: {
   externalUrl?: string;
   deadline?: string;
   auctionData?: { min_bid?: number; max_bid?: number };
+  difficulty?: number;
 }) {
   return apiPost<{ mission: Mission }>(`/api/games/${gameCode}/missions`, missionData);
 }
@@ -306,6 +307,96 @@ export function updateSettings(gameCode: string, playerId: string, settings: Par
   return apiPatch<{ success: boolean }>(`/api/games/${gameCode}/settings`, {
     playerId,
     settings,
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shop & Points
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  effect_type: string;
+  icon: string | null;
+  max_per_player: number | null;
+  max_per_game: number | null;
+  available_phases: string[] | null;
+  usable_phases: string[] | null;
+  // Enriched fields when playerId provided
+  purchased_count_player?: number;
+  purchased_count_game?: number;
+  can_buy?: boolean;
+}
+
+export interface PlayerPurchase {
+  id: string;
+  shop_item_id: string;
+  cost_paid: number;
+  purchased_at: string;
+  used_at: string | null;
+  phase_used: number | null;
+  target_player_id: string | null;
+}
+
+export interface ShopPlayerData {
+  id: string;
+  pseudo: string;
+  points: number;
+  purchases: PlayerPurchase[];
+  purchaseCounts: Record<string, number>;
+  unusedPowers: PlayerPurchase[];
+}
+
+export interface ShopResponse {
+  items: ShopItem[];
+  player: ShopPlayerData | null;
+}
+
+export interface PurchaseResponse {
+  success: boolean;
+  purchase: {
+    id: string;
+    item: {
+      name: string;
+      icon: string | null;
+      effect_type: string;
+    };
+    cost_paid: number;
+  };
+  new_balance: number;
+}
+
+export interface UsePowerResponse {
+  success: boolean;
+  effect_type: string;
+  result: {
+    message: string;
+    target_name?: string;
+    is_wolf?: boolean;
+    expires_at?: string;
+    [key: string]: unknown;
+  };
+}
+
+export function getShop(gameCode: string, playerId?: string) {
+  const params = playerId ? `?playerId=${playerId}` : '';
+  return apiGet<ShopResponse>(`/api/games/${gameCode}/shop${params}`);
+}
+
+export function purchaseItem(gameCode: string, playerId: string, itemId: string) {
+  return apiPost<PurchaseResponse>(`/api/games/${gameCode}/shop`, {
+    playerId,
+    itemId,
+  });
+}
+
+export function activatePower(gameCode: string, purchaseId: string, playerId: string, targetPlayerId?: string) {
+  return apiPost<UsePowerResponse>(`/api/games/${gameCode}/shop/${purchaseId}/use`, {
+    playerId,
+    targetPlayerId,
   });
 }
 

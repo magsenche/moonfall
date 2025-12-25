@@ -68,6 +68,9 @@ export function MissionForm({
   const [auctionMinBid, setAuctionMinBid] = useState(1);
   const [auctionMaxBid, setAuctionMaxBid] = useState<number | undefined>(undefined);
   
+  // Difficulty (1-5 stars = 2-10 points)
+  const [difficulty, setDifficulty] = useState(1);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,6 +101,9 @@ export function MissionForm({
     setPenaltyDescription(template.penalty_description ?? '');
     setExternalUrl(template.external_url ?? '');
     setSabotageAllowed(template.sabotage_allowed ?? false);
+    // Set difficulty from template or infer from reward type
+    const templateDifficulty = (template as unknown as { difficulty?: number }).difficulty;
+    setDifficulty(templateDifficulty ?? 1);
     setMode('custom'); // Switch to custom to allow editing
   };
 
@@ -135,6 +141,7 @@ export function MissionForm({
         externalUrl: externalUrl || undefined,
         auctionData,
         assignedPlayerIds: missionType === 'auction' ? [] : assignedToMultiple, // Auction auto-assigns all
+        difficulty,
       });
 
       onMissionCreated();
@@ -353,6 +360,32 @@ export function MissionForm({
               className="bg-slate-700 border-slate-600 w-24"
             />
             <span className="text-slate-400 text-sm">minutes</span>
+          </div>
+        </div>
+
+        {/* Difficulty (points reward) */}
+        <div>
+          <label className="text-xs text-slate-400 mb-1 block">
+            ⭐ Difficulté (= récompense en points)
+          </label>
+          <div className="flex items-center gap-2">
+            {[1, 2, 3, 4, 5].map((level) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => setDifficulty(level)}
+                className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-all ${
+                  difficulty >= level
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-slate-700 text-slate-500 hover:bg-slate-600'
+                }`}
+              >
+                ⭐
+              </button>
+            ))}
+            <span className="text-sm text-slate-400 ml-2">
+              = <span className="text-amber-400 font-bold">{difficulty * 2}</span> points
+            </span>
           </div>
         </div>
 

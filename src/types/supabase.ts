@@ -47,6 +47,13 @@ export type Database = {
             foreignKeyName: "game_events_actor_id_fkey"
             columns: ["actor_id"]
             isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "game_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
@@ -56,6 +63,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "games"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_events_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
           },
           {
             foreignKeyName: "game_events_target_id_fkey"
@@ -157,6 +171,13 @@ export type Database = {
             foreignKeyName: "mission_assignments_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "mission_assignments_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
@@ -168,6 +189,7 @@ export type Database = {
           created_at: string | null
           creator_id: string | null
           description: string
+          difficulty: number | null
           external_url: string | null
           id: string
           is_active: boolean | null
@@ -188,6 +210,7 @@ export type Database = {
           created_at?: string | null
           creator_id?: string | null
           description: string
+          difficulty?: number | null
           external_url?: string | null
           id?: string
           is_active?: boolean | null
@@ -208,6 +231,7 @@ export type Database = {
           created_at?: string | null
           creator_id?: string | null
           description?: string
+          difficulty?: number | null
           external_url?: string | null
           id?: string
           is_active?: boolean | null
@@ -234,6 +258,7 @@ export type Database = {
           created_at: string | null
           deadline: string | null
           description: string
+          difficulty: number | null
           external_url: string | null
           game_id: string
           id: string
@@ -266,6 +291,7 @@ export type Database = {
           created_at?: string | null
           deadline?: string | null
           description: string
+          difficulty?: number | null
           external_url?: string | null
           game_id: string
           id?: string
@@ -298,6 +324,7 @@ export type Database = {
           created_at?: string | null
           deadline?: string | null
           description?: string
+          difficulty?: number | null
           external_url?: string | null
           game_id?: string
           id?: string
@@ -327,6 +354,13 @@ export type Database = {
             foreignKeyName: "missions_assigned_to_fkey"
             columns: ["assigned_to"]
             isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "missions_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
@@ -348,12 +382,108 @@ export type Database = {
             foreignKeyName: "missions_validated_by_fkey"
             columns: ["validated_by"]
             isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "missions_validated_by_fkey"
+            columns: ["validated_by"]
+            isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "missions_winner_player_id_fkey"
             columns: ["winner_player_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "missions_winner_player_id_fkey"
+            columns: ["winner_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_purchases: {
+        Row: {
+          cost_paid: number
+          game_id: string
+          id: string
+          phase_used: number | null
+          player_id: string
+          purchased_at: string | null
+          result: Json | null
+          shop_item_id: string
+          target_player_id: string | null
+          used_at: string | null
+        }
+        Insert: {
+          cost_paid: number
+          game_id: string
+          id?: string
+          phase_used?: number | null
+          player_id: string
+          purchased_at?: string | null
+          result?: Json | null
+          shop_item_id: string
+          target_player_id?: string | null
+          used_at?: string | null
+        }
+        Update: {
+          cost_paid?: number
+          game_id?: string
+          id?: string
+          phase_used?: number | null
+          player_id?: string
+          purchased_at?: string | null
+          result?: Json | null
+          shop_item_id?: string
+          target_player_id?: string | null
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_purchases_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_purchases_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "player_purchases_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_purchases_shop_item_id_fkey"
+            columns: ["shop_item_id"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_purchases_target_player_id_fkey"
+            columns: ["target_player_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "player_purchases_target_player_id_fkey"
+            columns: ["target_player_id"]
             isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
@@ -371,6 +501,7 @@ export type Database = {
           id: string
           is_alive: boolean | null
           is_mj: boolean | null
+          mission_points: number | null
           pseudo: string
           role_id: string | null
           user_id: string | null
@@ -385,6 +516,7 @@ export type Database = {
           id?: string
           is_alive?: boolean | null
           is_mj?: boolean | null
+          mission_points?: number | null
           pseudo: string
           role_id?: string | null
           user_id?: string | null
@@ -399,6 +531,7 @@ export type Database = {
           id?: string
           is_alive?: boolean | null
           is_mj?: boolean | null
+          mission_points?: number | null
           pseudo?: string
           role_id?: string | null
           user_id?: string | null
@@ -463,6 +596,13 @@ export type Database = {
             foreignKeyName: "power_uses_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "power_uses_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
@@ -472,6 +612,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "powers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "power_uses_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
           },
           {
             foreignKeyName: "power_uses_target_id_fkey"
@@ -559,6 +706,13 @@ export type Database = {
             foreignKeyName: "push_subscriptions_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "push_subscriptions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
@@ -603,6 +757,57 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_items: {
+        Row: {
+          available_phases: string[] | null
+          cost: number
+          created_at: string | null
+          description: string
+          effect_data: Json | null
+          effect_type: Database["public"]["Enums"]["shop_effect_type"]
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          max_per_game: number | null
+          max_per_player: number | null
+          name: string
+          sort_order: number | null
+          usable_phases: string[] | null
+        }
+        Insert: {
+          available_phases?: string[] | null
+          cost: number
+          created_at?: string | null
+          description: string
+          effect_data?: Json | null
+          effect_type: Database["public"]["Enums"]["shop_effect_type"]
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_per_game?: number | null
+          max_per_player?: number | null
+          name: string
+          sort_order?: number | null
+          usable_phases?: string[] | null
+        }
+        Update: {
+          available_phases?: string[] | null
+          cost?: number
+          created_at?: string | null
+          description?: string
+          effect_data?: Json | null
+          effect_type?: Database["public"]["Enums"]["shop_effect_type"]
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_per_game?: number | null
+          max_per_player?: number | null
+          name?: string
+          sort_order?: number | null
+          usable_phases?: string[] | null
+        }
+        Relationships: []
+      }
       votes: {
         Row: {
           created_at: string | null
@@ -643,8 +848,22 @@ export type Database = {
             foreignKeyName: "votes_target_id_fkey"
             columns: ["target_id"]
             isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "votes_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
           },
           {
             foreignKeyName: "votes_voter_id_fkey"
@@ -689,6 +908,13 @@ export type Database = {
             foreignKeyName: "wolf_chat_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "wolf_chat_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
@@ -696,10 +922,51 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      player_wallet: {
+        Row: {
+          active_powers: Json | null
+          game_id: string | null
+          player_id: string | null
+          points: number | null
+          pseudo: string | null
+          unused_powers: number | null
+        }
+        Insert: {
+          active_powers?: never
+          game_id?: string | null
+          player_id?: string | null
+          points?: never
+          pseudo?: string | null
+          unused_powers?: never
+        }
+        Update: {
+          active_powers?: never
+          game_id?: string | null
+          player_id?: string | null
+          points?: never
+          pseudo?: string | null
+          unused_powers?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      award_mission_points: {
+        Args: { p_player_id: string; p_points: number; p_reason?: string }
+        Returns: number
+      }
+      spend_points: {
+        Args: { p_player_id: string; p_points: number }
+        Returns: boolean
+      }
     }
     Enums: {
       game_status: "lobby" | "jour" | "nuit" | "conseil" | "terminee"
@@ -732,6 +999,15 @@ export type Database = {
         | "extra_vision"
         | "silence"
         | "none"
+      shop_effect_type:
+        | "immunity"
+        | "double_vote"
+        | "wolf_vision"
+        | "anonymous_vote"
+        | "mj_question"
+        | "silence"
+        | "extra_life"
+        | "role_swap"
       team_type: "village" | "loups" | "solo"
       vote_type: "jour" | "nuit_loup" | "pouvoir"
     }
@@ -894,6 +1170,16 @@ export const Constants = {
         "extra_vision",
         "silence",
         "none",
+      ],
+      shop_effect_type: [
+        "immunity",
+        "double_vote",
+        "wolf_vision",
+        "anonymous_vote",
+        "mj_question",
+        "silence",
+        "extra_life",
+        "role_swap",
       ],
       team_type: ["village", "loups", "solo"],
       vote_type: ["jour", "nuit_loup", "pouvoir"],

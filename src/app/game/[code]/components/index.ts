@@ -15,6 +15,8 @@
  * - PlayersList: Players list
  * - SessionRecovery: Session recovery screen
  * - MissionsSection: Missions display
+ * - PlayerWallet: Points and active powers
+ * - Shop: Purchase powers with points
  */
 
 export * from './PhaseTimer';
@@ -31,3 +33,5 @@ export * from './PlayersList';
 export * from './SessionRecovery';
 export * from './MissionsSection';
 export * from './LobbyView';
+export * from './PlayerWallet';
+export * from './Shop';
