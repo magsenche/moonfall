@@ -211,15 +211,19 @@ supabase/
 
 ---
 
-## Rôles MVP
+## Rôles Implémentés
 
 | Rôle | Équipe | Pouvoir |
 |------|--------|---------|
 | Villageois | 🔵 Village | Aucun |
 | Loup-Garou | 🔴 Loups | Dévore un villageois chaque nuit |
 | Voyante | 🔵 Village | Voit un rôle chaque nuit |
+| Petite Fille | 🔵 Village | Lit le chat des loups (lecture seule) |
+| Ancien | 🔵 Village | Survit à la 1ère attaque des loups |
+| Chasseur | 🔵 Village | Tire sur quelqu'un quand il meurt |
+| Sorcière | 🔵 Village | Potion de vie + potion de mort |
 
-**Futurs rôles préparés :** Sorcière, Chasseur, Cupidon, Salvateur, Petite Fille, Ancien, Loup Blanc, Ange...
+**Futurs rôles préparés :** Cupidon, Salvateur, Loup Blanc, Ange...
 
 ---
 
@@ -280,15 +284,20 @@ supabase/
 - [x] **Auto-refresh Wallet/Shop** : mise à jour automatique après gain de points
 - [x] **Affichage résultats vote** : qui a voté qui (avec anonymat)
 - [x] **Vote Anonyme fonctionnel** : votes masqués comme "???"
+- [x] **4 nouveaux rôles IRL** : Petite Fille, Ancien, Chasseur, Sorcière
+- [x] **Système d'aide complet** : RoleDetailModal, PhaseHelpTooltip, RulesModal, TipToast
+- [x] **Mobile UX** : bottom sheets, FAB, touch-manipulation, 44px+ targets
+- [x] **Roles DB as source of truth** : config/roles.ts = fallback uniquement
 
 ### 🔄 En Cours
 
-**Nouveaux rôles IRL :**
-- [ ] Petite Fille (lecture seule chat loups)
-- [ ] Chasseur (emporte quelqu'un à sa mort)
-- [ ] Ancien (survit 1x attaque loups)
-- [ ] Sorcière (potions vie/mort)
-- [ ] Cupidon (amoureux liés)
+(Aucun - MVP + rôles IRL complets !)
+
+### ⏳ À Faire
+
+**Nouveaux rôles :**
+- [ ] Cupidon (amoureux liés - complexe)
+- [ ] Salvateur (protège un joueur la nuit)
 
 ### ⏳ À Faire - MVP
 

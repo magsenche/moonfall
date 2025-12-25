@@ -140,17 +140,18 @@ Aide le village à identifier et éliminer tous les loups-garous.
 src/
 ├── components/
 │   └── game/
-│       ├── role-detail-modal.tsx    # Modal détaillé du rôle
-│       ├── phase-help-tooltip.tsx   # Tooltip aide phase
-│       ├── rules-page.tsx           # Page règles complète
-│       └── tip-toast.tsx            # Bulles d'aide
+│       ├── role-detail-modal.tsx    # ✅ Modal détaillé du rôle
+│       ├── phase-help-tooltip.tsx   # ✅ Bottom sheet aide phase
+│       ├── rules-modal.tsx          # ✅ Modal règles + RulesButton
+│       └── tip-toast.tsx            # ✅ Bulles d'aide + hooks
 ├── lib/
 │   └── help/
-│       ├── role-details.ts          # Textes détaillés par rôle
-│       ├── phase-descriptions.ts    # Descriptions des phases
-│       └── tips.ts                  # Configuration des tips
-└── hooks/
-    └── useTips.ts                   # Hook pour gérer les tips
+│       ├── index.ts                 # ✅ Exports
+│       ├── role-details.ts          # ✅ Textes détaillés par rôle (8 rôles)
+│       ├── phase-descriptions.ts    # ✅ Descriptions des phases
+│       └── tips.ts                  # ✅ Configuration des tips (9 tips)
+└── config/
+    └── roles.ts                     # ✅ Fallback configs (DB = source of truth)
 ```
 
 ---
@@ -174,36 +175,39 @@ src/
 
 ## ✅ Checklist Implémentation
 
-- [ ] **RoleDetailModal** - Modal cliquable sur carte de rôle
-  - [ ] Composant modal
-  - [ ] Contenu par rôle (role-details.ts)
-  - [ ] Intégration dans PlayerRoleCard
+- [x] **RoleDetailModal** - Modal cliquable sur carte de rôle
+  - [x] Composant modal (`src/components/game/role-detail-modal.tsx`)
+  - [x] Contenu par rôle (`src/lib/help/role-details.ts`)
+  - [x] Intégration dans PlayerRoleCard
   
-- [ ] **PhaseHelpTooltip** - Aide contextuelle phase
-  - [ ] Composant tooltip/popover
-  - [ ] Descriptions par phase
-  - [ ] Intégration dans PhaseTimer
+- [x] **PhaseHelpTooltip** - Aide contextuelle phase
+  - [x] Composant bottom sheet modal (`src/components/game/phase-help-tooltip.tsx`)
+  - [x] Descriptions par phase (`src/lib/help/phase-descriptions.ts`)
+  - [x] Intégration dans GamePhaseBadge (avec `showHelp` prop)
   
-- [ ] **RulesPage** - Page règles
-  - [ ] Page /rules ou modal
-  - [ ] Contenu complet
-  - [ ] Bouton d'accès lobby + game
+- [x] **RulesModal** - Page règles complète
+  - [x] Modal avec tabs (Règles, Rôles, FAQ) (`src/components/game/rules-modal.tsx`)
+  - [x] Contenu complet avec accordéons pour les rôles
+  - [x] `RulesButton` composant autonome (variants: default, icon, floating)
+  - [x] Bouton flottant accessible pendant le jeu
   
-- [ ] **TipToast** - Bulles d'aide
-  - [ ] Composant toast
-  - [ ] Hook useTips
-  - [ ] Stockage localStorage
-  - [ ] Triggers aux bons moments
+- [x] **TipToast** - Bulles d'aide
+  - [x] Composant toast (`src/components/game/tip-toast.tsx`)
+  - [x] Hook `useTip` et `useGameTips` pour gestion contextuelle
+  - [x] Stockage localStorage (`src/lib/help/tips.ts`)
+  - [x] Triggers contextuels (lobby, vote, nuit loup, voyante, petite fille, sorcière)
 
 ---
 
 ## 📱 Mobile First
 
-- Touch-friendly (boutons 44px minimum)
-- Modal plein écran sur mobile
-- Swipe to dismiss
-- Pas de hover states (touch only)
+- [x] Touch-friendly (boutons 44px+ minimum)
+- [x] Bottom sheet modals sur mobile (slide-in-from-bottom)
+- [x] Drag indicator sur les modales mobiles
+- [x] `touch-manipulation` pour supprimer délai 300ms
+- [x] Bouton flottant (FAB) pour accès règles
 
 ---
 
 *Document créé le 25/12/2025*
+*Dernière mise à jour: 25/12/2025 - Système complet implémenté*
