@@ -142,6 +142,23 @@ export function useMissions({
     };
   }, [gameStatus, gameId, supabase, fetchMissions]);
 
+  // iOS PWA fix: refresh missions on visibility change (when app returns to foreground)
+  useEffect(() => {
+    if (gameStatus === 'lobby') return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[Visibility] App returned to foreground, refetching missions');
+        fetchMissions();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [gameStatus, fetchMissions]);
+
   return {
     // State
     missions,
