@@ -27,6 +27,7 @@ Les missions sont le cœur de l'expérience IRL. Elles doivent :
 | **Système de points** | ✅ **Implémenté** (difficulté 1-5⭐ = 2-10 pts) |
 | **Shop de pouvoirs** | ✅ **Implémenté** (6 pouvoirs achetables) |
 | **Support Mode Auto-Garou** | ✅ **Implémenté** (collective, competitive, auction) |
+| **Auto-refresh Wallet/Shop** | ✅ **Implémenté** (après gain de points) |
 | Missions collectives (succès/échec village) | ⚠️ Partiel (validation MJ uniquement) |
 | Variables dans énoncés ({player_name}) | ❌ À faire |
 

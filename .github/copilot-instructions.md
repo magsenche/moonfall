@@ -269,7 +269,7 @@ supabase/
 - [x] API submission/bid pour missions compétitives
 - [x] Système de points missions (difficulté 1-5⭐ = 2-10 pts)
 - [x] Shop de pouvoirs (6 pouvoirs : immunité, vote double, vision loup...)
-- [x] UI Wallet joueur (points + pouvoirs actifs)
+- [x] UI Wallet joueur (points + pouvoirs actifs avec noms/icônes)
 - [x] UI Shop (acheter avec points)
 - [x] Intégration pouvoirs dans vote (immunité, double_vote auto)
 - [x] Filtres missions MJ (En cours / Terminées / Toutes)
@@ -277,6 +277,7 @@ supabase/
 - [x] **Minimum 3 joueurs** (réduit de 6 à 3)
 - [x] **Missions en mode Auto-Garou** : collectives, compétitives, enchères (auto-assignation)
 - [x] **Durées de phase personnalisables** : min 30s pour tests rapides
+- [x] **Auto-refresh Wallet/Shop** : mise à jour automatique après gain de points
 
 ### 🔄 En Cours
 
