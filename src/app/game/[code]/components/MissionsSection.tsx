@@ -16,6 +16,7 @@ interface MissionsSectionProps {
   players: PartialPlayer[];
   currentPlayerId: string | null;
   isMJ: boolean;
+  isAutoMode?: boolean;
   showMissionForm: boolean;
   gameCode: string;
   onShowMissionForm: (show: boolean) => void;
@@ -28,6 +29,7 @@ export function MissionsSection({
   players,
   currentPlayerId,
   isMJ,
+  isAutoMode = false,
   showMissionForm,
   gameCode,
   onShowMissionForm,
@@ -142,6 +144,7 @@ export function MissionsSection({
                 is_mj: p.is_mj ?? false,
               }))}
               creatorId={currentPlayerId}
+              isAutoMode={isAutoMode}
               onMissionCreated={() => {
                 onShowMissionForm(false);
                 onMissionCreated();

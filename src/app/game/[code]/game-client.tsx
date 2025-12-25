@@ -477,13 +477,14 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
           />
         )}
 
-        {/* Missions Section */}
+        {/* Missions Section - Available in auto mode with restrictions */}
         {game.status !== 'terminee' && (
           <MissionsSection
             missions={missions.missions}
             players={players}
             currentPlayerId={currentPlayerId}
-            isMJ={isMJ && !isAutoMode}
+            isMJ={isMJ}
+            isAutoMode={isAutoMode}
             showMissionForm={missions.showMissionForm}
             gameCode={game.code}
             onShowMissionForm={missions.setShowMissionForm}

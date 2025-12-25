@@ -29,16 +29,22 @@ interface MissionFormProps {
   gameCode: string;
   players: Player[];
   creatorId: string;
+  isAutoMode?: boolean;
   onMissionCreated: () => void;
   onCancel: () => void;
 }
 
 type FormMode = 'template' | 'custom';
 
+// Mission types allowed in Auto-Garou mode
+const AUTO_MODE_ALLOWED_TYPES: MissionType[] = ['collective', 'competitive', 'auction'];
+const AUTO_MODE_ALLOWED_VALIDATIONS: MissionValidationType[] = ['mj', 'first_wins', 'best_score', 'auto'];
+
 export function MissionForm({ 
   gameCode, 
   players, 
-  creatorId, 
+  creatorId,
+  isAutoMode = false,
   onMissionCreated, 
   onCancel 
 }: MissionFormProps) {
@@ -113,6 +119,12 @@ export function MissionForm({
       return;
     }
 
+    // Validate mission type in auto mode
+    if (isAutoMode && !AUTO_MODE_ALLOWED_TYPES.includes(missionType)) {
+      setError('Ce type de mission n\'est pas disponible en mode Auto-Garou');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -125,6 +137,18 @@ export function MissionForm({
           max_bid: auctionMaxBid,
           current_highest_bid: 0,
         };
+      }
+
+      // In auto mode, competitive missions are assigned to all alive players
+      // Collective and auction missions don't need explicit assignment
+      let finalAssignedPlayerIds: string[];
+      if (missionType === 'auction' || missionType === 'collective') {
+        finalAssignedPlayerIds = []; // Auto-assigns all
+      } else if (isAutoMode && missionType === 'competitive') {
+        // Auto-assign to all alive players in auto mode
+        finalAssignedPlayerIds = alivePlayers.map(p => p.id);
+      } else {
+        finalAssignedPlayerIds = assignedToMultiple;
       }
 
       await createMission(gameCode, {
@@ -140,7 +164,7 @@ export function MissionForm({
         penaltyDescription: penaltyDescription || undefined,
         externalUrl: externalUrl || undefined,
         auctionData,
-        assignedPlayerIds: missionType === 'auction' ? [] : assignedToMultiple, // Auction auto-assigns all
+        assignedPlayerIds: finalAssignedPlayerIds,
         difficulty,
       });
 
@@ -290,6 +314,14 @@ export function MissionForm({
           />
         </div>
 
+        {/* Auto-Garou Mode Notice */}
+        {isAutoMode && (
+          <div className="p-2 bg-indigo-900/30 border border-indigo-500/30 rounded text-xs text-indigo-300">
+            🤖 <strong>Mode Auto-Garou</strong> : Seules les missions collectives, compétitives et enchères sont disponibles.
+            Elles seront automatiquement assignées à tous les joueurs.
+          </div>
+        )}
+
         {/* Type & Category */}
         <div className="grid grid-cols-2 gap-2">
           <div>
@@ -299,9 +331,11 @@ export function MissionForm({
               onChange={(e) => setMissionType(e.target.value as MissionType)}
               className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-sm"
             >
-              {Object.entries(MISSION_TYPE_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
+              {Object.entries(MISSION_TYPE_LABELS)
+                .filter(([value]) => !isAutoMode || AUTO_MODE_ALLOWED_TYPES.includes(value as MissionType))
+                .map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
             </select>
           </div>
           <div>
@@ -327,9 +361,11 @@ export function MissionForm({
               onChange={(e) => setValidationType(e.target.value as MissionValidationType)}
               className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-sm"
             >
-              {Object.entries(VALIDATION_TYPE_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
+              {Object.entries(VALIDATION_TYPE_LABELS)
+                .filter(([value]) => !isAutoMode || AUTO_MODE_ALLOWED_VALIDATIONS.includes(value as MissionValidationType))
+                .map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
             </select>
           </div>
           <div>
@@ -448,8 +484,8 @@ export function MissionForm({
           </div>
         )}
 
-        {/* Player assignment (not for auction) */}
-        {missionType !== 'auction' && (
+        {/* Player assignment (not for auction, not in auto mode) */}
+        {missionType !== 'auction' && !isAutoMode && (
           <div>
             <label className="text-xs text-slate-400 mb-1 block">
               👥 Assigner à des joueurs (optionnel)
@@ -474,6 +510,13 @@ export function MissionForm({
                 ⚠️ Une mission compétitive nécessite au moins 2 joueurs
               </p>
             )}
+          </div>
+        )}
+
+        {/* Auto-mode assignment info */}
+        {isAutoMode && missionType !== 'auction' && (
+          <div className="text-xs text-slate-400 bg-slate-800/50 p-2 rounded">
+            ℹ️ En mode Auto-Garou, la mission sera assignée à tous les joueurs vivants.
           </div>
         )}
 
