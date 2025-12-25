@@ -1,22 +1,19 @@
 /**
- * GameClient - Main game component (refactored)
+ * GameClient - Main game orchestrator (refactored v2)
  * 
- * This is a complete rewrite of lobby-client.tsx with:
- * - Extracted hooks for each domain (voting, night actions, chat, etc.)
- * - Extracted components for each UI section
- * - Clean separation of concerns
- * - ~300 lines instead of ~2000 lines
+ * Clean separation:
+ * - GameHeader: consistent header with phase/timer
+ * - NightPhaseLayout / DayPhaseLayout / CouncilPhaseLayout: phase-specific content
+ * - GameFooter: MJ controls, missions, players list, wallet/shop
  * 
- * @see hooks/ for all custom hooks
- * @see components/ for all UI components
+ * This file is now a thin orchestrator (~200 lines).
  */
 
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui';
-import { GamePhaseBadge, GameOver, TipToast, useGameTips, RulesButton } from '@/components/game';
+import { GameOver, TipToast, useGameTips, RulesButton } from '@/components/game';
 import { getRoleConfig } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/lib/notifications';
@@ -41,23 +38,12 @@ import {
 import {
   SessionRecovery,
   LobbyView,
-  PhaseTimer,
-  PhaseInstructions,
-  PlayerRoleCard,
-  WolfPack,
-  WolfNightVote,
-  WolfChatPanel,
-  SeerPowerPanel,
-  VotingPanel,
-  VoteResults,
-  MJControls,
-  MJOverview,
-  PlayersList,
-  MissionsSection,
-  PlayerWallet,
-  Shop,
+  GameHeader,
+  NightPhaseLayout,
+  DayPhaseLayout,
+  CouncilPhaseLayout,
+  GameFooter,
   HunterDeathModal,
-  WitchNightPanel,
 } from './components';
 
 interface GameClientProps {
@@ -138,7 +124,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
       })
     : [];
 
-  // Tips hook - show contextual tips based on game phase and player role
+  // Tips hook
   const { currentTipId, dismissCurrentTip } = useGameTips(
     game.status || 'lobby',
     currentRole?.name,
@@ -188,7 +174,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
     gameStatus: game.status || 'lobby',
   });
 
-  // Auto-Garou hook (no MJ mode)
+  // Auto-Garou hook
   useAutoGarou({
     gameCode: game.code,
     gameStatus: (game.status || 'lobby') as 'lobby' | 'jour' | 'nuit' | 'conseil' | 'terminee',
@@ -197,20 +183,18 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
     currentPlayerId,
   });
 
-  // Callback to refresh missions AND shop (when points may have changed)
+  // Callbacks
   const handleMissionUpdate = useCallback(() => {
     missions.fetchMissions();
     setShopRefreshKey(k => k + 1);
   }, [missions]);
 
-  // Copy game code
   const copyCode = useCallback(async () => {
     await navigator.clipboard.writeText(game.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, [game.code]);
 
-  // Start game
   const startGame = useCallback(async () => {
     setStartError(null);
     setIsStarting(true);
@@ -223,7 +207,6 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
     }
   }, [game.code]);
 
-  // Change phase (MJ)
   const changePhase = useCallback(async (phase: string) => {
     try {
       await apiChangePhase(game.code, phase);
@@ -232,7 +215,6 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
     }
   }, [game.code]);
 
-  // Add bots to game (MJ, dev helper)
   const addBotsToGame = useCallback(async () => {
     if (!currentPlayerId) return;
     setIsAddingBots(true);
@@ -245,7 +227,6 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
     }
   }, [game.code, currentPlayerId]);
 
-  // Remove bots from game (MJ, dev helper)
   const removeBotsFromGame = useCallback(async () => {
     if (!currentPlayerId) return;
     setIsAddingBots(true);
@@ -258,9 +239,8 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
     }
   }, [game.code, currentPlayerId]);
 
-  // Detect when Hunter dies and show the modal
+  // Hunter death detection
   useEffect(() => {
-    // Only show if: is hunter, is dead, game not ended, and modal not yet processed
     if (
       isHunter &&
       currentPlayer?.is_alive === false &&
@@ -271,7 +251,6 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
     }
   }, [isHunter, currentPlayer?.is_alive, game.status, hunterModalProcessed]);
 
-  // Handler when hunter shot is complete
   const handleHunterShotComplete = useCallback((
     targetName: string,
     targetRole: string | undefined,
@@ -280,7 +259,6 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
   ) => {
     setShowHunterModal(false);
     setHunterModalProcessed(true);
-    
     if (gameOver && winner) {
       setGameWinner(winner as 'village' | 'loups');
     }
@@ -289,11 +267,9 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
   // Fetch game winner when game ends
   useEffect(() => {
     if (game.status !== 'terminee') return;
-
     const fetchWinner = async () => {
       const { createClient } = await import('@/lib/supabase/client');
       const supabase = createClient();
-      
       const { data } = await supabase
         .from('game_events')
         .select('data')
@@ -304,7 +280,6 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
       if (data?.data && typeof data.data === 'object' && 'winner' in data.data) {
         setGameWinner(data.data.winner as 'village' | 'loups');
       } else {
-        // Fallback: calculate from current state
         const aliveWolves = game.players.filter(p => {
           const r = roles.find(role => role.id === p.role_id);
           return r?.team === 'loups' && p.is_alive !== false;
@@ -312,7 +287,6 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
         setGameWinner(aliveWolves === 0 ? 'village' : 'loups');
       }
     };
-
     fetchWinner();
   }, [game.status, game.id, game.players, roles]);
 
@@ -390,132 +364,89 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
   // ─────────────────────────────────────────────────────────────────────────────
   // RENDER: Game in Progress
   // ─────────────────────────────────────────────────────────────────────────────
+  const showTimer = game.status === 'jour' || game.status === 'conseil' || (isAutoMode && game.status === 'nuit');
+
   return (
     <main className="min-h-screen p-4">
-      {/* Background */}
+      {/* Phase-specific background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className={cn(
-          "absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl",
-          game.status === 'nuit' ? 'bg-indigo-900/30' : 'bg-amber-500/10'
+          "absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl transition-colors duration-1000",
+          game.status === 'nuit' ? 'bg-indigo-900/30' :
+          game.status === 'conseil' ? 'bg-purple-900/20' :
+          'bg-amber-500/10'
         )} />
         <div className={cn(
-          "absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl",
-          game.status === 'nuit' ? 'bg-purple-900/30' : 'bg-orange-500/10'
+          "absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl transition-colors duration-1000",
+          game.status === 'nuit' ? 'bg-purple-900/30' :
+          game.status === 'conseil' ? 'bg-red-900/20' :
+          'bg-orange-500/10'
         )} />
       </div>
 
       <div className="max-w-lg mx-auto pt-8">
-        {/* Game Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-white mb-2">{game.name}</h1>
-          <GamePhaseBadge status={game.status || 'lobby'} showHelp className="inline-flex" />
-        </div>
+        {/* Unified Header */}
+        <GameHeader
+          gameName={game.name}
+          gameStatus={game.status || 'lobby'}
+          timeRemaining={timeRemaining}
+          showTimer={showTimer}
+        />
 
-        {/* Player's Role Card */}
-        {currentRole && roleConfig && (
-          <PlayerRoleCard role={currentRole} roleConfig={roleConfig} />
-        )}
-
-        {/* Player Wallet & Shop (for all alive players, including MJ in auto mode) */}
-        {currentPlayerId && (!isMJ || isAutoMode) && currentPlayer?.is_alive !== false && (
-          <>
-            <PlayerWallet
-              gameCode={game.code}
-              playerId={currentPlayerId}
-              gameStatus={game.status || 'lobby'}
-              onPointsChange={handleMissionUpdate}
-              refreshKey={shopRefreshKey}
-            />
-            <Shop
-              gameCode={game.code}
-              playerId={currentPlayerId}
-              gameStatus={game.status || 'lobby'}
-              onPurchase={handleMissionUpdate}
-              refreshKey={shopRefreshKey}
-            />
-          </>
-        )}
-
-        {/* Wolf teammates (only shown to wolves) */}
-        {isWolf && <WolfPack wolves={wolves} />}
-
-        {/* Wolf Night Vote */}
-        {game.status === 'nuit' && isWolf && currentPlayer?.is_alive !== false && (
-          <WolfNightVote
-            alivePlayers={alivePlayers}
+        {/* Phase-specific layout */}
+        {game.status === 'nuit' && (
+          <NightPhaseLayout
+            currentPlayerId={currentPlayerId}
+            currentPlayer={currentPlayer}
+            currentRole={currentRole}
+            roleConfig={roleConfig}
+            isWolf={isWolf}
+            isSeer={isSeer}
+            isLittleGirl={isLittleGirl}
+            isWitch={isWitch}
             wolves={wolves}
+            alivePlayers={alivePlayers}
             nightTarget={nightActions.nightTarget}
             confirmedNightTarget={nightActions.confirmedNightTarget}
             hasNightVoted={nightActions.hasNightVoted}
             isNightVoting={nightActions.isNightVoting}
             nightVoteError={nightActions.nightVoteError}
-            onSelectTarget={nightActions.setNightTarget}
-            onSubmitVote={nightActions.submitNightVote}
-          />
-        )}
-
-        {/* Wolf Chat - Also visible to Petite Fille (read-only) */}
-        {game.status === 'nuit' && (isWolf || isLittleGirl) && (
-          <WolfChatPanel
-            messages={wolfChat.wolfMessages}
+            onSelectNightTarget={nightActions.setNightTarget}
+            onSubmitNightVote={nightActions.submitNightVote}
+            wolfMessages={wolfChat.wolfMessages}
             newMessage={wolfChat.newMessage}
             isSendingMessage={wolfChat.isSendingMessage}
-            currentPlayerId={currentPlayerId}
-            isAlive={currentPlayer?.is_alive !== false}
             onMessageChange={wolfChat.setNewMessage}
             onSendMessage={wolfChat.sendWolfMessage}
-            readOnly={isLittleGirl}
-          />
-        )}
-
-        {/* Seer Power */}
-        {game.status === 'nuit' && isSeer && currentPlayer?.is_alive !== false && (
-          <SeerPowerPanel
-            alivePlayers={alivePlayers}
-            currentPlayerId={currentPlayerId}
             seerTarget={nightActions.seerTarget}
             seerResult={nightActions.seerResult}
             hasUsedSeerPower={nightActions.hasUsedSeerPower}
             isUsingSeerPower={nightActions.isUsingSeerPower}
             seerError={nightActions.seerError}
-            onSelectTarget={nightActions.setSeerTarget}
-            onUsePower={nightActions.useSeerPower}
-          />
-        )}
-
-        {/* Witch Power */}
-        {game.status === 'nuit' && isWitch && currentPlayer?.is_alive !== false && (
-          <WitchNightPanel
-            alivePlayers={alivePlayers}
-            currentPlayerId={currentPlayerId}
+            onSelectSeerTarget={nightActions.setSeerTarget}
+            onUseSeerPower={nightActions.useSeerPower}
             gameCode={game.code}
             gamePhase={game.current_phase ?? 1}
           />
         )}
 
-        {/* Phase Instructions */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <PhaseTimer
-              timeRemaining={timeRemaining}
-              showTimer={game.status === 'jour' || game.status === 'conseil' || (isAutoMode && game.status === 'nuit')}
-            />
-            <PhaseInstructions
-              status={game.status || 'lobby'}
-              isWolf={isWolf}
-              isSeer={isSeer}
-              hasVoted={voting.hasVoted}
-              votesCount={voting.votesCount}
-              totalVoters={voting.totalVoters}
-            />
-          </CardContent>
-        </Card>
+        {game.status === 'jour' && (
+          <DayPhaseLayout
+            currentRole={currentRole}
+            roleConfig={roleConfig}
+            isWolf={isWolf}
+          />
+        )}
 
-        {/* Voting Panel */}
-        {game.status === 'conseil' && currentPlayer && currentPlayer.is_alive !== false && (!isMJ || isAutoMode) && (
-          <VotingPanel
-            alivePlayers={alivePlayers}
+        {game.status === 'conseil' && (
+          <CouncilPhaseLayout
             currentPlayerId={currentPlayerId}
+            currentPlayer={currentPlayer}
+            currentRole={currentRole}
+            roleConfig={roleConfig}
+            alivePlayers={alivePlayers}
+            isMJ={isMJ}
+            isAutoMode={isAutoMode}
             selectedTarget={voting.selectedTarget}
             confirmedVoteTarget={voting.confirmedVoteTarget}
             hasVoted={voting.hasVoted}
@@ -525,68 +456,38 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
             totalVoters={voting.totalVoters}
             onSelectTarget={voting.setSelectedTarget}
             onSubmitVote={voting.submitVote}
+            voteResults={voting.voteResults}
+            onDismissResults={voting.clearVoteResults}
           />
         )}
 
-        {/* Vote Results - Show after resolution */}
-        {voting.voteResults && (
-          <VoteResults
-            results={voting.voteResults}
-            onDismiss={voting.clearVoteResults}
-          />
-        )}
-
-        {/* MJ Controls - Also available in Auto-Garou mode to skip phases */}
-        {isMJ && game.status !== 'terminee' && (
-          <MJControls
-            gameStatus={game.status || 'lobby'}
-            wolfVoteCount={nightActions.wolfVoteCount}
-            nightVoteResolveError={nightActions.nightVoteResolveError}
-            showForceConfirm={nightActions.showForceConfirm}
-            isChangingPhase={nightActions.isChangingPhase || voting.isChangingPhase}
-            onChangePhase={changePhase}
-            onResolveVote={voting.resolveVote}
-            onResolveNightVote={nightActions.resolveNightVote}
-            onCancelForce={() => nightActions.setShowForceConfirm(false)}
-            isAutoMode={isAutoMode}
-          />
-        )}
-
-        {/* Missions Section - Available in auto mode with restrictions */}
-        {game.status !== 'terminee' && (
-          <MissionsSection
-            missions={missions.missions}
-            players={players}
-            currentPlayerId={currentPlayerId}
-            isMJ={isMJ}
-            isAutoMode={isAutoMode}
-            showMissionForm={missions.showMissionForm}
-            gameCode={game.code}
-            onShowMissionForm={missions.setShowMissionForm}
-            onMissionCreated={handleMissionUpdate}
-            onMissionUpdate={handleMissionUpdate}
-          />
-        )}
-
-        {/* Players List */}
-        <PlayersList
-          players={game.players}
+        {/* Common Footer */}
+        <GameFooter
+          game={game}
           roles={roles}
           currentPlayerId={currentPlayerId}
-          isMJ={isMJ && !isAutoMode}
+          currentPlayer={currentPlayer}
+          isMJ={isMJ}
+          isAutoMode={isAutoMode}
           isWolf={isWolf}
           wolves={wolves}
-          isAutoMode={isAutoMode}
+          gameStatus={game.status || 'lobby'}
+          wolfVoteCount={nightActions.wolfVoteCount}
+          nightVoteResolveError={nightActions.nightVoteResolveError}
+          showForceConfirm={nightActions.showForceConfirm}
+          isChangingPhase={nightActions.isChangingPhase || voting.isChangingPhase}
+          onChangePhase={changePhase}
+          onResolveVote={voting.resolveVote}
+          onResolveNightVote={nightActions.resolveNightVote}
+          onCancelForce={() => nightActions.setShowForceConfirm(false)}
+          missions={missions.missions}
+          showMissionForm={missions.showMissionForm}
+          onShowMissionForm={missions.setShowMissionForm}
+          onMissionCreated={handleMissionUpdate}
+          onMissionUpdate={handleMissionUpdate}
+          shopRefreshKey={shopRefreshKey}
+          onShopRefresh={handleMissionUpdate}
         />
-
-        {/* MJ Overview Panel - Hidden in Auto-Garou mode */}
-        {isMJ && !isAutoMode && (
-          <MJOverview
-            players={players}
-            roles={roles}
-            alivePlayers={alivePlayers}
-          />
-        )}
       </div>
 
       {/* Hunter Death Modal */}
@@ -599,12 +500,12 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
         />
       )}
 
-      {/* Tip Toast - Contextual tips for new players */}
+      {/* Tip Toast */}
       {currentTipId && (
         <TipToast tipId={currentTipId} show={true} onDismiss={dismissCurrentTip} />
       )}
 
-      {/* Floating Rules Button - Always accessible */}
+      {/* Floating Rules Button */}
       <RulesButton variant="floating" />
     </main>
   );

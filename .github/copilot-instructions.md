@@ -291,7 +291,7 @@ supabase/
 
 ### 🔄 En Cours
 
-(Aucun - MVP + rôles IRL complets !)
+(Rien pour l'instant)
 
 ### ⏳ À Faire
 
@@ -299,13 +299,9 @@ supabase/
 - [ ] Cupidon (amoureux liés - complexe)
 - [ ] Salvateur (protège un joueur la nuit)
 
-### ⏳ À Faire - MVP
-
-✅ MVP Complet !
-
 ### 📋 Backlog
 
-**Priorité haute (post-MVP) :**
+**Priorité haute :**
 - [ ] Valider notifications push en conditions réelles (test multi-appareils iOS)
 - [ ] Tester partie complète avec ~10 joueurs réels
 - [ ] Pouvoirs ciblés UI (wolf_vision, silence avec sélection cible)
@@ -316,7 +312,6 @@ supabase/
   - [ ] Conditions de victoire (timer/score/tours)
 
 **Backlog général :**
-- [ ] Système Fantôme (morts peuvent aider)
 - [ ] PWA offline support
 - [ ] Custom assets (images rôles, avatars)
 

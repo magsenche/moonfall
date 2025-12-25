@@ -1,7 +1,14 @@
 /**
  * Game components - Extracted from lobby-client.tsx
  * 
- * Each component handles a specific UI section:
+ * Layout components:
+ * - GameHeader: Unified header with phase badge and timer
+ * - NightPhaseLayout: Night-specific layout
+ * - DayPhaseLayout: Day discussion layout
+ * - CouncilPhaseLayout: Voting layout
+ * - GameFooter: Common footer (MJ controls, missions, players, wallet)
+ * 
+ * Feature components:
  * - PhaseTimer: Countdown timer
  * - PhaseInstructions: Current phase info
  * - PlayerRoleCard: Player's role display
@@ -19,6 +26,14 @@
  * - Shop: Purchase powers with points
  */
 
+// Layout components
+export * from './GameHeader';
+export * from './NightPhaseLayout';
+export * from './DayPhaseLayout';
+export * from './CouncilPhaseLayout';
+export * from './GameFooter';
+
+// Feature components
 export * from './PhaseTimer';
 export * from './PhaseInstructions';
 export * from './PlayerRoleCard';
