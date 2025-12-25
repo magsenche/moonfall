@@ -105,7 +105,8 @@ En mode **Auto-Garou** (partie sans MJ dédié), les missions sont disponibles a
 
 ### Comportement
 
-- Le **créateur de partie** peut créer et valider des missions tout en jouant
+- Le **créateur de partie** (MJ) joue comme un joueur normal : il peut voter, enchérir, utiliser le shop
+- Le MJ conserve ses pouvoirs de gestion : valider missions, passer les phases, clôturer enchères
 - Les missions **compétitives** sont automatiquement assignées à tous les joueurs vivants
 - L'UI n'affiche pas la section d'assignation manuelle des joueurs
 - Un message informatif explique les restrictions du mode Auto-Garou
