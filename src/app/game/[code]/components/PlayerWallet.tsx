@@ -75,6 +75,13 @@ export function PlayerWallet({ gameCode, playerId, gameStatus, onPointsChange, r
 
   const unusedPowers = playerData.unusedPowers || [];
 
+  // Separate passive powers from active/targeted powers
+  const PASSIVE_EFFECTS = ['immunity', 'double_vote', 'anonymous_vote'];
+  const TARGETED_EFFECTS = ['wolf_vision', 'silence'];
+  
+  const passivePowers = unusedPowers.filter(p => PASSIVE_EFFECTS.includes(p.effect_type || ''));
+  const activePowers = unusedPowers.filter(p => !PASSIVE_EFFECTS.includes(p.effect_type || ''));
+
   return (
     <Card className="mb-4 border border-purple-500/30 bg-purple-500/5">
       <CardHeader className="pb-2">
@@ -84,30 +91,60 @@ export function PlayerWallet({ gameCode, playerId, gameStatus, onPointsChange, r
         </CardTitle>
       </CardHeader>
       
-      {unusedPowers.length > 0 && (
+      {(passivePowers.length > 0 || activePowers.length > 0) && (
         <CardContent className="pt-2">
-          <p className="text-xs text-slate-400 mb-2">Pouvoirs disponibles :</p>
-          <div className="space-y-2">
-            {unusedPowers.map((purchase) => (
-              <div 
-                key={purchase.id}
-                className="flex items-center justify-between bg-slate-800/50 rounded p-2"
-              >
-                <span className="text-sm text-white">
-                  {purchase.item_icon || '⚡'} {purchase.item_name || 'Pouvoir'}
-                </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleUsePower(purchase)}
-                  disabled={usingPower === purchase.id}
-                  className="text-purple-400 hover:text-purple-300 text-xs"
-                >
-                  {usingPower === purchase.id ? '...' : 'Utiliser'}
-                </Button>
+          {/* Passive powers - no button, auto-apply at council */}
+          {passivePowers.length > 0 && (
+            <>
+              <p className="text-xs text-slate-400 mb-2">⚡ Pouvoirs passifs (auto au conseil) :</p>
+              <div className="space-y-2 mb-3">
+                {passivePowers.map((purchase) => (
+                  <div 
+                    key={purchase.id}
+                    className="flex items-center justify-between bg-green-900/20 border border-green-500/20 rounded p-2"
+                  >
+                    <span className="text-sm text-green-400">
+                      {purchase.item_icon || '⚡'} {purchase.item_name || 'Pouvoir'}
+                    </span>
+                    <span className="text-xs text-green-500/70">Auto</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
+          
+          {/* Active/targeted powers - can use manually */}
+          {activePowers.length > 0 && (
+            <>
+              <p className="text-xs text-slate-400 mb-2">🎯 Pouvoirs à activer :</p>
+              <div className="space-y-2">
+                {activePowers.map((purchase) => {
+                  const isTargeted = TARGETED_EFFECTS.includes(purchase.effect_type || '');
+                  return (
+                    <div 
+                      key={purchase.id}
+                      className="flex items-center justify-between bg-slate-800/50 rounded p-2"
+                    >
+                      <span className="text-sm text-white">
+                        {purchase.item_icon || '⚡'} {purchase.item_name || 'Pouvoir'}
+                        {isTargeted && <span className="text-xs text-slate-400 ml-1">(cible requise)</span>}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleUsePower(purchase)}
+                        disabled={usingPower === purchase.id || isTargeted}
+                        className="text-purple-400 hover:text-purple-300 text-xs"
+                        title={isTargeted ? 'UI de sélection de cible à venir' : undefined}
+                      >
+                        {usingPower === purchase.id ? '...' : isTargeted ? '🎯' : 'Utiliser'}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
           
           {powerResult && (
             <p className={`mt-2 text-xs ${
