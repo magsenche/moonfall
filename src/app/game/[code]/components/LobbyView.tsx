@@ -139,9 +139,9 @@ export function LobbyView({
               ))}
 
               {/* Empty slots */}
-              {game.players.length < 6 && (
+              {game.players.length < 3 && (
                 <li className="p-3 border-2 border-dashed border-slate-700 rounded-xl text-center text-slate-500">
-                  En attente de joueurs... (min. 6)
+                  En attente de joueurs... (min. 3)
                 </li>
               )}
             </ul>
@@ -271,6 +271,36 @@ export function LobbyView({
                   </div>
                 </div>
 
+                {/* Auto-Garou Mode */}
+                <div className="border-t border-slate-700 pt-4 mt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm text-slate-400 block">
+                        🤖 Mode Auto-Garou
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Sans MJ dédié : phases automatiques, tout le monde joue
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onSettingsChange({
+                        ...gameSettings,
+                        autoMode: !gameSettings.autoMode
+                      })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        gameSettings.autoMode ? 'bg-indigo-600' : 'bg-slate-700'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          gameSettings.autoMode ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
                 {/* Roles Distribution */}
                 <div className="border-t border-slate-700 pt-4 mt-4">
                   <label className="text-sm text-slate-400 mb-3 block">
@@ -369,6 +399,18 @@ export function LobbyView({
           </Card>
         )}
 
+        {/* Auto-Garou Mode Banner */}
+        {gameSettings.autoMode && (
+          <div className="mt-4 p-3 bg-indigo-900/50 border border-indigo-500/50 rounded-xl text-center">
+            <span className="text-indigo-300 text-sm font-medium">
+              🤖 Mode Auto-Garou activé
+            </span>
+            <p className="text-xs text-indigo-400/80 mt-1">
+              Tout le monde joue • Phases automatiques
+            </p>
+          </div>
+        )}
+
         {/* Start Game Button (MJ only) */}
         {isMJ && game.players.length >= 3 && (
           <div className="mt-6">
@@ -386,7 +428,9 @@ export function LobbyView({
               </p>
             )}
             <p className="text-xs text-slate-500 text-center mt-2">
-              Les rôles seront attribués aléatoirement
+              {gameSettings.autoMode 
+                ? 'Tu recevras aussi un rôle !' 
+                : 'Les rôles seront attribués aléatoirement'}
             </p>
           </div>
         )}

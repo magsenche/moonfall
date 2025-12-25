@@ -19,7 +19,7 @@ const VALID_TRANSITIONS: Record<GameStatus, GameStatus[]> = {
   terminee: [],
 };
 
-// Phases that have a timer
+// Phases that have a timer (nuit also in auto mode - handled below)
 const TIMED_PHASES: GameStatus[] = ['jour', 'conseil'];
 
 export async function POST(
@@ -45,6 +45,10 @@ export async function POST(
     return NextResponse.json({ error: 'Partie non trouvée' }, { status: 404 });
   }
 
+  // Get settings including autoMode
+  const settings = (game.settings || {}) as Partial<GameSettings>;
+  const isAutoMode = settings.autoMode ?? false;
+
   // Validate transition
   const validNextPhases = VALID_TRANSITIONS[game.status as GameStatus] ?? [];
   if (!validNextPhases.includes(phase)) {
@@ -53,9 +57,6 @@ export async function POST(
       { status: 400 }
     );
   }
-
-  // Get custom durations from settings or use defaults
-  const settings = (game.settings || {}) as Partial<GameSettings>;
   
   // Map phase to settings key (conseil uses voteDurationMinutes)
   const getPhaseDurationSeconds = (p: GameStatus): number => {
@@ -72,9 +73,13 @@ export async function POST(
     return PHASE_DURATIONS[p as keyof typeof PHASE_DURATIONS] ?? 0;
   };
 
+  // In auto mode, all phases have a timer (including nuit)
+  // In normal mode, only jour and conseil have timers
+  const phasesWithTimer = isAutoMode ? [...TIMED_PHASES, 'nuit'] : TIMED_PHASES;
+
   // Calculate phase_ends_at if this phase has a timer
   let phaseEndsAt: string | null = null;
-  if (TIMED_PHASES.includes(phase)) {
+  if (phasesWithTimer.includes(phase)) {
     const durationSeconds = getPhaseDurationSeconds(phase);
     if (durationSeconds) {
       phaseEndsAt = new Date(Date.now() + durationSeconds * 1000).toISOString();

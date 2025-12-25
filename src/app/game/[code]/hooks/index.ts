@@ -10,6 +10,7 @@
  * - useMissions: Mission system
  * - useGameSettings: MJ settings management
  * - usePlayerSession: Player identification
+ * - useAutoGarou: Auto mode (no MJ) progression
  */
 
 export * from './types';
@@ -21,3 +22,4 @@ export * from './useWolfChat';
 export * from './useMissions';
 export * from './useGameSettings';
 export * from './usePlayerSession';
+export * from './useAutoGarou';

@@ -41,6 +41,7 @@ export function useGameSettings({
         voteDurationMinutes: settings.voteDurationMinutes ?? DEFAULT_GAME_SETTINGS.voteDurationMinutes,
         councilIntervalMinutes: settings.councilIntervalMinutes ?? DEFAULT_GAME_SETTINGS.councilIntervalMinutes,
         rolesDistribution: settings.rolesDistribution ?? {},
+        autoMode: settings.autoMode ?? DEFAULT_GAME_SETTINGS.autoMode,
       });
     } catch (err) {
       console.error('Failed to load settings:', err);

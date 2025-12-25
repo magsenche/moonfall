@@ -42,8 +42,14 @@ export async function POST(
       );
     }
 
-    // Get non-MJ players
-    const players = game.players.filter((p) => !p.is_mj);
+    // Get settings including autoMode
+    const settings = (game.settings || {}) as Partial<GameSettings>;
+    const isAutoMode = settings.autoMode ?? false;
+
+    // In auto mode, everyone plays (including MJ). In normal mode, MJ is excluded.
+    const players = isAutoMode 
+      ? game.players 
+      : game.players.filter((p) => !p.is_mj);
     
     if (players.length < 3) {
       return NextResponse.json(
@@ -81,7 +87,6 @@ export async function POST(
     }
 
     const playerCount = players.length;
-    const settings = (game.settings || {}) as Partial<GameSettings>;
     const customDistribution = settings.rolesDistribution || {};
     
     // Check if we have a custom distribution configured
@@ -163,13 +168,21 @@ export async function POST(
       );
     }
 
+    // Calculate phase_ends_at for first night (only in auto mode)
+    let phaseEndsAt: string | null = null;
+    if (isAutoMode) {
+      const nightDurationMinutes = settings.nightDurationMinutes ?? 2;
+      phaseEndsAt = new Date(Date.now() + nightDurationMinutes * 60 * 1000).toISOString();
+    }
+
     // Update game status to 'nuit' (first night)
     const { error: updateError } = await supabase
       .from('games')
       .update({ 
         status: 'nuit',
         current_phase: 1,
-        started_at: new Date().toISOString()
+        started_at: new Date().toISOString(),
+        phase_ends_at: phaseEndsAt,
       })
       .eq('id', game.id);
 
@@ -191,7 +204,8 @@ export async function POST(
         player_count: playerCount,
         wolf_count: wolfCount,
         custom_distribution: useCustomDistribution,
-        roles_distribution: useCustomDistribution ? customDistribution : 'auto'
+        roles_distribution: useCustomDistribution ? customDistribution : 'auto',
+        auto_mode: isAutoMode,
       }
     });
 

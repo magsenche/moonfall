@@ -32,6 +32,7 @@ import {
   useWolfChat,
   useMissions,
   useGameSettings,
+  useAutoGarou,
   type GameWithPlayers,
   type Role,
 } from './hooks';
@@ -98,7 +99,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
   });
 
   // Timer hook
-  const { timeRemaining } = useTimer({
+  const { timeRemaining, isExpired } = useTimer({
     phaseEndsAt: game.phase_ends_at,
   });
 
@@ -108,6 +109,9 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
   const alivePlayers = players.filter(p => p.is_alive !== false);
   const isMJ = currentPlayerId === mj?.id;
   
+  // Auto mode from settings
+  const isAutoMode = (game.settings as { autoMode?: boolean })?.autoMode ?? false;
+
   const currentPlayer = currentPlayerId
     ? game.players.find(p => p.id === currentPlayerId)
     : null;
@@ -163,6 +167,15 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
     currentPlayerId,
     isMJ,
     gameStatus: game.status || 'lobby',
+  });
+
+  // Auto-Garou hook (no MJ mode)
+  useAutoGarou({
+    gameCode: game.code,
+    gameStatus: (game.status || 'lobby') as 'lobby' | 'jour' | 'nuit' | 'conseil' | 'terminee',
+    isAutoMode,
+    isExpired,
+    currentPlayerId,
   });
 
   // Copy game code
@@ -419,7 +432,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
           <CardContent className="pt-6">
             <PhaseTimer
               timeRemaining={timeRemaining}
-              showTimer={game.status === 'jour' || game.status === 'conseil'}
+              showTimer={game.status === 'jour' || game.status === 'conseil' || (isAutoMode && game.status === 'nuit')}
             />
             <PhaseInstructions
               status={game.status || 'lobby'}
@@ -449,8 +462,8 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
           />
         )}
 
-        {/* MJ Controls */}
-        {isMJ && game.status !== 'terminee' && (
+        {/* MJ Controls - Hidden in Auto-Garou mode */}
+        {isMJ && game.status !== 'terminee' && !isAutoMode && (
           <MJControls
             gameStatus={game.status || 'lobby'}
             wolfVoteCount={nightActions.wolfVoteCount}
@@ -470,7 +483,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
             missions={missions.missions}
             players={players}
             currentPlayerId={currentPlayerId}
-            isMJ={isMJ}
+            isMJ={isMJ && !isAutoMode}
             showMissionForm={missions.showMissionForm}
             gameCode={game.code}
             onShowMissionForm={missions.setShowMissionForm}
@@ -484,13 +497,13 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
           players={game.players}
           roles={roles}
           currentPlayerId={currentPlayerId}
-          isMJ={isMJ}
+          isMJ={isMJ && !isAutoMode}
           isWolf={isWolf}
           wolves={wolves}
         />
 
-        {/* MJ Overview Panel */}
-        {isMJ && (
+        {/* MJ Overview Panel - Hidden in Auto-Garou mode */}
+        {isMJ && !isAutoMode && (
           <MJOverview
             players={players}
             roles={roles}

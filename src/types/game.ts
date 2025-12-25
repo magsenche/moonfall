@@ -53,16 +53,19 @@ export interface GameSettings {
   rolesDistribution: {
     [roleId: string]: number; // how many of each role
   };
+  // Auto-Garou mode: no dedicated MJ, phases auto-advance, votes auto-resolve
+  autoMode: boolean;
 }
 
 // Default game settings
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
-  minPlayers: 6,
+  minPlayers: 3,
   maxPlayers: 30,
   councilIntervalMinutes: 120, // every 2 hours
   nightDurationMinutes: 30,
   voteDurationMinutes: 15,
   rolesDistribution: {},
+  autoMode: false,
 };
 
 // Player in a game (frontend/camelCase version)
