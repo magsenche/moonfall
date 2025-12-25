@@ -87,27 +87,27 @@ export async function PATCH(
 
   // Validate settings
   if (settings.nightDurationMinutes !== undefined) {
-    if (settings.nightDurationMinutes < 1 || settings.nightDurationMinutes > 120) {
+    if (settings.nightDurationMinutes < 0.5 || settings.nightDurationMinutes > 120) {
       return NextResponse.json(
-        { error: 'Durée de nuit invalide (1-120 min)' },
+        { error: 'Durée de nuit invalide (30s-120 min)' },
         { status: 400 }
       );
     }
   }
 
   if (settings.voteDurationMinutes !== undefined) {
-    if (settings.voteDurationMinutes < 1 || settings.voteDurationMinutes > 60) {
+    if (settings.voteDurationMinutes < 0.5 || settings.voteDurationMinutes > 60) {
       return NextResponse.json(
-        { error: 'Durée de vote invalide (1-60 min)' },
+        { error: 'Durée de vote invalide (30s-60 min)' },
         { status: 400 }
       );
     }
   }
 
   if (settings.councilIntervalMinutes !== undefined) {
-    if (settings.councilIntervalMinutes < 5 || settings.councilIntervalMinutes > 480) {
+    if (settings.councilIntervalMinutes < 1 || settings.councilIntervalMinutes > 480) {
       return NextResponse.json(
-        { error: 'Intervalle de conseil invalide (5-480 min)' },
+        { error: 'Durée du jour invalide (1-480 min)' },
         { status: 400 }
       );
     }

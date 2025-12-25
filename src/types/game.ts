@@ -61,9 +61,9 @@ export interface GameSettings {
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
   minPlayers: 3,
   maxPlayers: 30,
-  councilIntervalMinutes: 120, // every 2 hours
-  nightDurationMinutes: 30,
-  voteDurationMinutes: 15,
+  councilIntervalMinutes: 5, // 5 minutes day phase by default
+  nightDurationMinutes: 2,    // 2 minutes night by default
+  voteDurationMinutes: 2,     // 2 minutes council by default
   rolesDistribution: {},
   autoMode: false,
 };

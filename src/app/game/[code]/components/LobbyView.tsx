@@ -204,18 +204,20 @@ export function LobbyView({
                   <div className="flex items-center gap-3">
                     <input
                       type="range"
-                      min={5}
+                      min={0.5}
                       max={60}
-                      step={5}
+                      step={0.5}
                       value={gameSettings.nightDurationMinutes}
                       onChange={(e) => onSettingsChange({
                         ...gameSettings,
-                        nightDurationMinutes: parseInt(e.target.value)
+                        nightDurationMinutes: parseFloat(e.target.value)
                       })}
                       className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
                     />
                     <span className="text-white font-medium w-16 text-right">
-                      {gameSettings.nightDurationMinutes} min
+                      {gameSettings.nightDurationMinutes < 1 
+                        ? `${Math.round(gameSettings.nightDurationMinutes * 60)}s`
+                        : `${gameSettings.nightDurationMinutes} min`}
                     </span>
                   </div>
                 </div>
@@ -228,18 +230,20 @@ export function LobbyView({
                   <div className="flex items-center gap-3">
                     <input
                       type="range"
-                      min={1}
+                      min={0.5}
                       max={30}
-                      step={1}
+                      step={0.5}
                       value={gameSettings.voteDurationMinutes}
                       onChange={(e) => onSettingsChange({
                         ...gameSettings,
-                        voteDurationMinutes: parseInt(e.target.value)
+                        voteDurationMinutes: parseFloat(e.target.value)
                       })}
                       className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
                     />
                     <span className="text-white font-medium w-16 text-right">
-                      {gameSettings.voteDurationMinutes} min
+                      {gameSettings.voteDurationMinutes < 1 
+                        ? `${Math.round(gameSettings.voteDurationMinutes * 60)}s`
+                        : `${gameSettings.voteDurationMinutes} min`}
                     </span>
                   </div>
                 </div>
@@ -252,9 +256,9 @@ export function LobbyView({
                   <div className="flex items-center gap-3">
                     <input
                       type="range"
-                      min={30}
+                      min={1}
                       max={480}
-                      step={30}
+                      step={1}
                       value={gameSettings.councilIntervalMinutes}
                       onChange={(e) => onSettingsChange({
                         ...gameSettings,

@@ -462,8 +462,8 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
           />
         )}
 
-        {/* MJ Controls - Hidden in Auto-Garou mode */}
-        {isMJ && game.status !== 'terminee' && !isAutoMode && (
+        {/* MJ Controls - Also available in Auto-Garou mode to skip phases */}
+        {isMJ && game.status !== 'terminee' && (
           <MJControls
             gameStatus={game.status || 'lobby'}
             wolfVoteCount={nightActions.wolfVoteCount}
@@ -474,6 +474,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
             onResolveVote={voting.resolveVote}
             onResolveNightVote={nightActions.resolveNightVote}
             onCancelForce={() => nightActions.setShowForceConfirm(false)}
+            isAutoMode={isAutoMode}
           />
         )}
 

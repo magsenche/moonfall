@@ -16,6 +16,7 @@ interface MJControlsProps {
   onResolveVote: () => void;
   onResolveNightVote: (force?: boolean) => void;
   onCancelForce: () => void;
+  isAutoMode?: boolean;
 }
 
 export function MJControls({
@@ -28,11 +29,17 @@ export function MJControls({
   onResolveVote,
   onResolveNightVote,
   onCancelForce,
+  isAutoMode = false,
 }: MJControlsProps) {
   return (
     <Card className="mb-6 border border-purple-500/30">
       <CardHeader>
-        <CardTitle className="text-purple-400">🎭 Contrôles MJ</CardTitle>
+        <CardTitle className="text-purple-400">
+          🎭 Contrôles MJ
+          {isAutoMode && (
+            <span className="ml-2 text-xs font-normal text-indigo-400">(Auto-Garou)</span>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {gameStatus === 'nuit' && (
