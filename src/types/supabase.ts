@@ -780,7 +780,9 @@ export type Database = {
       }
       roles: {
         Row: {
+          bg_color: string | null
           card_image_url: string | null
+          color: string | null
           created_at: string | null
           description: string
           display_name: string
@@ -789,10 +791,13 @@ export type Database = {
           image_url: string | null
           is_active: boolean | null
           name: string
+          short_description: string | null
           team: Database["public"]["Enums"]["team_type"]
         }
         Insert: {
+          bg_color?: string | null
           card_image_url?: string | null
+          color?: string | null
           created_at?: string | null
           description: string
           display_name: string
@@ -801,10 +806,13 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean | null
           name: string
+          short_description?: string | null
           team: Database["public"]["Enums"]["team_type"]
         }
         Update: {
+          bg_color?: string | null
           card_image_url?: string | null
+          color?: string | null
           created_at?: string | null
           description?: string
           display_name?: string
@@ -813,6 +821,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean | null
           name?: string
+          short_description?: string | null
           team?: Database["public"]["Enums"]["team_type"]
         }
         Relationships: []

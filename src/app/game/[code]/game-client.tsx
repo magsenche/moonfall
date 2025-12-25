@@ -16,7 +16,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui';
-import { GamePhaseBadge, GameOver } from '@/components/game';
+import { GamePhaseBadge, GameOver, TipToast, useGameTips, RulesButton } from '@/components/game';
 import { getRoleConfig } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/lib/notifications';
@@ -137,6 +137,16 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
         return pRole?.team === 'loups';
       })
     : [];
+
+  // Tips hook - show contextual tips based on game phase and player role
+  const { currentTipId, dismissCurrentTip } = useGameTips(
+    game.status || 'lobby',
+    currentRole?.name,
+    isWolf,
+    isSeer,
+    isLittleGirl,
+    isWitch
+  );
 
   // Voting hook
   const voting = useVoting({
@@ -398,7 +408,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
         {/* Game Header */}
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-white mb-2">{game.name}</h1>
-          <GamePhaseBadge status={game.status || 'lobby'} className="inline-flex" />
+          <GamePhaseBadge status={game.status || 'lobby'} showHelp className="inline-flex" />
         </div>
 
         {/* Player's Role Card */}
@@ -587,6 +597,16 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
           onShotComplete={handleHunterShotComplete}
         />
       )}
+
+      {/* Tip Toast - Contextual tips for new players */}
+      {currentTipId && (
+        <TipToast tipId={currentTipId} show={true} onDismiss={dismissCurrentTip} />
+      )}
+
+      {/* Floating Rules Button - Always accessible */}
+      <div className="fixed bottom-4 right-4 z-40">
+        <RulesButton size="sm" />
+      </div>
     </main>
   );
 }

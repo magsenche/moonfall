@@ -6,3 +6,9 @@ export { NotificationPrompt, NotificationBadge } from './notification-prompt';
 export { GameOver } from './game-over';
 export { MissionForm } from './mission-form';
 export { MissionCard } from './mission-card';
+
+// Help system components
+export { RoleDetailModal } from './role-detail-modal';
+export { PhaseHelpTooltip } from './phase-help-tooltip';
+export { TipToast, useTip, useGameTips } from './tip-toast';
+export { RulesModal, RulesButton } from './rules-modal';

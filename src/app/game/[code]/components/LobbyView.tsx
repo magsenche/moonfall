@@ -6,7 +6,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, Button } from '@/components/ui';
-import { PlayerAvatar } from '@/components/game';
+import { PlayerAvatar, RulesButton } from '@/components/game';
 import { NotificationPrompt } from '@/components/game/notification-prompt';
 import { getRoleConfig } from '@/config/roles';
 import type { GameWithPlayers, Role, GameSettings } from '../hooks/types';
@@ -97,6 +97,11 @@ export function LobbyView({
         {/* Notification Prompt */}
         <div className="mb-6">
           <NotificationPrompt playerId={currentPlayerId || undefined} />
+        </div>
+
+        {/* Rules Button */}
+        <div className="mb-6">
+          <RulesButton />
         </div>
 
         {/* Players List */}

@@ -2,12 +2,14 @@
 
 import { theme } from '@/config/theme';
 import { cn } from '@/lib/utils';
+import { PhaseHelpTooltip } from './phase-help-tooltip';
 import type { GameStatus } from '@/types/database';
 
 interface GamePhaseBadgeProps {
   status: GameStatus;
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
+  showHelp?: boolean;
   className?: string;
 }
 
@@ -29,23 +31,27 @@ export function GamePhaseBadge({
   status,
   size = 'md',
   showLabel = true,
+  showHelp = false,
   className,
 }: GamePhaseBadgeProps) {
   const phaseKey = status as keyof typeof theme.phases;
   const phaseConfig = theme.phases[phaseKey] || theme.phases.lobby;
 
   return (
-    <div
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-full font-medium',
-        sizeClasses[size],
-        phaseConfig.bg,
-        phaseConfig.text,
-        className
-      )}
-    >
-      <span>{phaseConfig.icon}</span>
-      {showLabel && <span>{phaseLabels[status] || status}</span>}
+    <div className="inline-flex items-center gap-2">
+      <div
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full font-medium',
+          sizeClasses[size],
+          phaseConfig.bg,
+          phaseConfig.text,
+          className
+        )}
+      >
+        <span>{phaseConfig.icon}</span>
+        {showLabel && <span>{phaseLabels[status] || status}</span>}
+      </div>
+      {showHelp && <PhaseHelpTooltip phase={status} />}
     </div>
   );
 }
