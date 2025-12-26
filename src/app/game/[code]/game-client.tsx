@@ -13,8 +13,9 @@
 
 'use client';
 
-import { GameProvider, TimerProvider, useGame } from './context';
+import { GameProvider, TimerProvider, useGame, useTimerContext } from './context';
 import { GameLayout } from './components/GameLayout';
+import { useAutoGarou } from './hooks';
 import type { GameWithPlayers, Role } from './hooks';
 
 interface GameClientProps {
@@ -23,8 +24,32 @@ interface GameClientProps {
 }
 
 /**
- * Inner component that wraps children with TimerProvider
- * This must be inside GameProvider to access game.phase_ends_at
+ * GameLogic - Invisible component that handles auto-garou mode
+ * 
+ * This component uses useTimerContext() for isExpired, so it re-renders
+ * each second. But since it returns null (no UI), this is cheap.
+ * This isolates the timer dependency from GameLayout and its children.
+ */
+function GameLogic() {
+  const { game, gameStatus, isAutoMode, currentPlayerId } = useGame();
+  const { isExpired } = useTimerContext();
+
+  useAutoGarou({
+    gameCode: game.code,
+    gameStatus: gameStatus as 'lobby' | 'jour' | 'nuit' | 'conseil' | 'terminee',
+    isAutoMode,
+    isExpired,
+    currentPlayerId,
+  });
+
+  return null; // No UI, just logic
+}
+
+/**
+ * TimerWrapper - Wraps children with TimerProvider
+ * 
+ * Must be inside GameProvider to access game.phase_ends_at which
+ * updates in real-time when phases change.
  */
 function TimerWrapper({ children }: { children: React.ReactNode }) {
   const { game } = useGame();
@@ -39,6 +64,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
   return (
     <GameProvider initialGame={initialGame} roles={roles}>
       <TimerWrapper>
+        <GameLogic />
         <GameLayout />
       </TimerWrapper>
     </GameProvider>
