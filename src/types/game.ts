@@ -65,7 +65,7 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
   nightDurationMinutes: 2,    // 2 minutes night by default
   voteDurationMinutes: 2,     // 2 minutes council by default
   rolesDistribution: {},
-  autoMode: false,
+  autoMode: true, // Default to Auto-Garou (no dedicated MJ, everyone plays)
 };
 
 // Player in a game (frontend/camelCase version)

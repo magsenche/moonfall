@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MotionButton, Button, Input, MotionCard, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import { OnboardingTooltips } from '@/components/game';
 import { cn } from '@/lib/utils';
 import { 
   savePlayerSession, 
@@ -514,6 +515,9 @@ export default function HomePage() {
           </p>
         </motion.div>
       </div>
+
+      {/* Onboarding tooltips */}
+      <OnboardingTooltips location="home" />
     </main>
   );
 }

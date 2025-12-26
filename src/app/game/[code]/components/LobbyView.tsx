@@ -8,7 +8,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { MotionCard, CardContent, CardHeader, CardTitle, MotionButton, Button } from '@/components/ui';
-import { PlayerAvatar, RulesButton, PhaseBackground } from '@/components/game';
+import { PlayerAvatar, RulesButton, PhaseBackground, OnboardingTooltips } from '@/components/game';
 import { NotificationPrompt } from '@/components/game/notification-prompt';
 import { getRoleConfig } from '@/config/roles';
 import { cn } from '@/lib/utils';
@@ -527,6 +527,9 @@ export function LobbyView() {
           ← Quitter le lobby
         </MotionButton>
       </div>
+
+      {/* Onboarding tooltips for new users */}
+      <OnboardingTooltips location="lobby" />
     </main>
   );
 }
