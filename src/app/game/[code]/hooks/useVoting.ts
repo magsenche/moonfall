@@ -11,6 +11,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { submitVote as apiSubmitVote, resolveVote as apiResolveVote, ApiError, VoteDetail, VoteResolveResponse } from '@/lib/api';
 
 interface UseVotingOptions {
@@ -111,6 +112,87 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
   const clearVoteResults = useCallback(() => {
     setVoteResults(null);
   }, []);
+
+  // Realtime subscription for vote count updates
+  useEffect(() => {
+    // Only subscribe during conseil phase and when not voted yet
+    if (gameStatus !== 'conseil') return;
+    
+    const supabase = createClient();
+    
+    // Fetch current vote count on mount/status change
+    const fetchVoteCount = async () => {
+      try {
+        const { data: game } = await supabase
+          .from('games')
+          .select('code')
+          .eq('code', gameCode)
+          .single();
+        
+        if (!game) return;
+        
+        const { data: gameWithId } = await supabase
+          .from('games')
+          .select('id')
+          .eq('code', gameCode)
+          .single();
+        
+        if (!gameWithId) return;
+        
+        // Count votes for current phase
+        const { count: voteCount } = await supabase
+          .from('votes')
+          .select('*', { count: 'exact', head: true })
+          .eq('game_id', gameWithId.id)
+          .eq('vote_type', 'jour');
+        
+        // Count alive non-MJ players (or MJ in auto mode)
+        const { data: players } = await supabase
+          .from('players')
+          .select('is_mj, is_alive')
+          .eq('game_id', gameWithId.id);
+        
+        const { data: gameSettings } = await supabase
+          .from('games')
+          .select('settings')
+          .eq('id', gameWithId.id)
+          .single();
+        
+        const settings = gameSettings?.settings as { autoMode?: boolean } | null;
+        const isAutoMode = settings?.autoMode === true;
+        const totalVoters = players?.filter(p => 
+          p.is_alive && (!p.is_mj || isAutoMode)
+        ).length || 0;
+        
+        setVotesCount(voteCount || 0);
+        setTotalVoters(totalVoters);
+      } catch (err) {
+        console.error('Error fetching vote count:', err);
+      }
+    };
+    
+    fetchVoteCount();
+    
+    // Subscribe to vote changes
+    const channel = supabase
+      .channel(`votes:${gameCode}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'votes',
+        },
+        () => {
+          fetchVoteCount();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [gameCode, gameStatus]);
 
   return {
     // State

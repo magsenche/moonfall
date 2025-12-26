@@ -120,46 +120,46 @@ export function VotingPanel({
               initial="hidden"
               animate="show"
             >
-              <div className="space-y-2 mb-4">
-                {targets.map((player) => (
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {targets.map((player, i) => (
                   <motion.button
                     key={player.id}
-                    variants={itemVariants}
-                    whileHover={{ scale: 1.02, x: 4 }}
-                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
                     onClick={() => onSelectTarget(player.id)}
+                    whileTap={{ scale: 0.95 }}
                     className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-xl transition-colors",
-                      "border-2 min-h-[52px]",
+                      "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
                       selectedTarget === player.id
-                        ? "bg-red-900/50 border-red-500 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]"
-                        : "bg-zinc-800/80 border-white/20 hover:border-white/40"
+                        ? "bg-red-500/30 border-2 border-red-500 shadow-[3px_3px_0px_0px_rgba(220,38,38,0.5)]"
+                        : "bg-zinc-800/50 hover:bg-red-900/30 border-2 border-transparent"
                     )}
                   >
-                    <PlayerAvatar
-                      playerId={player.id}
-                      pseudo={player.pseudo}
-                      size="sm"
-                      showDeadSticker={false}
-                    />
-                    <span className="font-bold text-white flex-1 text-left">{player.pseudo}</span>
-                    
-                    <AnimatePresence>
+                    <div className="relative">
+                      <PlayerAvatar
+                        playerId={player.id}
+                        pseudo={player.pseudo}
+                        size="sm"
+                        showDeadSticker={false}
+                      />
                       {selectedTarget === player.id && (
                         <motion.span
-                          initial={{ scale: 0, rotate: -20 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          exit={{ scale: 0 }}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
                           className={cn(
-                            'px-2 py-1 rounded-md text-xs font-bold',
-                            'bg-red-600 border-2 border-white text-white',
-                            'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.4)]'
+                            'absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full',
+                            'bg-red-600 border border-white text-white font-bold',
+                            'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)]'
                           )}
                         >
-                          ☠️ CIBLE
+                          ☠️
                         </motion.span>
                       )}
-                    </AnimatePresence>
+                    </div>
+                    <span className="font-medium text-white text-sm truncate w-full text-center">
+                      {player.pseudo}
+                    </span>
                   </motion.button>
                 ))}
               </div>
