@@ -10,8 +10,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../context';
 import { getRoleConfig } from '@/config/roles';
-import { cn } from '@/lib/utils';
-import { GameOver, TipToast, RulesButton, PhaseBackground } from '@/components/game';
+import { GameOver, TipToast, RulesButton, PhaseBackground, MissionsDrawer } from '@/components/game';
 
 import { SessionRecovery } from './SessionRecovery';
 import { HunterDeathModal } from './HunterDeathModal';
@@ -127,6 +126,27 @@ export function GameLayout() {
 
       {/* Floating Rules Button - Sticker style */}
       <RulesButton variant="floating" />
+
+      {/* Floating Missions Drawer */}
+      {gameStatus !== 'terminee' && <MissionsDrawerWrapper />}
     </main>
+  );
+}
+
+// Wrapper component to access context
+function MissionsDrawerWrapper() {
+  const { game, players, currentPlayerId, isMJ, isAutoMode, missions, ui } = useGame();
+  
+  return (
+    <MissionsDrawer
+      missions={missions.missions}
+      players={players}
+      currentPlayerId={currentPlayerId}
+      isMJ={isMJ}
+      isAutoMode={isAutoMode}
+      gameCode={game.code}
+      onMissionCreated={ui.refreshShop}
+      onMissionUpdate={ui.refreshShop}
+    />
   );
 }

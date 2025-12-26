@@ -67,6 +67,22 @@ const EVENT_NOTIFICATIONS: Record<string, { emoji: string; title: string; body: 
     emoji: '💀',
     title: 'Élimination !',
     body: 'Un joueur a été éliminé...'
+  },
+  // Mission events
+  mission_created: {
+    emoji: '📋',
+    title: 'Nouvelle mission !',
+    body: 'Une nouvelle mission a été créée pour toi.'
+  },
+  mission_validate: {
+    emoji: '✅',
+    title: 'Mission réussie !',
+    body: 'Une mission vient d\'être validée !'
+  },
+  mission_fail: {
+    emoji: '❌',
+    title: 'Mission échouée',
+    body: 'Une mission a échoué...'
   }
 }
 
@@ -76,6 +92,34 @@ function getNotificationInfo(event_type: string, data: Record<string, unknown>):
   if (event_type === 'phase_changed') {
     const newPhase = (data?.to || data?.new_phase || data?.phase) as string
     return PHASE_NOTIFICATIONS[newPhase] || null
+  }
+  
+  // For mission events, customize with mission title
+  if (event_type === 'mission_created') {
+    const missionTitle = data?.title as string || 'Une mission'
+    return {
+      emoji: '📋',
+      title: 'Nouvelle mission !',
+      body: `"${missionTitle}" - C'est pour toi !`
+    }
+  }
+  
+  if (event_type === 'mission_validate') {
+    const missionTitle = data?.title as string || 'Ta mission'
+    return {
+      emoji: '✅',
+      title: 'Mission réussie !',
+      body: `"${missionTitle}" a été validée !`
+    }
+  }
+  
+  if (event_type === 'mission_fail') {
+    const missionTitle = data?.title as string || 'Ta mission'
+    return {
+      emoji: '❌',
+      title: 'Mission échouée',
+      body: `"${missionTitle}" a échoué...`
+    }
   }
   
   // For other events, check if they have a notification configured
@@ -123,12 +167,12 @@ Deno.serve(async (req) => {
     }
 
     // Get all players in the game
-    const { data: players } = await supabase
+    const { data: allPlayers } = await supabase
       .from('players')
       .select('id, user_id, pseudo')
       .eq('game_id', game_id)
 
-    if (!players || players.length === 0) {
+    if (!allPlayers || allPlayers.length === 0) {
       console.log('[Push] No players found')
       return new Response(JSON.stringify({ message: 'No players to notify' }), {
         status: 200,
@@ -136,9 +180,29 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Filter players based on event type
+    // For mission events, only notify assigned players
+    let targetPlayers = allPlayers
+    const eventData = data as Record<string, unknown> || {}
+    
+    if (event_type === 'mission_created') {
+      const assignedPlayerIds = eventData.assigned_player_ids as string[] | undefined
+      if (assignedPlayerIds && assignedPlayerIds.length > 0) {
+        targetPlayers = allPlayers.filter(p => assignedPlayerIds.includes(p.id))
+        console.log(`[Push] Mission created - notifying ${targetPlayers.length} assigned players`)
+      }
+    } else if (event_type === 'mission_validate' || event_type === 'mission_fail') {
+      // For mission completion, notify the winner/assigned player
+      const targetId = payload.record.target_id
+      if (targetId) {
+        targetPlayers = allPlayers.filter(p => p.id === targetId)
+        console.log(`[Push] Mission ${event_type} - notifying target player`)
+      }
+    }
+
     // Get push subscriptions - by user_id OR player_id
-    const playerIds = players.map(p => p.id)
-    const userIds = players.map(p => p.user_id).filter(Boolean) as string[]
+    const playerIds = targetPlayers.map(p => p.id)
+    const userIds = targetPlayers.map(p => p.user_id).filter(Boolean) as string[]
     
     // Query subscriptions by player_id
     const { data: subsByPlayer } = await supabase

@@ -16,3 +16,6 @@ export { RulesModal, RulesButton } from './rules-modal';
 
 // Onboarding
 export { OnboardingTooltips, resetOnboarding } from './onboarding-tooltips';
+
+// Missions
+export { MissionsDrawer } from './missions-drawer';

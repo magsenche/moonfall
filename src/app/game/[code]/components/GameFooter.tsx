@@ -17,7 +17,6 @@ import { useGame } from '../context';
 
 import { MJControls } from './MJControls';
 import { MJOverview } from './MJOverview';
-import { MissionsSection } from './MissionsSection';
 import { PlayersList } from './PlayersList';
 import { PlayerWallet } from './PlayerWallet';
 import { Shop } from './Shop';
@@ -27,7 +26,6 @@ export function GameFooter() {
     game,
     roles,
     currentPlayerId,
-    currentPlayer,
     isMJ,
     isAutoMode,
     isWolf,
@@ -38,7 +36,6 @@ export function GameFooter() {
     gameStatus,
     nightActions,
     voting,
-    missions,
     actions,
     ui,
   } = useGame();
@@ -175,22 +172,6 @@ export function GameFooter() {
             )}
           </AnimatePresence>
         </motion.div>
-      )}
-
-      {/* Missions Section - Available in auto mode with restrictions */}
-      {gameStatus !== 'terminee' && (
-        <MissionsSection
-          missions={missions.missions}
-          players={players}
-          currentPlayerId={currentPlayerId}
-          isMJ={isMJ}
-          isAutoMode={isAutoMode}
-          showMissionForm={missions.showMissionForm}
-          gameCode={game.code}
-          onShowMissionForm={missions.setShowMissionForm}
-          onMissionCreated={ui.refreshShop}
-          onMissionUpdate={ui.refreshShop}
-        />
       )}
 
       {/* Players List */}
