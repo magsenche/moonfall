@@ -24,12 +24,14 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
 | Table | Description |
 |-------|-------------|
 | `games` | Parties (code, status, settings, phase_ends_at, winner) |
-| `players` | Joueurs (pseudo, role_id, is_alive, is_mj) |
+| `players` | Joueurs (pseudo, role_id, is_alive, is_mj, mission_points) |
 | `roles` | Rôles disponibles (name, team, description, icon) |
 | `powers` | Pouvoirs par rôle (phase, priority, uses_per_game) |
-| `missions` | Missions IRL (type, category, reward, auction_data) |
+| `missions` | Missions IRL (type, category, difficulty, auction_data) |
 | `mission_assignments` | Participation joueurs aux missions |
 | `mission_templates` | Templates de missions réutilisables (globaux) |
+| `shop_items` | Items achetables (name, cost, effect_type, limits) |
+| `player_purchases` | Achats joueurs (shop_item_id, used_at, result) |
 | `votes` | Votes jour/nuit |
 | `wolf_chat` | Chat privé des loups |
 | `power_uses` | Historique pouvoirs utilisés |

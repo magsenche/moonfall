@@ -112,7 +112,7 @@ npm run supabase:types # Générer types TS depuis DB
 
 ## À faire
 
-- [ ] Ajouter `.env.example` avec toutes les variables
+- [x] Ajouter `.env.example` avec toutes les variables (`.env.local.example` créé)
 - [ ] Script de setup automatisé
 - [ ] Tests E2E avec Playwright
 - [ ] Storybook pour les composants UI

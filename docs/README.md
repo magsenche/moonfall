@@ -13,7 +13,8 @@
 | [ROLES.md](./ROLES.md) | Game design des rôles, pouvoirs, équipes |
 | [MISSIONS_DESIGN.md](./MISSIONS_DESIGN.md) | Système de missions IRL, enchères, récompenses |
 | [INFINITE_MODE.md](./INFINITE_MODE.md) | Mode Loup-Garou Infini (respawn + points) |
-| [HELP_SYSTEM.md](./HELP_SYSTEM.md) | 🆕 Système d'aide in-game, tooltips, règles |
+| [HELP_SYSTEM.md](./HELP_SYSTEM.md) | Système d'aide in-game, tooltips, règles |
+| [learn/](./learn/) | 🎓 **Guide d'apprentissage** (React, Next.js, Supabase, TypeScript...) |
 
 ## Liens rapides
 
@@ -35,4 +36,4 @@ Chaque doc contient une section "À faire" pour tracker les améliorations. Mett
 
 ---
 
-*Dernière mise à jour: 24/12/2025*
+*Dernière mise à jour: 26/12/2025*

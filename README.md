@@ -48,6 +48,18 @@ Voir [`docs/`](./docs/README.md) pour la documentation technique complète :
 - [ROLES.md](./docs/ROLES.md) - Game design des rôles
 - [MISSIONS_DESIGN.md](./docs/MISSIONS_DESIGN.md) - Système de missions
 
+## Tutoriels
+
+Guide d'apprentissage dans [`docs/learn/`](./docs/learn/README.md) :
+
+1. [Next.js Basics](./docs/learn/01-nextjs-basics.md) - App Router, Server Components
+2. [React Hooks](./docs/learn/02-react-hooks.md) - useState, useEffect, useMemo
+3. [Custom Hooks](./docs/learn/03-custom-hooks.md) - Créer ses propres hooks
+4. [Supabase](./docs/learn/04-supabase.md) - Client, Realtime, queries
+5. [TypeScript](./docs/learn/05-typescript.md) - Types, génériques, guards
+6. [Tailwind CSS](./docs/learn/06-tailwind.md) - Classes, cn(), responsive
+7. [Patterns](./docs/learn/07-patterns.md) - API Routes, sessions, PWA
+
 ## Commandes
 
 ```bash

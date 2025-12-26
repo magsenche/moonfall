@@ -338,4 +338,4 @@ Voir : `supabase/migrations/002_mission_templates.sql`
 
 ---
 
-*Document vivant - mis à jour le 25/12/2025*
+*Document vivant - mis à jour le 26/12/2025*

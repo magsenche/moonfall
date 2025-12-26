@@ -40,30 +40,34 @@
 
 ---
 
-## Rôles futurs - Adaptés IRL 🎮
+## Rôles implémentés - Adaptés IRL 🎮
 
 > **Note importante** : Ces rôles sont adaptés pour une expérience **IRL** où les joueurs ne peuvent pas vraiment "fermer les yeux". Les mécaniques sont repensées pour fonctionner via l'app.
 
-### Priorité haute (Prochaine implémentation)
+### Rôles Village (7 rôles)
 
-| Rôle | Équipe | Pouvoir IRL |
-|------|--------|-------------|
-| **Sorcière** | 🔵 Village | Voit qui va mourir la nuit + 1 potion de vie (annule) + 1 potion de mort (tue un autre joueur) |
-| **Chasseur** | 🔵 Village | À sa mort, choisit immédiatement un joueur à emporter avec lui (UI pop-up) |
-| **Petite Fille** | 🔵 Village | **Accès en lecture seule au chat des loups** (peut lire mais pas écrire) |
+| Rôle | Pouvoir IRL | Status |
+|------|-------------|--------|
+| **Villageois** | Aucun | ✅ Implémenté |
+| **Voyante** | Voit le rôle d'un joueur chaque nuit | ✅ Implémenté |
+| **Petite Fille** | Accès en lecture seule au chat des loups | ✅ Implémenté |
+| **Ancien** | Survit à la première attaque des loups (auto) | ✅ Implémenté |
+| **Chasseur** | À sa mort, choisit un joueur à emporter | ✅ Implémenté |
+| **Sorcière** | Potion de vie + potion de mort | ✅ Implémenté |
+| **Salvateur** | Protège un joueur chaque nuit | ⏳ À faire |
 
-### Priorité moyenne
+### Rôles Loups (1 rôle)
+
+| Rôle | Pouvoir IRL | Status |
+|------|-------------|--------|
+| **Loup-Garou** | Dévore un villageois chaque nuit, chat privé | ✅ Implémenté |
+
+### Rôles futurs
 
 | Rôle | Équipe | Pouvoir IRL |
 |------|--------|-------------|
 | **Cupidon** | 🔵 Village | En début de partie, désigne 2 amoureux. Si l'un meurt → l'autre meurt aussi (notification) |
 | **Salvateur** | 🔵 Village | Chaque nuit, protège un joueur. Si les loups le ciblent → survit. Ne peut pas se protéger 2x de suite. |
-| **Ancien** | 🔵 Village | Survit à la première attaque des loups (consommé automatiquement) |
-
-### Rôles spéciaux
-
-| Rôle | Équipe | Pouvoir IRL |
-|------|--------|-------------|
 | **Loup Blanc** | ⚪ Solo | Loup-garou visible dans le chat loup, mais une nuit sur deux peut tuer un loup secrètement |
 | **Ange** | ⚪ Solo | Gagne immédiatement s'il est éliminé au **premier** conseil. Sinon devient Villageois. |
 | **Corbeau** | 🔵 Village | Chaque nuit, désigne un joueur qui aura +2 votes contre lui au prochain conseil |
@@ -159,157 +163,13 @@ Algorithme actuel dans `/api/games/[code]/start/` :
 
 ## 🔧 Implémentation des nouveaux rôles
 
-### 1. Petite Fille 👧 (Facile)
+> Les rôles Petite Fille, Ancien, Chasseur et Sorcière sont maintenant **implémentés**. Voir les fichiers :
+> - `src/app/game/[code]/components/HunterDeathModal.tsx`
+> - `src/app/game/[code]/components/WitchNightPanel.tsx`
+> - `src/app/api/games/[code]/power/hunter/` et `witch/`
+> - `src/lib/help/role-details.ts` pour les descriptions
 
-**Concept IRL** : Accès en **lecture seule** au chat des loups.
-
-| Aspect | Détail |
-|--------|--------|
-| Équipe | 🔵 Village |
-| Pouvoir | Voit le chat des loups sans pouvoir écrire |
-| Risque | Aucun (contrairement à la version classique) |
-
-**Implémentation** :
-```typescript
-// game-client.tsx - Condition d'affichage du WolfChatPanel
-const canSeeWolfChat = isWolf || isLittleGirl;
-const canWriteWolfChat = isWolf; // Petite fille = read-only
-
-// WolfChatPanel.tsx - Props
-interface WolfChatPanelProps {
-  readOnly?: boolean; // true pour Petite Fille
-}
-```
-
-**Fichiers à modifier** :
-- `src/app/game/[code]/game-client.tsx` - Ajouter condition `isLittleGirl`
-- `src/app/game/[code]/components/WolfChatPanel.tsx` - Mode read-only
-- `src/config/roles.ts` - Ajouter config UI
-- Migration DB - Ajouter rôle
-
----
-
-### 2. Chasseur 🏹 (Moyen)
-
-**Concept IRL** : À sa mort (vote OU nuit), choisit immédiatement qui emporter.
-
-| Aspect | Détail |
-|--------|--------|
-| Équipe | 🔵 Village |
-| Pouvoir | Quand il meurt, tue un joueur de son choix |
-| Déclencheur | Mort par vote OU par loups |
-
-**Implémentation** :
-```typescript
-// Nouveau composant
-// src/app/game/[code]/components/HunterDeathModal.tsx
-interface HunterDeathModalProps {
-  alivePlayers: Player[];
-  onSelectTarget: (targetId: string) => void;
-  timeLimit?: number; // Timer optionnel
-}
-
-// API endpoint
-// POST /api/games/[code]/power/hunter
-// Body: { hunterId, targetId }
-// → Tue la cible, révèle son rôle
-```
-
-**Flow** :
-1. Chasseur meurt (vote ou nuit)
-2. Modal apparaît IMMÉDIATEMENT sur son écran
-3. Il choisit une cible parmi les vivants
-4. Cible meurt, rôle révélé
-5. Jeu continue
-
-**Fichiers à créer/modifier** :
-- `src/app/game/[code]/components/HunterDeathModal.tsx` - Nouveau
-- `src/app/api/games/[code]/power/hunter/route.ts` - Nouveau
-- `src/app/api/games/[code]/vote/resolve/route.ts` - Trigger si chasseur meurt
-- `src/app/api/games/[code]/vote/night/resolve/route.ts` - Trigger si chasseur meurt
-
----
-
-### 3. Ancien 👴 (Facile)
-
-**Concept IRL** : Survit automatiquement à la 1ère attaque des loups.
-
-| Aspect | Détail |
-|--------|--------|
-| Équipe | 🔵 Village |
-| Pouvoir | Immunité 1x contre les loups (auto) |
-| Limite | 1 seule fois, consommé automatiquement |
-
-**Implémentation** :
-```typescript
-// Dans /api/games/[code]/vote/night/resolve
-async function resolveNightVote() {
-  const targetPlayer = await getTarget();
-  const isElder = targetPlayer.role.name === 'ancien';
-  
-  if (isElder && !hasUsedElderPower(targetPlayer)) {
-    // Marquer pouvoir utilisé
-    await markElderPowerUsed(targetPlayer);
-    // Ne pas tuer
-    return { killed: null, elderSaved: true };
-  }
-  
-  // Sinon, tuer normalement
-  await killPlayer(targetPlayer);
-}
-```
-
-**Fichiers à modifier** :
-- `src/app/api/games/[code]/vote/night/resolve/route.ts` - Check Ancien
-- Table `power_uses` pour tracker si déjà utilisé
-
----
-
-### 4. Sorcière 🧙‍♀️ (Moyen)
-
-**Concept IRL** : Voit la victime des loups + 2 potions (vie et mort).
-
-| Aspect | Détail |
-|--------|--------|
-| Équipe | 🔵 Village |
-| Pouvoir 1 | Voit qui va mourir cette nuit |
-| Pouvoir 2 | Potion de vie (1x) - sauve la victime |
-| Pouvoir 3 | Potion de mort (1x) - tue quelqu'un d'autre |
-
-**Flow de nuit** :
-1. Loups votent leur cible
-2. Sorcière voit : "Les loups veulent tuer [Alice]"
-3. Sorcière peut :
-   - Utiliser potion de vie → Alice survit
-   - Utiliser potion de mort → Choisit une autre cible
-   - Ne rien faire
-4. Résolution de la nuit
-
-**Implémentation** :
-```typescript
-// Nouveau composant
-// src/app/game/[code]/components/WitchNightPanel.tsx
-interface WitchNightPanelProps {
-  wolfTarget: Player | null;      // Qui les loups veulent tuer
-  hasLifePotion: boolean;
-  hasDeathPotion: boolean;
-  alivePlayers: Player[];
-  onUseLifePotion: () => void;
-  onUseDeathPotion: (targetId: string) => void;
-  onSkip: () => void;
-}
-
-// La sorcière agit APRÈS les loups, AVANT résolution
-```
-
-**Fichiers à créer/modifier** :
-- `src/app/game/[code]/components/WitchNightPanel.tsx` - Nouveau
-- `src/app/api/games/[code]/power/witch/route.ts` - Nouveau
-- `src/app/api/games/[code]/vote/night/resolve/route.ts` - Attendre sorcière
-
----
-
-### 5. Cupidon 💘 (Complexe)
+### Cupidon 💘 (Complexe - À faire)
 
 **Concept IRL** : Désigne 2 amoureux en début de partie.
 
@@ -378,6 +238,10 @@ async function checkLoversDeath(deadPlayerId: string) {
 - [x] Chat privé des loups
 - [x] Vote nuit des loups
 - [x] Distribution custom par MJ (settings partie)
+- [x] **Petite Fille** - Lecture seule chat loups
+- [x] **Ancien** - Survit 1x à l'attaque des loups (pouvoir passif `elder_survival`)
+- [x] **Chasseur** - Emporte quelqu'un à sa mort (HunterDeathModal + API)
+- [x] **Sorcière** - Potions vie/mort (WitchNightPanel + API)
 
 ## 🔄 En cours
 
@@ -385,19 +249,13 @@ async function checkLoversDeath(deadPlayerId: string) {
 
 ## ⏳ À faire - Rôles IRL
 
-### Priorité 1 (Facile)
-- [ ] **Petite Fille** - Lecture seule chat loups
-- [ ] **Ancien** - Survit 1x à l'attaque des loups
+### Priorité 1 (Moyen)
+- [ ] **Salvateur** - Protège un joueur la nuit
 
-### Priorité 2 (Moyen)  
-- [ ] **Chasseur** - Emporte quelqu'un à sa mort
-- [ ] **Sorcière** - Potions vie/mort
-
-### Priorité 3 (Complexe)
+### Priorité 2 (Complexe)
 - [ ] **Cupidon** - Amoureux liés
 
 ### Backlog
-- [ ] **Salvateur** - Protège un joueur la nuit
 - [ ] **Corbeau** - +2 votes contre un joueur
 - [ ] **Loup Blanc** - Loup solo qui peut tuer un loup
 - [ ] **Ange** - Gagne s'il meurt au 1er conseil

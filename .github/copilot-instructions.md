@@ -14,15 +14,6 @@ Chaque joueur reçoit un rôle secret. Missions IRL + conseils réguliers avec �
 
 Docs centralisées dans [`docs/`](../docs/README.md) :
 
-| Document | Contenu |
-|----------|---------|
-| [STACK.md](../docs/STACK.md) | Stack technique, installation, structure projet |
-| [SUPABASE.md](../docs/SUPABASE.md) | Database, Auth, Realtime, Storage, Edge Functions |
-| [VERCEL.md](../docs/VERCEL.md) | Déploiement, CI/CD, environnements |
-| [PUSH_NOTIFICATIONS.md](../docs/PUSH_NOTIFICATIONS.md) | Web Push, VAPID, Service Worker |
-| [ROLES.md](../docs/ROLES.md) | Game design des rôles, pouvoirs, équipes |
-| [MISSIONS_DESIGN.md](../docs/MISSIONS_DESIGN.md) | Système de missions IRL, enchères, récompenses |
-
 > **⚠️ Important :** Avant d'implémenter une fonctionnalité, consulter la doc associée. Après un changement significatif (nouveau système, config, rôle...), **mettre à jour la doc correspondante**.
 
 ---
@@ -95,6 +86,45 @@ components/
 - [ ] Related code is colocated
 - [ ] New patterns are documented if non-obvious
 - [ ] Build passes (`npm run build`)
+
+---
+
+## ❌ Anti-patterns à éviter
+
+### Code
+- ❌ Ne PAS hardcoder des IDs de rôles/joueurs → utiliser les requêtes DB
+- ❌ Ne PAS dupliquer la logique métier entre API routes → extraire dans `lib/`
+- ❌ Ne PAS utiliser `any` en TypeScript → typer avec `src/types/`
+- ❌ Ne PAS créer de nouveaux composants UI génériques → réutiliser `components/ui/`
+- ❌ Ne PAS faire de prop drilling >2 niveaux → utiliser context ou composition
+
+### UI / UX
+- ❌ Ne PAS mettre du texte anglais dans l'UI → tout en **français**
+- ❌ Ne PAS utiliser des boutons <44px sur mobile → respecter touch targets
+- ❌ Ne PAS oublier les états loading/error → toujours les gérer
+
+### Supabase
+- ❌ Ne PAS utiliser `execute_sql` pour DDL → utiliser `apply_migration`
+- ❌ Ne PAS oublier `npm run supabase:types` après une migration
+- ❌ Ne PAS requêter sans filtrer par `game_id` → risque de data leak
+
+### Patterns existants à réutiliser
+- API client : `lib/api/client.ts` (apiGet, apiPost, apiPatch, apiDelete)
+- Sessions joueur : `lib/utils/player-session.ts`
+- Hooks game : `app/game/[code]/hooks/` (useVoting, useTimer, etc.)
+- Aide/Help : `lib/help/` (role-details, phase-descriptions, tips)
+
+
+---
+
+## Conventions
+
+- **Langue code** : Anglais
+- **Langue UI** : Français
+- **Types DB** : snake_case (`is_alive`, `game_id`)
+- **Types TS** : camelCase pour les alias (`isAlive`)
+- **Commits** : Conventional Commits (feat:, fix:, etc.)
+- **Instructions Copilot** : Mettre à jour `.github/copilot-instructions.md` lors de changements significatifs
 
 ---
 
@@ -229,69 +259,17 @@ supabase/
 
 ## État d'Avancement
 
-### ✅ Fait
+### Fonctionnalités principales
 
-- [x] Setup projet (Next.js 16, Supabase, Tailwind 4)
-- [x] Schéma DB complet avec migrations
-- [x] Types TypeScript générés depuis Supabase
-- [x] MCP Supabase connecté
-- [x] Storage buckets pour assets
-- [x] Composants UI (Button, Input, Card)
-- [x] Composants game (PlayerAvatar, RoleBadge, GamePhaseBadge)
-- [x] Config thème/rôles/joueurs extensible
-- [x] Page d'accueil (créer/rejoindre partie)
-- [x] API routes (POST/GET games, join, start)
-- [x] Lobby avec realtime (liste joueurs)
-- [x] Handlers de rôles (Villageois, Loup-Garou, Voyante)
-- [x] Lancement de partie (distribution des rôles)
-- [x] Vue joueur avec son rôle (carte, équipe, phase)
-- [x] RLS policies corrigées (anon access pour prototype)
-- [x] Système d'identification joueur (session/localStorage)
-- [x] Système de vote jour (élimination publique)
-- [x] Conditions de victoire (loups >= villageois / plus de loups)
-- [x] Vote nuit des loups
-- [x] Chat privé des loups (realtime)
-- [x] Pouvoir Voyante (voir un rôle)
-- [x] Timer countdown (jour: 5min, conseil: 3min)
-- [x] Missions basiques (création MJ, validation)
-- [x] Interface MJ (voir rôles, panneau de contrôle, vue d'ensemble)
-- [x] Web Push Notifications (Service Worker, permission prompt, phase change alerts)
-- [x] Écran de fin de partie festif (message victoire, confettis)
-- [x] Missions multi-joueurs (assigner à plusieurs personnes via mission_assignments)
-- [x] Settings partie MJ (temps des phases personnalisables via UI)
-- [x] Sessions multi-jeux (localStorage par gameCode, migration ancien format)
-- [x] Reconnexion simplifiée (rejoin par pseudo via API, sans email auth)
-- [x] Homepage avec "Mes parties" (liste sessions stockées)
-- [x] iOS PWA : refresh auto au retour foreground (visibilitychange)
-- [x] Reset automatique des votes au changement de phase (tous joueurs)
-- [x] MJ peut forcer résolution vote loups (même si incomplet)
-- [x] Affichage du vote confirmé (pour qui on a voté)
-- [x] Compteur votes loups visible par MJ pendant la nuit
-- [x] Système de missions avancé (types, catégories, templates, enchères)
-- [x] UI MJ : créer mission depuis templates ou libre
-- [x] Missions enchères (auction) : joueurs enchérissent, gagnant réalise le défi
-- [x] API submission/bid pour missions compétitives
-- [x] Système de points missions (difficulté 1-5⭐ = 2-10 pts)
-- [x] Shop de pouvoirs (6 pouvoirs : immunité, vote double, vision loup...)
-- [x] UI Wallet joueur (points + pouvoirs actifs avec noms/icônes)
-- [x] UI Shop (acheter avec points)
-- [x] Intégration pouvoirs dans vote (immunité, double_vote auto)
-- [x] Filtres missions MJ (En cours / Terminées / Toutes)
-- [x] **Mode Auto-Garou** : partie sans MJ dédié (phases auto, MJ peut accélérer)
-- [x] **Minimum 3 joueurs** (réduit de 6 à 3)
-- [x] **Missions en mode Auto-Garou** : collectives, compétitives, enchères (auto-assignation)
-- [x] **Durées de phase personnalisables** : min 30s pour tests rapides
-- [x] **Auto-refresh Wallet/Shop** : mise à jour automatique après gain de points
-- [x] **Affichage résultats vote** : qui a voté qui (avec anonymat)
-- [x] **Vote Anonyme fonctionnel** : votes masqués comme "???"
-- [x] **4 nouveaux rôles IRL** : Petite Fille, Ancien, Chasseur, Sorcière
-- [x] **Système d'aide complet** : RoleDetailModal, PhaseHelpTooltip, RulesModal, TipToast
-- [x] **Mobile UX** : bottom sheets, FAB, touch-manipulation, 44px+ targets
-- [x] **Roles DB as source of truth** : config/roles.ts = fallback uniquement
+- **Jeu complet** : Lobby → Jour → Conseil → Nuit → Victoire (avec timer)
+- **8 rôles** : Villageois, Loup-Garou, Voyante, Petite Fille, Ancien, Chasseur, Sorcière + extensible
+- **Missions IRL** : individuelles, collectives, compétitives, enchères + points + shop
+- **Mode Auto-Garou** : partie sans MJ dédié (phases automatiques)
+- **Realtime** : votes, chat loups, missions via Supabase
+- **PWA** : notifications push, refresh iOS, sessions multi-jeux
+- **Aide in-game** : modales rôles, tooltips phases, règles, tips contextuels
 
-### 🔄 En Cours
-
-(Rien pour l'instant)
+→ Détails : voir `docs/` (ROLES.md, MISSIONS_DESIGN.md, HELP_SYSTEM.md, etc.)
 
 ### ⏳ À Faire
 
@@ -314,17 +292,6 @@ supabase/
 **Backlog général :**
 - [ ] PWA offline support
 - [ ] Custom assets (images rôles, avatars)
-
----
-
-## Conventions
-
-- **Langue code** : Anglais
-- **Langue UI** : Français
-- **Types DB** : snake_case (`is_alive`, `game_id`)
-- **Types TS** : camelCase pour les alias (`isAlive`)
-- **Commits** : Conventional Commits (feat:, fix:, etc.)
-- **Instructions Copilot** : Mettre à jour `.github/copilot-instructions.md` lors de changements significatifs
 
 ---
 
