@@ -16,9 +16,10 @@ import type { GameWithPlayers } from './types';
 interface UseGameRealtimeOptions {
   game: GameWithPlayers;
   onGameUpdate: (game: GameWithPlayers) => void;
+  onPlayersChange?: () => void; // Called when player data changes (for shop refresh)
 }
 
-export function useGameRealtime({ game, onGameUpdate }: UseGameRealtimeOptions) {
+export function useGameRealtime({ game, onGameUpdate, onPlayersChange }: UseGameRealtimeOptions) {
   const router = useRouter();
   const supabase = createClient();
   const { sendNotification, permission } = useNotifications();
@@ -55,7 +56,8 @@ export function useGameRealtime({ game, onGameUpdate }: UseGameRealtimeOptions) 
           is_alive,
           is_mj,
           role_id,
-          created_at
+          created_at,
+          mission_points
         )
       `)
       .eq('id', game.id)
@@ -84,7 +86,10 @@ export function useGameRealtime({ game, onGameUpdate }: UseGameRealtimeOptions) 
           table: 'players',
           filter: `game_id=eq.${game.id}`,
         },
-        () => refetchGame()
+        () => {
+          refetchGame();
+          onPlayersChange?.(); // Notify for shop/wallet refresh
+        }
       )
       .on(
         'postgres_changes',
@@ -116,10 +121,13 @@ export function useGameRealtime({ game, onGameUpdate }: UseGameRealtimeOptions) 
   }, [game.id, supabase, router, onGameUpdate, refetchGame]);
 
   // iOS PWA fix: refresh on visibility change
+  // When app returns to foreground, WebSocket may be stale
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
+        console.log('[iOS PWA] App returned to foreground, refetching...');
         refetchGame();
+        onPlayersChange?.(); // Also refresh shop/wallet
       }
     };
 
@@ -127,7 +135,7 @@ export function useGameRealtime({ game, onGameUpdate }: UseGameRealtimeOptions) 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [refetchGame]);
+  }, [refetchGame, onPlayersChange]);
 
   return { refetchGame };
 }

@@ -143,58 +143,110 @@ export async function PATCH(
         return NextResponse.json({ error: 'Mission pas en cours' }, { status: 400 });
       }
       
-      // Determine winner: explicit winnerId, or assigned_to if single player
-      resolvedWinnerId = winnerId || mission.assigned_to || null;
+      // Calculate points based on difficulty (1-5 stars = 2-10 points)
+      const difficulty = mission.difficulty ?? 1;
+      const pointsAwarded = difficulty * 2;
       
-      updateData = {
-        status: 'success',
-        validated_by: playerId,
-        validated_at: new Date().toISOString(),
-        winner_player_id: resolvedWinnerId,
-      };
-      newStatus = 'success';
-      
-      // Update mission_assignments for the winner
-      if (resolvedWinnerId) {
-        await supabase
+      // Handle collective missions: award points to ALL assigned players
+      if (mission.mission_type === 'collective') {
+        // Get all assigned players for collective mission
+        const { data: assignments } = await supabase
           .from('mission_assignments')
-          .update({
-            status: 'completed',
-            submitted_at: new Date().toISOString(),
-            validated_by_mj: true,
-          })
-          .eq('mission_id', missionId)
-          .eq('player_id', resolvedWinnerId);
+          .select('player_id')
+          .eq('mission_id', missionId);
         
-        // Mark other players as not winning (but not failed)
-        await supabase
-          .from('mission_assignments')
-          .update({ status: 'pending' })
-          .eq('mission_id', missionId)
-          .neq('player_id', resolvedWinnerId);
+        if (assignments && assignments.length > 0) {
+          // Mark all assignments as completed
+          await supabase
+            .from('mission_assignments')
+            .update({
+              status: 'completed',
+              submitted_at: new Date().toISOString(),
+              validated_by_mj: true,
+            })
+            .eq('mission_id', missionId);
+          
+          // Award points to each player
+          for (const assignment of assignments) {
+            await supabase.rpc('award_mission_points', {
+              p_player_id: assignment.player_id,
+              p_points: pointsAwarded,
+              p_reason: 'mission_complete',
+            });
+            
+            // Log points awarded for each player
+            await supabase.from('game_events').insert({
+              game_id: game.id,
+              actor_id: assignment.player_id,
+              event_type: 'points_earned',
+              data: {
+                mission_id: missionId,
+                mission_title: mission.title,
+                difficulty,
+                points: pointsAwarded,
+                collective: true,
+              },
+            });
+          }
+        }
         
-        // Award points based on difficulty (1-5 stars = 2-10 points)
-        const difficulty = mission.difficulty ?? 1;
-        const pointsAwarded = difficulty * 2;
+        updateData = {
+          status: 'success',
+          validated_by: playerId,
+          validated_at: new Date().toISOString(),
+          winner_player_id: null, // No single winner for collective
+        };
+        newStatus = 'success';
+      } else {
+        // Individual/competitive/auction: single winner
+        resolvedWinnerId = winnerId || mission.assigned_to || null;
         
-        await supabase.rpc('award_mission_points', {
-          p_player_id: resolvedWinnerId,
-          p_points: pointsAwarded,
-          p_reason: 'mission_complete',
-        });
+        updateData = {
+          status: 'success',
+          validated_by: playerId,
+          validated_at: new Date().toISOString(),
+          winner_player_id: resolvedWinnerId,
+        };
+        newStatus = 'success';
         
-        // Log points awarded
-        await supabase.from('game_events').insert({
-          game_id: game.id,
-          actor_id: resolvedWinnerId,
-          event_type: 'points_earned',
-          data: {
-            mission_id: missionId,
-            mission_title: mission.title,
-            difficulty,
-            points: pointsAwarded,
-          },
-        });
+        // Update mission_assignments for the winner
+        if (resolvedWinnerId) {
+          await supabase
+            .from('mission_assignments')
+            .update({
+              status: 'completed',
+              submitted_at: new Date().toISOString(),
+              validated_by_mj: true,
+            })
+            .eq('mission_id', missionId)
+            .eq('player_id', resolvedWinnerId);
+          
+          // Mark other players as not winning (but not failed)
+          await supabase
+            .from('mission_assignments')
+            .update({ status: 'pending' })
+            .eq('mission_id', missionId)
+            .neq('player_id', resolvedWinnerId);
+          
+          await supabase.rpc('award_mission_points', {
+            p_player_id: resolvedWinnerId,
+            p_points: pointsAwarded,
+            p_reason: 'mission_complete',
+          });
+          
+          // Log points awarded
+          await supabase.from('game_events').insert({
+            game_id: game.id,
+            actor_id: resolvedWinnerId,
+            event_type: 'points_earned',
+            data: {
+              mission_id: missionId,
+              mission_title: mission.title,
+              difficulty,
+              points: pointsAwarded,
+            },
+          });
+        }
       }
       break;
 

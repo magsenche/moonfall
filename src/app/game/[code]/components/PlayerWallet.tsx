@@ -1,42 +1,27 @@
 /**
  * PlayerWallet - Shows player's points and active powers
+ * Now receives pre-fetched data from parent to avoid loading delay
  */
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Button } from '@/components/ui';
-import { getShop, activatePower, type ShopPlayerData, type PlayerPurchase, ApiError } from '@/lib/api';
+import { activatePower, type ShopPlayerData, type PlayerPurchase, ApiError } from '@/lib/api';
 
 interface PlayerWalletProps {
   gameCode: string;
   playerId: string;
   gameStatus: string;
   onPointsChange?: () => void;
-  refreshKey?: number;
+  // Pre-fetched data from parent
+  playerData: ShopPlayerData | null;
+  isLoading: boolean;
 }
 
-export function PlayerWallet({ gameCode, playerId, gameStatus, onPointsChange, refreshKey }: PlayerWalletProps) {
-  const [playerData, setPlayerData] = useState<ShopPlayerData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function PlayerWallet({ gameCode, playerId, gameStatus, onPointsChange, playerData, isLoading }: PlayerWalletProps) {
   const [usingPower, setUsingPower] = useState<string | null>(null);
   const [powerResult, setPowerResult] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
-  const fetchWallet = useCallback(async () => {
-    try {
-      const response = await getShop(gameCode, playerId);
-      setPlayerData(response.player);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Erreur');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [gameCode, playerId]);
-
-  useEffect(() => {
-    fetchWallet();
-  }, [fetchWallet, gameStatus, refreshKey]);
 
   const handleUsePower = async (purchase: PlayerPurchase) => {
     if (!purchase.id) return;
@@ -47,7 +32,6 @@ export function PlayerWallet({ gameCode, playerId, gameStatus, onPointsChange, r
     try {
       const result = await activatePower(gameCode, purchase.id, playerId);
       setPowerResult({ message: result.result.message, type: 'success' });
-      fetchWallet(); // Refresh
       onPointsChange?.();
     } catch (err) {
       setPowerResult({ 
@@ -69,7 +53,7 @@ export function PlayerWallet({ gameCode, playerId, gameStatus, onPointsChange, r
     );
   }
 
-  if (error || !playerData) {
+  if (!playerData) {
     return null; // Silent fail
   }
 

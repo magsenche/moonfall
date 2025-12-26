@@ -88,6 +88,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
   useGameRealtime({
     game,
     onGameUpdate: setGame,
+    onPlayersChange: () => setShopRefreshKey(k => k + 1),
   });
 
   // Timer hook

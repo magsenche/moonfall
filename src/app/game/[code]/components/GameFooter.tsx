@@ -11,9 +11,10 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui';
 import type { Role, GameWithPlayers, Mission, PartialPlayer } from '../hooks';
+import { getShop, type ShopItem, type ShopPlayerData } from '@/lib/api';
 
 import { MJControls } from './MJControls';
 import { MJOverview } from './MJOverview';
@@ -86,10 +87,46 @@ export function GameFooter({
 }: GameFooterProps) {
   const [showWallet, setShowWallet] = useState(false);
   
+  // Prefetch shop data for quick access
+  const [shopItems, setShopItems] = useState<ShopItem[]>([]);
+  const [playerShopData, setPlayerShopData] = useState<ShopPlayerData | null>(null);
+  const [isShopLoading, setIsShopLoading] = useState(true);
+  
   const players = game.players.filter(p => !p.is_mj);
   const alivePlayers = players.filter(p => p.is_alive !== false);
   const isAlive = currentPlayer?.is_alive !== false;
   const showWalletAndShop = currentPlayerId && (!isMJ || isAutoMode) && isAlive;
+  
+  // Prefetch shop data when component mounts (not when expanded)
+  const fetchShopData = useCallback(async () => {
+    if (!currentPlayerId || !showWalletAndShop) return;
+    
+    setIsShopLoading(true);
+    try {
+      const response = await getShop(game.code, currentPlayerId);
+      setShopItems(response.items);
+      setPlayerShopData(response.player);
+    } catch (err) {
+      console.error('Shop prefetch error:', err);
+    } finally {
+      setIsShopLoading(false);
+    }
+  }, [game.code, currentPlayerId, showWalletAndShop]);
+  
+  useEffect(() => {
+    fetchShopData();
+  }, [fetchShopData, gameStatus, shopRefreshKey]);
+  
+  // Handle refresh from child components
+  const handleShopRefresh = useCallback(() => {
+    fetchShopData();
+    onShopRefresh();
+  }, [fetchShopData, onShopRefresh]);
+  
+  // Summary for collapsed state
+  const points = playerShopData?.points ?? 0;
+  const unusedPowersCount = playerShopData?.unusedPowers?.length ?? 0;
+  const availableItemsCount = shopItems.filter(i => i.can_buy).length;
 
   return (
     <div className="space-y-4 mt-6">
@@ -118,7 +155,19 @@ export function GameFooter({
             onClick={() => setShowWallet(!showWallet)}
             className="w-full mb-2"
           >
-            {showWallet ? '▲ Fermer' : '💰 Points & Shop'}
+            {showWallet ? (
+              '▲ Fermer'
+            ) : (
+              <span className="flex items-center justify-center gap-3">
+                <span>💰 {isShopLoading ? '...' : `${points} pts`}</span>
+                {!isShopLoading && unusedPowersCount > 0 && (
+                  <span className="text-purple-400">⚡ {unusedPowersCount}</span>
+                )}
+                {!isShopLoading && availableItemsCount > 0 && (
+                  <span className="text-emerald-400">🛒 {availableItemsCount}</span>
+                )}
+              </span>
+            )}
           </Button>
           
           {showWallet && (
@@ -127,15 +176,18 @@ export function GameFooter({
                 gameCode={game.code}
                 playerId={currentPlayerId}
                 gameStatus={gameStatus}
-                onPointsChange={onShopRefresh}
-                refreshKey={shopRefreshKey}
+                onPointsChange={handleShopRefresh}
+                playerData={playerShopData}
+                isLoading={isShopLoading}
               />
               <Shop
                 gameCode={game.code}
                 playerId={currentPlayerId}
                 gameStatus={gameStatus}
-                onPurchase={onShopRefresh}
-                refreshKey={shopRefreshKey}
+                onPurchase={handleShopRefresh}
+                items={shopItems}
+                playerData={playerShopData}
+                isLoading={isShopLoading}
               />
             </div>
           )}
