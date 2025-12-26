@@ -6,6 +6,7 @@ export { NotificationPrompt, NotificationBadge } from './notification-prompt';
 export { GameOver } from './game-over';
 export { MissionForm } from './mission-form';
 export { MissionCard } from './mission-card';
+export { PhaseBackground } from './phase-background';
 
 // Help system components
 export { RoleDetailModal } from './role-detail-modal';

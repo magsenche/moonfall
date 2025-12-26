@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MotionCard, CardContent, MotionButton } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 interface Confetti {
@@ -69,12 +70,19 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
       {/* Background overlay */}
-      <div className={cn(
-        "absolute inset-0 transition-opacity duration-1000",
-        winner === 'village' 
-          ? 'bg-linear-to-b from-blue-950/95 via-slate-900/95 to-green-950/95'
-          : 'bg-linear-to-b from-red-950/95 via-slate-900/95 to-purple-950/95'
-      )} />
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={cn(
+          "absolute inset-0",
+          winner === 'village' 
+            ? 'bg-linear-to-b from-blue-950/95 via-slate-900/95 to-green-950/95'
+            : 'bg-linear-to-b from-red-950/95 via-slate-900/95 to-purple-950/95'
+        )} 
+      />
+      
+      {/* Noise texture */}
+      <div className="noise-overlay" />
 
       {/* Confetti */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -90,6 +98,7 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
               animationDelay: `${piece.delay}s`,
               animationDuration: `${piece.duration}s`,
               transform: `rotate(${piece.rotation}deg)`,
+              borderRadius: '2px',
             }}
           />
         ))}
@@ -98,116 +107,176 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
       {/* Content */}
       <div className="relative z-10 w-full max-w-lg mx-4">
         {/* Victory announcement */}
-        <div className={cn(
-          "text-center mb-8 transition-all duration-1000",
-          showResults ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'
-        )}>
-          <div className="text-8xl mb-4 animate-bounce">{winnerEmoji}</div>
-          <h1 className={cn(
-            "text-4xl font-bold mb-2",
-            winner === 'village' ? 'text-blue-400' : 'text-red-400'
-          )}>
-            {winnerTeam} gagne !
-          </h1>
-          <p className="text-lg text-slate-300">{winnerMessage}</p>
-          <p className="text-sm text-slate-500 mt-2">{gameName}</p>
-        </div>
-
-        {/* Results card */}
-        <Card className={cn(
-          "transition-all duration-1000 delay-500",
-          showResults ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10',
-          winner === 'village' 
-            ? 'border-blue-500/30 bg-blue-950/30'
-            : 'border-red-500/30 bg-red-950/30'
-        )}>
-          <CardContent className="pt-6">
-            {/* Winners section */}
-            <div className="mb-6">
-              <h3 className={cn(
-                "text-sm font-medium mb-3 flex items-center gap-2",
-                winner === 'village' ? 'text-blue-400' : 'text-red-400'
-              )}>
-                <span>👑</span>
-                <span>Vainqueurs</span>
-              </h3>
-              <div className="space-y-2">
-                {winners.map((player, i) => (
-                  <div 
-                    key={i}
-                    className={cn(
-                      "flex items-center justify-between p-2 rounded-lg",
-                      winner === 'village' ? 'bg-blue-500/10' : 'bg-red-500/10'
-                    )}
-                  >
-                    <span className="text-white font-medium">
-                      {player.pseudo}
-                      {player.isAlive ? '' : ' ☠️'}
-                    </span>
-                    <span className="text-sm text-slate-400">{player.roleName}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Losers section */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium mb-3 text-slate-500 flex items-center gap-2">
-                <span>💀</span>
-                <span>Vaincus</span>
-              </h3>
-              <div className="space-y-2">
-                {losers.map((player, i) => (
-                  <div 
-                    key={i}
-                    className="flex items-center justify-between p-2 rounded-lg bg-slate-800/30"
-                  >
-                    <span className="text-slate-400">
-                      {player.pseudo}
-                      {player.isAlive ? '' : ' ☠️'}
-                    </span>
-                    <span className="text-sm text-slate-500">{player.roleName}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-3 text-center mb-6">
-              <div className="p-3 bg-slate-800/30 rounded-lg">
-                <div className="text-2xl font-bold text-white">{players.length}</div>
-                <div className="text-xs text-slate-500">Joueurs</div>
-              </div>
-              <div className="p-3 bg-slate-800/30 rounded-lg">
-                <div className="text-2xl font-bold text-green-400">
-                  {players.filter(p => p.isAlive).length}
-                </div>
-                <div className="text-xs text-slate-500">Survivants</div>
-              </div>
-              <div className="p-3 bg-slate-800/30 rounded-lg">
-                <div className="text-2xl font-bold text-red-400">
-                  {players.filter(p => !p.isAlive).length}
-                </div>
-                <div className="text-xs text-slate-500">Éliminés</div>
-              </div>
-            </div>
-
-            {/* Play again button */}
-            {onPlayAgain && (
-              <button
-                onClick={onPlayAgain}
+        <AnimatePresence>
+          {showResults && (
+            <motion.div 
+              initial={{ opacity: 0, y: -30, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: 'spring', damping: 12 }}
+              className="text-center mb-8"
+            >
+              <motion.div 
+                className="text-8xl mb-4"
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                {winnerEmoji}
+              </motion.div>
+              <h1 
                 className={cn(
-                  "w-full py-3 rounded-xl font-medium transition-colors",
-                  winner === 'village'
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-red-600 hover:bg-red-700 text-white'
+                  "text-5xl font-black mb-2",
+                  winner === 'village' ? 'text-blue-400' : 'text-red-400'
+                )}
+                style={{ textShadow: '4px 4px 0px rgba(0,0,0,0.5)' }}
+              >
+                {winnerTeam} gagne !
+              </h1>
+              <p className="text-lg text-slate-300 font-medium">{winnerMessage}</p>
+              <motion.span 
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+                className={cn(
+                  "inline-block mt-3 px-4 py-1 rounded-full text-sm font-medium",
+                  "bg-zinc-800/80 border border-white/20 text-slate-400",
+                  "shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
                 )}
               >
-                🔄 Nouvelle partie
-              </button>
-            )}
-          </CardContent>
-        </Card>
+                {gameName}
+              </motion.span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Results card */}
+        <AnimatePresence>
+          {showResults && (
+            <MotionCard 
+              variant="sticker"
+              rotation={0}
+              className={cn(
+                winner === 'village' 
+                  ? 'border-blue-500/50'
+                  : 'border-red-500/50'
+              )}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <CardContent className="pt-6">
+                {/* Winners section */}
+                <div className="mb-6">
+                  <h3 className={cn(
+                    "text-sm font-bold mb-3 flex items-center gap-2",
+                    winner === 'village' ? 'text-blue-400' : 'text-red-400'
+                  )}>
+                    <span>👑</span>
+                    <span>Vainqueurs</span>
+                  </h3>
+                  <div className="space-y-2">
+                    {winners.map((player, i) => (
+                      <motion.div 
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.6 + i * 0.1 }}
+                        className={cn(
+                          "flex items-center justify-between p-3 rounded-xl border",
+                          "shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]",
+                          winner === 'village' 
+                            ? 'bg-blue-900/30 border-blue-500/50' 
+                            : 'bg-red-900/30 border-red-500/50'
+                        )}
+                      >
+                        <span className="text-white font-bold">
+                          {player.pseudo}
+                          {player.isAlive ? '' : ' ☠️'}
+                        </span>
+                        <span className={cn(
+                          "text-xs px-2 py-1 rounded-full font-medium",
+                          "bg-zinc-700 border border-zinc-500 text-slate-300"
+                        )}>
+                          {player.roleName}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Losers section */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-bold mb-3 text-slate-500 flex items-center gap-2">
+                    <span>💀</span>
+                    <span>Vaincus</span>
+                  </h3>
+                  <div className="space-y-2">
+                    {losers.map((player, i) => (
+                      <motion.div 
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.8 + i * 0.1 }}
+                        className={cn(
+                          "flex items-center justify-between p-3 rounded-xl",
+                          "bg-zinc-800/50 border border-zinc-700/50"
+                        )}
+                      >
+                        <span className="text-slate-400">
+                          {player.pseudo}
+                          {player.isAlive ? '' : ' ☠️'}
+                        </span>
+                        <span className="text-xs text-slate-500">{player.roleName}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-3 text-center mb-6">
+                  {[
+                    { value: players.length, label: 'Joueurs', color: 'text-white' },
+                    { value: players.filter(p => p.isAlive).length, label: 'Survivants', color: 'text-green-400' },
+                    { value: players.filter(p => !p.isAlive).length, label: 'Éliminés', color: 'text-red-400' },
+                  ].map((stat, i) => (
+                    <motion.div 
+                      key={stat.label}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1 + i * 0.1 }}
+                      className={cn(
+                        "p-3 rounded-xl border",
+                        "bg-zinc-800/50 border-zinc-700/50",
+                        "shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]"
+                      )}
+                    >
+                      <div className={cn("text-2xl font-black", stat.color)}>{stat.value}</div>
+                      <div className="text-xs text-slate-500">{stat.label}</div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Play again button */}
+                {onPlayAgain && (
+                  <MotionButton
+                    variant="sticker"
+                    onClick={onPlayAgain}
+                    className={cn(
+                      "w-full py-4 text-lg",
+                      winner === 'village'
+                        ? 'bg-blue-600 border-blue-400 hover:bg-blue-500'
+                        : 'bg-red-600 border-red-400 hover:bg-red-500'
+                    )}
+                  >
+                    🔄 Nouvelle partie
+                  </MotionButton>
+                )}
+              </CardContent>
+            </MotionCard>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

@@ -1,15 +1,18 @@
 /**
- * GameFooter - Common footer section
+ * GameFooter - Y2K styled common footer section
  *
  * Uses GameContext - no props needed.
  * Contains: MJ Controls, Missions, Players List, Wallet & Shop.
+ * Action bar positioned in thumb zone (bottom 30% of screen).
  */
 
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MotionButton } from '@/components/ui';
 import { getShop, type ShopItem, type ShopPlayerData } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { useGame } from '../context';
 
 import { MJControls } from './MJControls';
@@ -100,52 +103,78 @@ export function GameFooter() {
         />
       )}
 
-      {/* Wallet & Shop Toggle */}
+      {/* Wallet & Shop Toggle - Y2K Sticker Style */}
       {showWalletAndShop && (
-        <div>
-          <Button
-            variant="ghost"
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <MotionButton
+            variant="sticker"
             size="sm"
             onClick={() => setShowWallet(!showWallet)}
-            className="w-full mb-2"
+            className={cn(
+              'w-full mb-2',
+              showWallet ? 'bg-zinc-700' : 'bg-zinc-800'
+            )}
           >
             {showWallet ? (
               '▲ Fermer'
             ) : (
               <span className="flex items-center justify-center gap-3">
-                <span>💰 {isShopLoading ? '...' : `${points} pts`}</span>
+                <span className="flex items-center gap-1">
+                  <span>💰</span>
+                  <span className="font-bold">{isShopLoading ? '...' : `${points} pts`}</span>
+                </span>
                 {!isShopLoading && unusedPowersCount > 0 && (
-                  <span className="text-purple-400">⚡ {unusedPowersCount}</span>
+                  <span className={cn(
+                    'px-2 py-0.5 rounded-full text-xs font-bold',
+                    'bg-purple-500/30 text-purple-300 border border-purple-500/50'
+                  )}>
+                    ⚡ {unusedPowersCount}
+                  </span>
                 )}
                 {!isShopLoading && availableItemsCount > 0 && (
-                  <span className="text-emerald-400">🛒 {availableItemsCount}</span>
+                  <span className={cn(
+                    'px-2 py-0.5 rounded-full text-xs font-bold',
+                    'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50'
+                  )}>
+                    🛒 {availableItemsCount}
+                  </span>
                 )}
               </span>
             )}
-          </Button>
+          </MotionButton>
 
-          {showWallet && (
-            <div className="space-y-3">
-              <PlayerWallet
-                gameCode={game.code}
-                playerId={currentPlayerId}
-                gameStatus={gameStatus}
-                onPointsChange={handleShopRefresh}
-                playerData={playerShopData}
-                isLoading={isShopLoading}
-              />
-              <Shop
-                gameCode={game.code}
-                playerId={currentPlayerId}
-                gameStatus={gameStatus}
-                onPurchase={handleShopRefresh}
-                items={shopItems}
-                playerData={playerShopData}
-                isLoading={isShopLoading}
-              />
-            </div>
-          )}
-        </div>
+          <AnimatePresence>
+            {showWallet && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-3 overflow-hidden"
+              >
+                <PlayerWallet
+                  gameCode={game.code}
+                  playerId={currentPlayerId}
+                  gameStatus={gameStatus}
+                  onPointsChange={handleShopRefresh}
+                  playerData={playerShopData}
+                  isLoading={isShopLoading}
+                />
+                <Shop
+                  gameCode={game.code}
+                  playerId={currentPlayerId}
+                  gameStatus={gameStatus}
+                  onPurchase={handleShopRefresh}
+                  items={shopItems}
+                  playerData={playerShopData}
+                  isLoading={isShopLoading}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       )}
 
       {/* Missions Section - Available in auto mode with restrictions */}

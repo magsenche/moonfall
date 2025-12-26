@@ -1,5 +1,6 @@
 /**
  * VoteResults - Display vote results after council resolution
+ * Y2K Sticker aesthetic
  * 
  * Shows:
  * - Who voted for whom (with anonymous votes hidden as "???")
@@ -9,7 +10,8 @@
 
 'use client';
 
-import { Card, CardHeader, CardTitle, CardContent, Button } from '@/components/ui';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MotionCard, CardHeader, CardTitle, CardContent, MotionButton } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import type { VoteResults as VoteResultsType } from '../hooks/useVoting';
 
@@ -35,34 +37,68 @@ export function VoteResults({ results, onDismiss }: VoteResultsProps) {
     .sort(([a], [b]) => (voteCounts[b] ?? 0) - (voteCounts[a] ?? 0));
 
   return (
-    <Card className="mb-6 border-2 border-purple-500/50 bg-purple-950/20">
+    <MotionCard 
+      variant="sticker" 
+      rotation={-0.5}
+      className="mb-6 border-purple-500/50"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+    >
       <CardHeader>
         <CardTitle className="text-purple-400 flex items-center gap-2">
-          📊 Résultats du vote
+          <motion.span
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ duration: 0.5 }}
+          >
+            📊
+          </motion.span>
+          Résultats du vote
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Result summary */}
-        <div className={cn(
-          "p-4 rounded-xl text-center",
-          eliminated ? "bg-red-900/30 border border-red-500/30" :
-          immunityUsed ? "bg-yellow-900/30 border border-yellow-500/30" :
-          tie ? "bg-slate-800/50 border border-slate-500/30" :
-          "bg-slate-800/50"
-        )}>
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className={cn(
+            "p-4 rounded-xl text-center border-2",
+            "shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]",
+            eliminated ? "bg-red-900/30 border-red-500" :
+            immunityUsed ? "bg-yellow-900/30 border-yellow-500" :
+            tie ? "bg-zinc-800 border-zinc-500" :
+            "bg-zinc-800 border-zinc-600"
+          )}
+        >
           {eliminated ? (
             <>
-              <p className="text-2xl mb-2">☠️</p>
-              <p className="text-lg font-bold text-red-400">
+              <motion.p 
+                className="text-3xl mb-2"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.5 }}
+              >
+                ☠️
+              </motion.p>
+              <p className="text-lg font-black text-red-400">
                 {eliminated.pseudo} a été éliminé(e)
               </p>
-              <p className="text-sm text-slate-400 mt-1">
-                Rôle révélé : {eliminated.role} ({eliminated.team})
-              </p>
+              <span className={cn(
+                "inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium",
+                "border shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]",
+                eliminated.team === 'village' ? "bg-blue-600 border-blue-400 text-white" : "bg-red-600 border-red-400 text-white"
+              )}>
+                {eliminated.role} ({eliminated.team})
+              </span>
             </>
           ) : immunityUsed ? (
             <>
-              <p className="text-2xl mb-2">🛡️</p>
+              <motion.p 
+                className="text-3xl mb-2"
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 0.5, repeat: 2 }}
+              >
+                🛡️
+              </motion.p>
               <p className="text-lg font-bold text-yellow-400">
                 Un joueur a utilisé son immunité !
               </p>
@@ -72,7 +108,13 @@ export function VoteResults({ results, onDismiss }: VoteResultsProps) {
             </>
           ) : tie ? (
             <>
-              <p className="text-2xl mb-2">⚖️</p>
+              <motion.p 
+                className="text-3xl mb-2"
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 0.5 }}
+              >
+                ⚖️
+              </motion.p>
               <p className="text-lg font-bold text-slate-300">
                 Égalité !
               </p>
@@ -81,56 +123,73 @@ export function VoteResults({ results, onDismiss }: VoteResultsProps) {
               </p>
             </>
           ) : (
-            <>
-              <p className="text-lg text-slate-300">
-                Aucun vote ou pas d&apos;élimination
-              </p>
-            </>
+            <p className="text-lg text-slate-300">
+              Aucun vote ou pas d&apos;élimination
+            </p>
           )}
-        </div>
+        </motion.div>
 
         {/* Game over announcement */}
-        {gameOver && winner && (
-          <div className={cn(
-            "p-4 rounded-xl text-center",
-            winner === 'village' ? "bg-blue-900/30 border border-blue-500/50" : "bg-red-900/30 border border-red-500/50"
-          )}>
-            <p className="text-2xl mb-2">{winner === 'village' ? '🏆' : '🐺'}</p>
-            <p className="text-lg font-bold">
-              {winner === 'village' ? 'Le Village a gagné !' : 'Les Loups ont gagné !'}
-            </p>
-          </div>
-        )}
+        <AnimatePresence>
+          {gameOver && winner && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={cn(
+                "p-4 rounded-xl text-center border-2",
+                "shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]",
+                winner === 'village' ? "bg-blue-900/50 border-blue-500" : "bg-red-900/50 border-red-500"
+              )}
+            >
+              <motion.p 
+                className="text-4xl mb-2"
+                animate={{ scale: [1, 1.3, 1] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              >
+                {winner === 'village' ? '🏆' : '🐺'}
+              </motion.p>
+              <p className="text-xl font-black" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.3)' }}>
+                {winner === 'village' ? 'Le Village a gagné !' : 'Les Loups ont gagné !'}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Vote details */}
         {sortedTargets.length > 0 && (
           <div className="space-y-3">
-            <h4 className="text-sm font-medium text-slate-400 uppercase tracking-wider">
+            <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
               Détail des votes
             </h4>
-            {sortedTargets.map(([targetId, votes]) => {
+            {sortedTargets.map(([targetId, votes], i) => {
               const targetPseudo = votes[0]?.targetPseudo ?? 'Inconnu';
               const voteCount = voteCounts[targetId] ?? votes.length;
               const isEliminated = eliminated?.id === targetId;
 
               return (
-                <div
+                <motion.div
                   key={targetId}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + i * 0.1 }}
                   className={cn(
-                    "p-3 rounded-lg",
-                    isEliminated ? "bg-red-900/20 border border-red-500/30" : "bg-slate-800/50"
+                    "p-3 rounded-xl border",
+                    isEliminated 
+                      ? "bg-red-900/30 border-red-500/50 shadow-[2px_2px_0px_0px_rgba(220,38,38,0.3)]" 
+                      : "bg-zinc-800/50 border-zinc-600/50"
                   )}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className={cn(
-                      "font-medium",
+                      "font-bold",
                       isEliminated ? "text-red-400" : "text-white"
                     )}>
                       {isEliminated && "☠️ "}{targetPseudo}
                     </span>
                     <span className={cn(
-                      "text-sm px-2 py-0.5 rounded-full",
-                      isEliminated ? "bg-red-500/30 text-red-300" : "bg-slate-700 text-slate-300"
+                      "text-sm px-2.5 py-0.5 rounded-full font-bold",
+                      "border shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]",
+                      isEliminated ? "bg-red-600 border-red-400 text-white" : "bg-zinc-700 border-zinc-500 text-slate-200"
                     )}>
                       {voteCount} vote{voteCount > 1 ? 's' : ''}
                     </span>
@@ -140,10 +199,11 @@ export function VoteResults({ results, onDismiss }: VoteResultsProps) {
                       <span
                         key={idx}
                         className={cn(
-                          "text-xs px-2 py-1 rounded",
+                          "text-xs px-2 py-1 rounded-lg font-medium",
+                          "border shadow-[1px_1px_0px_0px_rgba(0,0,0,0.2)]",
                           vote.isAnonymous
-                            ? "bg-purple-900/50 text-purple-300 italic"
-                            : "bg-slate-700/50 text-slate-300"
+                            ? "bg-purple-900/50 border-purple-500/50 text-purple-300 italic"
+                            : "bg-zinc-700/50 border-zinc-500/50 text-slate-300"
                         )}
                         title={vote.isDouble ? "Vote double" : undefined}
                       >
@@ -153,29 +213,29 @@ export function VoteResults({ results, onDismiss }: VoteResultsProps) {
                       </span>
                     ))}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
         )}
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-4 text-xs text-slate-500 pt-2 border-t border-slate-700">
+        <div className="flex flex-wrap gap-4 text-xs text-slate-500 pt-2 border-t border-zinc-700">
           <span>✌️ = Vote double</span>
           <span className="text-purple-400">??? = Vote anonyme</span>
         </div>
 
         {/* Dismiss button */}
         {onDismiss && (
-          <Button
+          <MotionButton
             variant="ghost"
             className="w-full mt-2"
             onClick={onDismiss}
           >
             Fermer
-          </Button>
+          </MotionButton>
         )}
       </CardContent>
-    </Card>
+    </MotionCard>
   );
 }

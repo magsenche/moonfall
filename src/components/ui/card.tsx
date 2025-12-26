@@ -1,8 +1,11 @@
+'use client';
+
 import { cn } from '@/lib/utils';
 import { type HTMLAttributes, forwardRef } from 'react';
+import { motion, type HTMLMotionProps } from 'framer-motion';
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'glass';
+  variant?: 'default' | 'glass' | 'sticker';
 }
 
 const Card = forwardRef<HTMLDivElement, CardProps>(
@@ -10,6 +13,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
     const variants = {
       default: 'bg-slate-800/50 border border-slate-700',
       glass: 'bg-slate-800/30 backdrop-blur-lg border border-slate-700/50',
+      sticker: 'bg-zinc-800 border-2 border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]',
     };
 
     return (
@@ -29,6 +33,43 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
 );
 
 Card.displayName = 'Card';
+
+// Motion Card with Y2K hover effects
+export interface MotionCardProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
+  variant?: 'default' | 'glass' | 'sticker';
+  rotation?: number;
+  children: React.ReactNode;
+}
+
+const MotionCard = forwardRef<HTMLDivElement, MotionCardProps>(
+  ({ className, variant = 'sticker', rotation = 0, children, ...props }, ref) => {
+    const variants = {
+      default: 'bg-slate-800/50 border border-slate-700',
+      glass: 'bg-slate-800/30 backdrop-blur-lg border border-slate-700/50',
+      sticker: 'bg-zinc-800 border-2 border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]',
+    };
+
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ rotate: rotation }}
+        whileHover={{ rotate: 0, scale: 1.02, boxShadow: '6px 6px 0px 0px rgba(0,0,0,0.5)' }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        className={cn(
+          'rounded-2xl p-6',
+          variants[variant],
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </motion.div>
+    );
+  }
+);
+
+MotionCard.displayName = 'MotionCard';
 
 const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
@@ -58,4 +99,4 @@ const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 );
 CardContent.displayName = 'CardContent';
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent };
+export { Card, MotionCard, CardHeader, CardTitle, CardDescription, CardContent };

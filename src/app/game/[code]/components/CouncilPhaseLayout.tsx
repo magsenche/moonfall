@@ -1,12 +1,14 @@
 /**
  * CouncilPhaseLayout - Council voting phase layout
+ * Y2K Sticker aesthetic
  *
  * Uses GameContext - no props needed.
  */
 
 'use client';
 
-import { Card, CardContent } from '@/components/ui';
+import { motion } from 'framer-motion';
+import { MotionCard, CardContent } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { useGame } from '../context';
 
@@ -32,28 +34,45 @@ export function CouncilPhaseLayout() {
   return (
     <div className="space-y-4">
       {/* Council atmosphere instruction */}
-      <Card
-        className={cn(
-          'border-purple-500/30 bg-gradient-to-br from-purple-950/30 to-slate-900/50'
-        )}
+      <MotionCard
+        variant="sticker"
+        rotation={-0.5}
+        className="border-purple-500/50"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
       >
         <CardContent className="pt-5 pb-4">
           <div className="text-center">
-            <p className="text-3xl mb-2">⚖️</p>
-            <h3 className="font-bold text-white mb-2">Conseil du village</h3>
-            <p className="text-slate-400 text-sm">
+            <motion.p 
+              className="text-4xl mb-2"
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              ⚖️
+            </motion.p>
+            <h3 className="font-black text-white text-lg mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.3)' }}>
+              Conseil du village
+            </h3>
+            <p className="text-slate-300 text-sm">
               {voting.hasVoted
-                ? `Vote enregistré ! (${voting.votesCount}/${voting.totalVoters})`
-                : 'Le moment est venu de désigner un suspect à éliminer.'}
+                ? `✅ Vote enregistré ! (${voting.votesCount}/${voting.totalVoters})`
+                : '⚡ Le moment est venu de désigner un suspect à éliminer.'}
             </p>
             {!voting.hasVoted && canVote && (
-              <p className="text-xs text-purple-400 mt-2">
-                Choisissez un joueur à éliminer ci-dessous
-              </p>
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className={cn(
+                  'inline-block mt-3 px-3 py-1 rounded-full text-xs font-medium',
+                  'bg-purple-600/50 border border-purple-400/50 text-purple-200'
+                )}
+              >
+                👇 Choisissez un joueur à éliminer ci-dessous
+              </motion.p>
             )}
           </div>
         </CardContent>
-      </Card>
+      </MotionCard>
 
       {/* Player's Role Card */}
       {currentRole && roleConfig && <PlayerRoleCard role={currentRole} roleConfig={roleConfig} />}
@@ -77,14 +96,26 @@ export function CouncilPhaseLayout() {
 
       {/* Dead player message */}
       {!isAlive && (
-        <Card className="border-slate-700/50">
+        <MotionCard 
+          variant="sticker" 
+          rotation={1}
+          className="border-zinc-600"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
           <CardContent className="py-6 text-center">
-            <p className="text-3xl mb-2">👻</p>
+            <motion.p 
+              className="text-4xl mb-2"
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              👻
+            </motion.p>
             <p className="text-slate-400 text-sm">
               Vous êtes mort... Observez le vote en silence.
             </p>
           </CardContent>
-        </Card>
+        </MotionCard>
       )}
 
       {/* Vote Results - Show after resolution */}

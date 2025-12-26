@@ -1,16 +1,25 @@
 /**
- * LobbyView - Lobby screen before game starts
+ * LobbyView - Y2K styled Lobby screen before game starts
  *
  * Uses GameContext - no props needed.
  */
 
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, Button } from '@/components/ui';
-import { PlayerAvatar, RulesButton } from '@/components/game';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MotionCard, CardContent, CardHeader, CardTitle, MotionButton, Button } from '@/components/ui';
+import { PlayerAvatar, RulesButton, PhaseBackground } from '@/components/game';
 import { NotificationPrompt } from '@/components/game/notification-prompt';
 import { getRoleConfig } from '@/config/roles';
+import { cn } from '@/lib/utils';
 import { useGame } from '../context';
+
+// Simple item animation - no stagger to avoid flickering on realtime updates
+const itemVariants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  show: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.8 },
+};
 
 export function LobbyView() {
   const { game, roles, currentPlayerId, isMJ, settings, actions, ui, router } = useGame();
@@ -25,35 +34,61 @@ export function LobbyView() {
   const playersForRoles = gameSettings.autoMode ? game.players.length : players.length;
 
   return (
-    <main className="min-h-screen p-4">
-      {/* Background */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-      </div>
+    <main className="min-h-screen safe-area-top safe-area-bottom">
+      {/* Y2K Background */}
+      <PhaseBackground phase="lobby" players={game.players} />
 
-      <div className="max-w-lg mx-auto pt-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">{game.name}</h1>
-          <p className="text-slate-400">En attente des joueurs...</p>
-        </div>
+      <div className="relative z-10 max-w-lg mx-auto px-4 pt-8 pb-8">
+        {/* Header - Y2K Style */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <motion.h1 
+            className="text-3xl font-black text-white mb-2 tracking-tight"
+            style={{ textShadow: '3px 3px 0px rgba(0,0,0,0.5)' }}
+          >
+            {game.name}
+          </motion.h1>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: 'spring' }}
+            className={cn(
+              'inline-block px-4 py-1.5 rounded-full',
+              'bg-indigo-600/30 border-2 border-indigo-400/50 text-indigo-300',
+              'text-sm font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]'
+            )}
+          >
+            ⏳ En attente des joueurs...
+          </motion.div>
+        </motion.div>
 
-        {/* Game Code */}
-        <Card className="mb-6">
+        {/* Game Code - Sticker Card */}
+        <MotionCard variant="sticker" rotation={1} className="mb-6">
           <CardContent className="pt-6">
-            <p className="text-sm text-slate-400 text-center mb-2">Code de la partie</p>
-            <button
+            <p className="text-sm text-slate-400 text-center mb-2 font-medium">Code de la partie</p>
+            <motion.button
               onClick={actions.copyCode}
-              className="w-full text-4xl font-mono font-bold text-center tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={cn(
+                'w-full text-4xl font-mono font-black text-center tracking-widest',
+                'text-indigo-400 hover:text-indigo-300 transition-colors',
+                'py-2'
+              )}
             >
               {game.code}
-            </button>
-            <p className="text-sm text-slate-500 text-center mt-2">
-              {ui.copied ? '✓ Copié !' : 'Clique pour copier'}
-            </p>
+            </motion.button>
+            <motion.p 
+              className="text-sm text-slate-500 text-center mt-2"
+              animate={ui.copied ? { scale: [1, 1.1, 1] } : {}}
+            >
+              {ui.copied ? '✅ Copié !' : '📋 Clique pour copier'}
+            </motion.p>
           </CardContent>
-        </Card>
+        </MotionCard>
 
         {/* Notification Prompt */}
         <div className="mb-6">
@@ -63,49 +98,108 @@ export function LobbyView() {
         {/* Rules Button - Floating on mobile */}
         <RulesButton variant="floating" />
 
-        {/* Players List */}
-        <Card>
+        {/* Players Grid - Y2K Sticker Style */}
+        <MotionCard variant="sticker" rotation={-0.5}>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Joueurs</span>
-              <span className="text-lg font-normal text-slate-400">{game.players.length} / 20</span>
+              <span className="flex items-center gap-2">
+                <span className="text-2xl">👥</span>
+                Joueurs
+              </span>
+              <span className={cn(
+                'px-3 py-1 rounded-full text-sm font-bold',
+                'bg-indigo-500/20 border border-indigo-500/40 text-indigo-300'
+              )}>
+                {game.players.length} / 20
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              <AnimatePresence mode="popLayout">
               {/* MJ */}
               {mj && (
-                <li className="flex items-center gap-3 p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
-                  <PlayerAvatar playerId={mj.id} pseudo={mj.pseudo} size="sm" isMj={true} />
-                  <div>
-                    <p className="font-medium text-white">{mj.pseudo}</p>
-                    <p className="text-xs text-indigo-400">Maître du Jeu</p>
-                  </div>
-                </li>
+                <motion.div
+                  key={mj.id}
+                  variants={itemVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                  layout
+                  className={cn(
+                    'relative flex flex-col items-center p-3 rounded-xl',
+                    'bg-indigo-900/50 border-2 border-indigo-400',
+                    'shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]'
+                  )}
+                >
+                  <PlayerAvatar playerId={mj.id} pseudo={mj.pseudo} size="md" isMj={true} />
+                  <p className="mt-2 text-xs font-bold text-white truncate max-w-full">{mj.pseudo}</p>
+                  <span className={cn(
+                    'absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-md',
+                    'bg-amber-500 border-2 border-white text-white',
+                    'text-[8px] font-black uppercase',
+                    'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.4)]'
+                  )}>
+                    MJ
+                  </span>
+                </motion.div>
               )}
 
               {/* Other players */}
-              {players.map((player) => (
-                <li key={player.id} className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl">
-                  <PlayerAvatar playerId={player.id} pseudo={player.pseudo} size="sm" />
-                  <p className="font-medium text-white">{player.pseudo}</p>
-                </li>
+              {players.map((player, i) => (
+                <motion.div
+                  key={player.id}
+                  variants={itemVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                  layout
+                  whileHover={{ scale: 1.05 }}
+                  className={cn(
+                    'flex flex-col items-center p-3 rounded-xl',
+                    'bg-zinc-800/80 border-2 border-white/30',
+                    'shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]',
+                    player.id === currentPlayerId && 'border-indigo-400 bg-indigo-900/30'
+                  )}
+                  style={{ transform: `rotate(${(i % 2 === 0 ? 1 : -1) * (i % 3)}deg)` }}
+                >
+                  <PlayerAvatar playerId={player.id} pseudo={player.pseudo} size="md" />
+                  <p className="mt-2 text-xs font-bold text-white truncate max-w-full">{player.pseudo}</p>
+                  {player.id === currentPlayerId && (
+                    <span className={cn(
+                      'absolute -top-1 -left-1 px-1.5 py-0.5 rounded-md',
+                      'bg-indigo-500 border-2 border-white text-white',
+                      'text-[8px] font-bold uppercase',
+                      'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.4)]'
+                    )}>
+                      TOI
+                    </span>
+                  )}
+                </motion.div>
               ))}
+              </AnimatePresence>
+            </div>
 
-              {/* Empty slots */}
-              {game.players.length < 3 && (
-                <li className="p-3 border-2 border-dashed border-slate-700 rounded-xl text-center text-slate-500">
-                  En attente de joueurs... (min. 3)
-                </li>
-              )}
-            </ul>
+            {/* Empty slots */}
+            {game.players.length < 3 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className={cn(
+                  'mt-4 p-4 rounded-xl text-center',
+                  'border-2 border-dashed border-slate-600 text-slate-500'
+                )}
+              >
+                En attente de joueurs... (min. 3)
+              </motion.div>
+            )}
 
             {/* Bots buttons (MJ only, for testing) */}
             {isMJ && (
               <div className="mt-4 pt-4 border-t border-slate-700">
                 <p className="text-xs text-slate-500 mb-2">🧪 Mode dev</p>
                 <div className="flex gap-2">
-                  <Button
+                  <MotionButton
                     variant="secondary"
                     size="sm"
                     onClick={actions.addBotsToGame}
@@ -113,9 +207,9 @@ export function LobbyView() {
                     className="flex-1"
                   >
                     {ui.isAddingBots ? '⏳...' : '🤖 +5 Bots'}
-                  </Button>
+                  </MotionButton>
                   {players.some((p) => p.pseudo.startsWith('🤖')) && (
-                    <Button
+                    <MotionButton
                       variant="ghost"
                       size="sm"
                       onClick={actions.removeBotsFromGame}
@@ -123,34 +217,41 @@ export function LobbyView() {
                       className="text-red-400 hover:text-red-300"
                     >
                       🗑️ Retirer bots
-                    </Button>
+                    </MotionButton>
                   )}
                 </div>
               </div>
             )}
           </CardContent>
-        </Card>
+        </MotionCard>
 
-        {/* Game Settings (MJ only) */}
+        {/* Game Settings (MJ only) - Y2K Style */}
         {isMJ && (
-          <Card className="mt-4 bg-slate-800/50 border-slate-700">
+          <MotionCard variant="sticker" rotation={0.3} className="mt-4">
             <CardHeader className="pb-2">
-              <button
+              <motion.button
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setShowSettings(!showSettings)}
                 className="flex items-center justify-between w-full text-left"
               >
-                <CardTitle className="text-sm font-medium text-slate-300">
-                  ⚙️ Paramètres de la partie
+                <CardTitle className="text-sm font-bold text-slate-300 flex items-center gap-2">
+                  <span>⚙️</span>
+                  Paramètres de la partie
                 </CardTitle>
-                <span className="text-slate-400">{showSettings ? '▲' : '▼'}</span>
-              </button>
+                <motion.span 
+                  animate={{ rotate: showSettings ? 180 : 0 }}
+                  className="text-slate-400"
+                >
+                  ▼
+                </motion.span>
+              </motion.button>
             </CardHeader>
 
             {showSettings && (
               <CardContent className="space-y-4">
                 {/* Night Duration */}
                 <div>
-                  <label className="text-sm text-slate-400 mb-1 block">🌙 Durée de la nuit</label>
+                  <label className="text-sm text-slate-400 mb-1 block font-medium">🌙 Durée de la nuit</label>
                   <div className="flex items-center gap-3">
                     <input
                       type="range"
@@ -164,9 +265,12 @@ export function LobbyView() {
                           nightDurationMinutes: parseFloat(e.target.value),
                         })
                       }
-                      className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                      className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                     />
-                    <span className="text-white font-medium w-16 text-right">
+                    <span className={cn(
+                      'text-white font-bold w-16 text-right px-2 py-1 rounded-lg',
+                      'bg-slate-700/50 text-sm'
+                    )}>
                       {gameSettings.nightDurationMinutes < 1
                         ? `${Math.round(gameSettings.nightDurationMinutes * 60)}s`
                         : `${gameSettings.nightDurationMinutes} min`}
@@ -176,7 +280,7 @@ export function LobbyView() {
 
                 {/* Vote Duration */}
                 <div>
-                  <label className="text-sm text-slate-400 mb-1 block">
+                  <label className="text-sm text-slate-400 mb-1 block font-medium">
                     🗳️ Durée du vote (conseil)
                   </label>
                   <div className="flex items-center gap-3">
@@ -192,9 +296,12 @@ export function LobbyView() {
                           voteDurationMinutes: parseFloat(e.target.value),
                         })
                       }
-                      className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                      className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                     />
-                    <span className="text-white font-medium w-16 text-right">
+                    <span className={cn(
+                      'text-white font-bold w-16 text-right px-2 py-1 rounded-lg',
+                      'bg-slate-700/50 text-sm'
+                    )}>
                       {gameSettings.voteDurationMinutes < 1
                         ? `${Math.round(gameSettings.voteDurationMinutes * 60)}s`
                         : `${gameSettings.voteDurationMinutes} min`}
@@ -345,42 +452,80 @@ export function LobbyView() {
                   )}
                 </div>
 
-                {/* Save Button */}
-                <Button variant="secondary" className="w-full" onClick={saveSettings} disabled={isSavingSettings}>
+                {/* Save Button - Y2K sticker style */}
+                <MotionButton 
+                  variant="sticker" 
+                  className="w-full bg-indigo-600 border-indigo-400" 
+                  onClick={saveSettings} 
+                  disabled={isSavingSettings}
+                >
                   {isSavingSettings ? '⏳ Sauvegarde...' : '💾 Sauvegarder'}
-                </Button>
+                </MotionButton>
               </CardContent>
             )}
-          </Card>
+          </MotionCard>
         )}
 
         {/* Auto-Garou Mode Banner */}
         {gameSettings.autoMode && (
-          <div className="mt-4 p-3 bg-indigo-900/50 border border-indigo-500/50 rounded-xl text-center">
-            <span className="text-indigo-300 text-sm font-medium">🤖 Mode Auto-Garou activé</span>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={cn(
+              'mt-4 p-3 rounded-xl text-center',
+              'bg-indigo-900/50 border-2 border-indigo-500/50',
+              'shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]'
+            )}
+          >
+            <span className="text-indigo-300 text-sm font-bold">🤖 Mode Auto-Garou activé</span>
             <p className="text-xs text-indigo-400/80 mt-1">Tout le monde joue • Phases automatiques</p>
-          </div>
+          </motion.div>
         )}
 
-        {/* Start Game Button (MJ only) */}
+        {/* Start Game Button (MJ only) - Y2K style */}
         {isMJ && game.players.length >= 3 && (
-          <div className="mt-6">
-            <Button className="w-full" size="lg" onClick={actions.startGame} disabled={ui.isStarting}>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-6"
+          >
+            <MotionButton 
+              variant="sticker"
+              className={cn(
+                "w-full text-lg py-4",
+                "bg-emerald-600 border-emerald-400 hover:bg-emerald-500"
+              )}
+              onClick={actions.startGame} 
+              disabled={ui.isStarting}
+            >
               {ui.isStarting ? '⏳ Lancement...' : '🎮 Lancer la partie'}
-            </Button>
-            {ui.startError && <p className="text-sm text-red-400 text-center mt-2">{ui.startError}</p>}
+            </MotionButton>
+            {ui.startError && (
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-sm text-red-400 text-center mt-2"
+              >
+                {ui.startError}
+              </motion.p>
+            )}
             <p className="text-xs text-slate-500 text-center mt-2">
               {gameSettings.autoMode
                 ? 'Tu recevras aussi un rôle !'
                 : 'Les rôles seront attribués aléatoirement'}
             </p>
-          </div>
+          </motion.div>
         )}
 
         {/* Back button */}
-        <Button variant="ghost" className="w-full mt-4" onClick={() => router.push('/')}>
-          Quitter le lobby
-        </Button>
+        <MotionButton 
+          variant="ghost" 
+          className="w-full mt-4" 
+          onClick={() => router.push('/')}
+        >
+          ← Quitter le lobby
+        </MotionButton>
       </div>
     </main>
   );

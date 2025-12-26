@@ -1,19 +1,17 @@
 /**
- * GameLayout - Main game UI orchestrator
+ * GameLayout - Main game UI orchestrator (Y2K Edition)
  *
  * Uses GameContext to render the appropriate view based on game state.
- * Does NOT use TimerContext - timer logic is in GameLogic component.
- * This prevents GameLayout from re-rendering every second.
- * 
- * Only GameHeader uses useTimerContext() for displaying the timer.
+ * Implements the Y2K/Sticker/Scrapbook aesthetic with PhaseBackground.
  */
 
 'use client';
 
+import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../context';
 import { getRoleConfig } from '@/config/roles';
 import { cn } from '@/lib/utils';
-import { GameOver, TipToast, RulesButton } from '@/components/game';
+import { GameOver, TipToast, RulesButton, PhaseBackground } from '@/components/game';
 
 import { SessionRecovery } from './SessionRecovery';
 import { HunterDeathModal } from './HunterDeathModal';
@@ -85,55 +83,49 @@ export function GameLayout() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <main className="min-h-screen p-4">
-      {/* Phase-specific background */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div
-          className={cn(
-            'absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl transition-colors duration-1000',
-            gameStatus === 'nuit'
-              ? 'bg-indigo-900/30'
-              : gameStatus === 'conseil'
-                ? 'bg-purple-900/20'
-                : 'bg-amber-500/10'
-          )}
-        />
-        <div
-          className={cn(
-            'absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl transition-colors duration-1000',
-            gameStatus === 'nuit'
-              ? 'bg-purple-900/30'
-              : gameStatus === 'conseil'
-                ? 'bg-red-900/20'
-                : 'bg-orange-500/10'
-          )}
-        />
-      </div>
+    <main className="min-h-screen safe-area-top safe-area-bottom">
+      {/* Y2K Phase Background with floating avatars */}
+      <PhaseBackground 
+        phase={gameStatus as 'lobby' | 'jour' | 'nuit' | 'conseil' | 'terminee'} 
+        players={game.players}
+      />
 
-      <div className="max-w-lg mx-auto pt-8">
-        {/* Unified Header */}
+      <div className="relative z-10 max-w-lg mx-auto px-4 pt-8 pb-24">
+        {/* Unified Header - Dynamic Island style */}
         <GameHeader />
 
-        {/* Phase-specific layout */}
-        {gameStatus === 'nuit' && <NightPhaseLayout />}
+        {/* Phase-specific layout with animations */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={gameStatus}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+          >
+            {gameStatus === 'nuit' && <NightPhaseLayout />}
+            {gameStatus === 'jour' && <DayPhaseLayout />}
+            {gameStatus === 'conseil' && <CouncilPhaseLayout />}
+          </motion.div>
+        </AnimatePresence>
 
-        {gameStatus === 'jour' && <DayPhaseLayout />}
-
-        {gameStatus === 'conseil' && <CouncilPhaseLayout />}
-
-        {/* Common Footer */}
+        {/* Common Footer - Floating action bar at bottom */}
         <GameFooter />
       </div>
 
       {/* Hunter Death Modal */}
-      {ui.showHunterModal && currentPlayerId && <HunterDeathModal />}
+      <AnimatePresence>
+        {ui.showHunterModal && currentPlayerId && <HunterDeathModal />}
+      </AnimatePresence>
 
       {/* Tip Toast */}
-      {tips.currentTipId && (
-        <TipToast tipId={tips.currentTipId} show={true} onDismiss={tips.dismissCurrentTip} />
-      )}
+      <AnimatePresence>
+        {tips.currentTipId && (
+          <TipToast tipId={tips.currentTipId} show={true} onDismiss={tips.dismissCurrentTip} />
+        )}
+      </AnimatePresence>
 
-      {/* Floating Rules Button */}
+      {/* Floating Rules Button - Sticker style */}
       <RulesButton variant="floating" />
     </main>
   );

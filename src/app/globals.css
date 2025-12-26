@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #020617;
+  --background: #09090b;
   --foreground: #f8fafc;
 }
 
@@ -17,22 +17,48 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* Custom scrollbar */
+/* iOS Safe Areas */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Y2K Sticker Utility Class */
+.sticker {
+  border: 2px solid white;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+.sticker:hover {
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 0.5);
+}
+
+.sticker:active {
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 0.5);
+  transform: translate(2px, 2px);
+}
+
+/* Custom scrollbar - Y2K style */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: #18181b;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: #3f3f46;
   border-radius: 4px;
+  border: 1px solid #52525b;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #52525b;
 }
 
 /* Smooth transitions */
@@ -44,6 +70,21 @@ body {
 :focus-visible {
   outline: 2px solid #6366f1;
   outline-offset: 2px;
+}
+
+/* Noise texture overlay helper */
+.noise-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  pointer-events: none;
+}
+
+/* Grid pattern helper */
+.grid-pattern {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 /* Confetti animation */
@@ -60,4 +101,30 @@ body {
 
 .animate-confetti {
   animation: confetti-fall linear forwards;
+}
+
+/* Text shadow helper for Y2K headers */
+.text-shadow-hard {
+  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+}
+
+/* Minimum touch target for mobile */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Perspective for 3D card flips */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+/* Backface hidden for card flips */
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* Border width 3 (not in default Tailwind) */
+.border-3 {
+  border-width: 3px;
 }

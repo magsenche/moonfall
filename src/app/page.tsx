@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MotionButton, Button, Input, MotionCard, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import { cn } from '@/lib/utils';
 import { 
   savePlayerSession, 
   getAllSessions, 
@@ -140,116 +142,225 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4">
-      {/* Background decoration */}
+    <main className="min-h-screen flex flex-col items-center justify-center p-4 safe-area-top safe-area-bottom">
+      {/* Y2K Background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        {/* Base gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-zinc-900 to-zinc-950" />
+        
+        {/* Noise texture */}
+        <div 
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }}
+        />
+        
+        {/* Animated blobs */}
+        <motion.div
+          className="absolute w-[500px] h-[500px] rounded-full blur-3xl bg-indigo-600/20"
+          animate={{ x: [0, 50, 0], y: [0, 30, 0], scale: [1, 1.1, 1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ top: '10%', left: '-10%' }}
+        />
+        <motion.div
+          className="absolute w-[400px] h-[400px] rounded-full blur-3xl bg-purple-600/15"
+          animate={{ x: [0, -40, 0], y: [0, 50, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          style={{ bottom: '5%', right: '-5%' }}
+        />
+        
+        {/* Grid pattern */}
+        <div 
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                             linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+            backgroundSize: '40px 40px',
+          }}
+        />
       </div>
 
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold mb-2">
+      <div className="w-full max-w-md relative z-10">
+        {/* Logo - Y2K Style */}
+        <motion.div 
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <motion.div
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            className="inline-block mb-4"
+          >
+            <span className="text-6xl">🌙</span>
+          </motion.div>
+          <h1 className={cn(
+            'text-5xl font-black mb-2 tracking-tight',
+          )}
+            style={{ textShadow: '4px 4px 0px rgba(0,0,0,0.5)' }}
+          >
             <span className="text-indigo-400">Moon</span>
             <span className="text-purple-400">fall</span>
           </h1>
-          <p className="text-slate-400">Loup-Garou Grandeur Nature</p>
-        </div>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className={cn(
+              'inline-block px-4 py-1 rounded-full text-sm font-medium',
+              'bg-zinc-800/80 border border-white/20 text-slate-300',
+              'shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]'
+            )}
+          >
+            🐺 Loup-Garou Grandeur Nature
+          </motion.p>
+        </motion.div>
 
-        {/* Active sessions banner */}
-        {sessions.length > 0 && mode === 'home' && !showRejoinPrompt && (
-          <Card variant="glass" className="mb-6 border-indigo-500/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">🎮 Mes parties</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {sessions.slice(0, 3).map((session) => (
-                <div 
-                  key={session.gameCode}
-                  className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{session.pseudo}</p>
-                    <p className="text-xs text-slate-500 font-mono">{session.gameCode}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleResumeGame(session)}
-                    >
-                      Reprendre →
-                    </Button>
-                    <button
-                      onClick={() => handleForgetGame(session)}
-                      className="text-slate-500 hover:text-red-400 p-1"
-                      title="Oublier cette partie"
-                    >
-                      ✕
-                    </button>
-                  </div>
+        {/* Active sessions banner - Y2K Sticker Style */}
+        <AnimatePresence>
+          {sessions.length > 0 && mode === 'home' && !showRejoinPrompt && (
+            <MotionCard 
+              variant="sticker" 
+              rotation={-1}
+              className="mb-6 border-indigo-500/50"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <span>🎮</span> Mes parties
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {sessions.slice(0, 3).map((session, i) => (
+                  <motion.div 
+                    key={session.gameCode}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className={cn(
+                      'flex items-center justify-between p-3 rounded-xl',
+                      'bg-zinc-700/50 border border-white/10'
+                    )}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold truncate text-white">{session.pseudo}</p>
+                      <p className="text-xs text-slate-500 font-mono">{session.gameCode}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MotionButton
+                        size="sm"
+                        variant="sticker"
+                        className="bg-indigo-600 border-indigo-400"
+                        onClick={() => handleResumeGame(session)}
+                      >
+                        Reprendre →
+                      </MotionButton>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleForgetGame(session)}
+                        className="text-slate-500 hover:text-red-400 p-2"
+                        title="Oublier cette partie"
+                      >
+                        ✕
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ))}
+              </CardContent>
+            </MotionCard>
+          )}
+        </AnimatePresence>
+
+        {/* Rejoin prompt modal - Y2K Style */}
+        <AnimatePresence>
+          {showRejoinPrompt && (
+            <MotionCard 
+              variant="sticker" 
+              rotation={1}
+              className="mb-6 border-amber-500/50"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <CardContent className="p-4">
+                <p className="text-amber-200 mb-3 font-medium">
+                  Le pseudo <strong>{showRejoinPrompt.pseudo}</strong> existe déjà dans cette partie.
+                </p>
+                <p className="text-slate-400 text-sm mb-4">
+                  Est-ce toi ? Tu peux te reconnecter à ta partie.
+                </p>
+                <div className="flex gap-2">
+                  <MotionButton
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => setShowRejoinPrompt(null)}
+                  >
+                    Non, annuler
+                  </MotionButton>
+                  <MotionButton
+                    variant="sticker"
+                    className="flex-1 bg-amber-600 border-amber-400"
+                    onClick={handleRejoin}
+                    isLoading={isLoading}
+                  >
+                    Oui, c&apos;est moi !
+                  </MotionButton>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+              </CardContent>
+            </MotionCard>
+          )}
+        </AnimatePresence>
 
-        {/* Rejoin prompt modal */}
-        {showRejoinPrompt && (
-          <Card variant="glass" className="mb-6 border-amber-500/50">
-            <CardContent className="p-4">
-              <p className="text-amber-200 mb-3">
-                Le pseudo <strong>{showRejoinPrompt.pseudo}</strong> existe déjà dans cette partie.
-              </p>
-              <p className="text-slate-400 text-sm mb-4">
-                Est-ce toi ? Tu peux te reconnecter à ta partie.
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  className="flex-1"
-                  onClick={() => setShowRejoinPrompt(null)}
-                >
-                  Non, annuler
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={handleRejoin}
-                  isLoading={isLoading}
-                >
-                  Oui, c&apos;est moi !
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Home - Choice buttons */}
-        {mode === 'home' && !showRejoinPrompt && (
-          <div className="space-y-4">
-            <Button 
-              className="w-full text-lg py-6" 
-              size="lg"
-              onClick={() => setMode('create')}
+        {/* Home - Choice buttons - Y2K Style */}
+        <AnimatePresence mode="wait">
+          {mode === 'home' && !showRejoinPrompt && (
+            <motion.div 
+              key="home-buttons"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-4"
             >
-              🎮 Créer une partie
-            </Button>
-            <Button 
-              className="w-full text-lg py-6" 
-              variant="secondary" 
-              size="lg"
-              onClick={() => setMode('join')}
-            >
-              🚀 Rejoindre une partie
-            </Button>
-          </div>
-        )}
+              <MotionButton 
+                variant="sticker"
+                className={cn(
+                  "w-full text-lg py-6",
+                  "bg-indigo-600 border-indigo-400 hover:bg-indigo-500"
+                )}
+                onClick={() => setMode('create')}
+              >
+                🎮 Créer une partie
+              </MotionButton>
+              <MotionButton 
+                variant="sticker"
+                className={cn(
+                  "w-full text-lg py-6",
+                  "bg-purple-600 border-purple-400 hover:bg-purple-500"
+                )}
+                onClick={() => setMode('join')}
+              >
+                🚀 Rejoindre une partie
+              </MotionButton>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Create Game Form */}
+        {/* Create Game Form - Y2K Style */}
         {mode === 'create' && (
-          <Card variant="glass">
+          <MotionCard 
+            variant="sticker" 
+            rotation={0.5}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             <CardHeader>
-              <CardTitle>🎮 Créer une partie</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <span>🎮</span> Créer une partie
+              </CardTitle>
               <CardDescription>
                 Tu seras le Maître du Jeu (MJ) de cette partie
               </CardDescription>
@@ -273,39 +384,57 @@ export default function HomePage() {
                   maxLength={20}
                 />
                 
-                {error && (
-                  <p className="text-red-400 text-sm bg-red-500/10 p-3 rounded-lg">
-                    {error}
-                  </p>
-                )}
+                <AnimatePresence>
+                  {error && (
+                    <motion.p 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className={cn(
+                        'text-red-400 text-sm p-3 rounded-xl',
+                        'bg-red-900/50 border border-red-500/50'
+                      )}
+                    >
+                      {error}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
 
                 <div className="flex gap-3 pt-2">
-                  <Button 
+                  <MotionButton 
                     type="button" 
                     variant="ghost" 
                     onClick={() => { setMode('home'); setError(null); }}
                     className="flex-1"
                   >
-                    Retour
-                  </Button>
-                  <Button 
+                    ← Retour
+                  </MotionButton>
+                  <MotionButton 
                     type="submit" 
+                    variant="sticker"
+                    className="flex-1 bg-emerald-600 border-emerald-400"
                     isLoading={isLoading}
-                    className="flex-1"
                   >
-                    Créer
-                  </Button>
+                    Créer ✓
+                  </MotionButton>
                 </div>
               </form>
             </CardContent>
-          </Card>
+          </MotionCard>
         )}
 
-        {/* Join Game Form */}
+        {/* Join Game Form - Y2K Style */}
         {mode === 'join' && (
-          <Card variant="glass">
+          <MotionCard 
+            variant="sticker" 
+            rotation={-0.5}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             <CardHeader>
-              <CardTitle>🚀 Rejoindre une partie</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <span>🚀</span> Rejoindre une partie
+              </CardTitle>
               <CardDescription>
                 Entre le code fourni par le MJ
               </CardDescription>
@@ -331,40 +460,59 @@ export default function HomePage() {
                   maxLength={20}
                 />
                 
-                {error && (
-                  <p className="text-red-400 text-sm bg-red-500/10 p-3 rounded-lg">
-                    {error}
-                  </p>
-                )}
+                <AnimatePresence>
+                  {error && (
+                    <motion.p 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className={cn(
+                        'text-red-400 text-sm p-3 rounded-xl',
+                        'bg-red-900/50 border border-red-500/50'
+                      )}
+                    >
+                      {error}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
 
                 <div className="flex gap-3 pt-2">
-                  <Button 
+                  <MotionButton 
                     type="button" 
                     variant="ghost" 
                     onClick={() => { setMode('home'); setError(null); }}
                     className="flex-1"
                   >
-                    Retour
-                  </Button>
-                  <Button 
+                    ← Retour
+                  </MotionButton>
+                  <MotionButton 
                     type="submit" 
+                    variant="sticker"
+                    className="flex-1 bg-purple-600 border-purple-400"
                     isLoading={isLoading}
-                    className="flex-1"
                   >
-                    Rejoindre
-                  </Button>
+                    Rejoindre →
+                  </MotionButton>
                 </div>
               </form>
             </CardContent>
-          </Card>
+          </MotionCard>
         )}
 
-        {/* PWA Install hint */}
-        <div className="mt-8 text-center">
-          <p className="text-slate-600 text-sm">
-            📱 Ajoute Moonfall à ton écran d&apos;accueil pour recevoir les notifications !
+        {/* PWA Install hint - Y2K Style */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-8 text-center"
+        >
+          <p className={cn(
+            'inline-block px-4 py-2 rounded-full text-sm',
+            'bg-zinc-800/60 border border-white/10 text-slate-500'
+          )}>
+            📱 Ajoute Moonfall à ton écran d&apos;accueil !
           </p>
-        </div>
+        </motion.div>
       </div>
     </main>
   );
