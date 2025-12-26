@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { 
   submitNightVote as apiSubmitNightVote, 
   resolveNightVote as apiResolveNightVote,
@@ -52,6 +53,7 @@ export function useNightActions({
   // Seer power state
   const [seerTarget, setSeerTarget] = useState<string | null>(null);
   const [seerResult, setSeerResult] = useState<SeerResult | null>(null);
+  const [seerHistory, setSeerHistory] = useState<SeerResult[]>([]);
   const [hasUsedSeerPower, setHasUsedSeerPower] = useState(false);
   const [isUsingSeerPower, setIsUsingSeerPower] = useState(false);
   const [seerError, setSeerError] = useState<string | null>(null);
@@ -152,12 +154,60 @@ export function useNightActions({
       const data = await apiUseSeerPower(gameCode, currentPlayerId, seerTarget);
       setSeerResult(data.result);
       setHasUsedSeerPower(true);
+      // Add to history
+      setSeerHistory(prev => [...prev, data.result]);
     } catch (err) {
       setSeerError(err instanceof ApiError ? err.message : 'Une erreur est survenue');
     } finally {
       setIsUsingSeerPower(false);
     }
   }, [currentPlayerId, seerTarget, gameCode]);
+
+  // Fetch seer power history
+  useEffect(() => {
+    if (!currentPlayerId || gameStatus === 'lobby') return;
+    
+    const supabase = createClient();
+    
+    const fetchSeerHistory = async () => {
+      try {
+        // Get game id
+        const { data: game } = await supabase
+          .from('games')
+          .select('id')
+          .eq('code', gameCode)
+          .single();
+        
+        if (!game) return;
+        
+        // Get all seer power uses for this player
+        const { data: powerUses } = await supabase
+          .from('power_uses')
+          .select(`
+            result,
+            phase,
+            target:target_id (
+              id,
+              pseudo
+            )
+          `)
+          .eq('game_id', game.id)
+          .eq('player_id', currentPlayerId)
+          .order('phase', { ascending: true });
+        
+        if (powerUses) {
+          const history = powerUses
+            .filter(use => use.result)
+            .map(use => use.result as SeerResult);
+          setSeerHistory(history);
+        }
+      } catch (err) {
+        console.error('Error fetching seer history:', err);
+      }
+    };
+    
+    fetchSeerHistory();
+  }, [currentPlayerId, gameCode, gameStatus]);
 
   return {
     // Wolf vote state
@@ -176,6 +226,7 @@ export function useNightActions({
     // Seer state
     seerTarget,
     seerResult,
+    seerHistory,
     hasUsedSeerPower,
     isUsingSeerPower,
     seerError,

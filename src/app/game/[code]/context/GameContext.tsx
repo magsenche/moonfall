@@ -116,6 +116,7 @@ export interface GameContextType {
     seerTarget: string | null;
     setSeerTarget: (id: string | null) => void;
     seerResult: SeerResult | null;
+    seerHistory: SeerResult[];
     hasUsedSeerPower: boolean;
     isUsingSeerPower: boolean;
     seerError: string | null;
@@ -538,6 +539,7 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
         seerTarget: nightActionsHook.seerTarget,
         setSeerTarget: nightActionsHook.setSeerTarget,
         seerResult: nightActionsHook.seerResult,
+        seerHistory: nightActionsHook.seerHistory,
         hasUsedSeerPower: nightActionsHook.hasUsedSeerPower,
         isUsingSeerPower: nightActionsHook.isUsingSeerPower,
         seerError: nightActionsHook.seerError,

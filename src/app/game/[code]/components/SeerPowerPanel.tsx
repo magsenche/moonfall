@@ -16,6 +16,7 @@ interface SeerPowerPanelProps {
   currentPlayerId: string | null;
   seerTarget: string | null;
   seerResult: SeerResult | null;
+  seerHistory: SeerResult[];
   hasUsedSeerPower: boolean;
   isUsingSeerPower: boolean;
   seerError: string | null;
@@ -28,6 +29,7 @@ export function SeerPowerPanel({
   currentPlayerId,
   seerTarget,
   seerResult,
+  seerHistory,
   hasUsedSeerPower,
   isUsingSeerPower,
   seerError,
@@ -38,7 +40,8 @@ export function SeerPowerPanel({
   const targets = alivePlayers.filter(p => p.id !== currentPlayerId);
 
   return (
-    <MotionCard 
+    <>
+      <MotionCard 
       variant="sticker" 
       rotation={1}
       className="mb-6 border-purple-500/50"
@@ -189,5 +192,65 @@ export function SeerPowerPanel({
         </AnimatePresence>
       </CardContent>
     </MotionCard>
+
+    {/* Seer History */}
+    {seerHistory.length > 0 && (
+      <MotionCard
+        variant="sticker"
+        rotation={-0.5}
+        className="border-purple-500/30"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <CardHeader>
+          <CardTitle className="text-purple-300 text-sm flex items-center gap-2">
+            📜 Vos visions passées
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {seerHistory.map((vision, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={cn(
+                  'p-3 rounded-lg border',
+                  'bg-zinc-800/50',
+                  vision.team === 'loups' 
+                    ? 'border-red-500/30' 
+                    : 'border-blue-500/30'
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-white text-sm">{vision.targetName}</p>
+                    <p className={cn(
+                      "text-xs",
+                      vision.team === 'loups' ? "text-red-400" : "text-blue-400"
+                    )}>
+                      {vision.roleName === 'loup_garou' ? '🐺 Loup-Garou' :
+                       vision.roleName === 'villageois' ? '👤 Villageois' :
+                       vision.roleName}
+                    </p>
+                  </div>
+                  <span className={cn(
+                    "px-2 py-1 rounded-full text-xs font-medium",
+                    vision.team === 'loups'
+                      ? 'bg-red-600/20 text-red-400 border border-red-500/30'
+                      : 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                  )}>
+                    {vision.team === 'loups' ? '🐺' : '🏘️'}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </CardContent>
+      </MotionCard>
+    )}
+    </>
   );
 }

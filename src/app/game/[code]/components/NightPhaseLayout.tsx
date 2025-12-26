@@ -119,6 +119,7 @@ export function NightPhaseLayout() {
           currentPlayerId={currentPlayerId}
           seerTarget={nightActions.seerTarget}
           seerResult={nightActions.seerResult}
+          seerHistory={nightActions.seerHistory}
           hasUsedSeerPower={nightActions.hasUsedSeerPower}
           isUsingSeerPower={nightActions.isUsingSeerPower}
           seerError={nightActions.seerError}

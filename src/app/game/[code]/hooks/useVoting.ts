@@ -123,42 +123,30 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
     // Fetch current vote count on mount/status change
     const fetchVoteCount = async () => {
       try {
-        const { data: game } = await supabase
+        // Get game with id, current_phase, and settings in one query
+        const { data: gameData } = await supabase
           .from('games')
-          .select('code')
+          .select('id, current_phase, settings')
           .eq('code', gameCode)
           .single();
         
-        if (!game) return;
+        if (!gameData) return;
         
-        const { data: gameWithId } = await supabase
-          .from('games')
-          .select('id')
-          .eq('code', gameCode)
-          .single();
-        
-        if (!gameWithId) return;
-        
-        // Count votes for current phase
+        // Count votes for current phase only
         const { count: voteCount } = await supabase
           .from('votes')
           .select('*', { count: 'exact', head: true })
-          .eq('game_id', gameWithId.id)
+          .eq('game_id', gameData.id)
+          .eq('phase', gameData.current_phase ?? 0)
           .eq('vote_type', 'jour');
         
         // Count alive non-MJ players (or MJ in auto mode)
         const { data: players } = await supabase
           .from('players')
           .select('is_mj, is_alive')
-          .eq('game_id', gameWithId.id);
+          .eq('game_id', gameData.id);
         
-        const { data: gameSettings } = await supabase
-          .from('games')
-          .select('settings')
-          .eq('id', gameWithId.id)
-          .single();
-        
-        const settings = gameSettings?.settings as { autoMode?: boolean } | null;
+        const settings = gameData.settings as { autoMode?: boolean } | null;
         const isAutoMode = settings?.autoMode === true;
         const totalVoters = players?.filter(p => 
           p.is_alive && (!p.is_mj || isAutoMode)
