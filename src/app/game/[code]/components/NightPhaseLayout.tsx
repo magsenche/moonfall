@@ -1,16 +1,15 @@
 /**
  * NightPhaseLayout - Night-specific layout
- * 
+ *
+ * Uses GameContext - no props needed.
  * Shows role-specific actions for wolves, seer, witch, etc.
- * Dark themed with moon atmosphere.
  */
 
 'use client';
 
 import { Card, CardContent } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import type { Role, PartialPlayer, WolfMessage, SeerResult } from '../hooks';
-import type { RoleConfig } from '@/config/roles';
+import { useGame } from '../context';
 
 import {
   PlayerRoleCard,
@@ -21,117 +20,53 @@ import {
   WitchNightPanel,
 } from './index';
 
-interface NightPhaseLayoutProps {
-  // Player info
-  currentPlayerId: string | null;
-  currentPlayer: PartialPlayer | null | undefined;
-  currentRole: Role | null | undefined;
-  roleConfig: RoleConfig | null;
-  
-  // Role booleans
-  isWolf: boolean;
-  isSeer: boolean;
-  isLittleGirl: boolean;
-  isWitch: boolean;
-  
-  // Wolf data
-  wolves: PartialPlayer[];
-  alivePlayers: PartialPlayer[];
-  
-  // Night actions
-  nightTarget: string | null;
-  confirmedNightTarget: string | null;
-  hasNightVoted: boolean;
-  isNightVoting: boolean;
-  nightVoteError: string | null;
-  onSelectNightTarget: (id: string | null) => void;
-  onSubmitNightVote: () => void;
-  
-  // Wolf chat
-  wolfMessages: WolfMessage[];
-  newMessage: string;
-  isSendingMessage: boolean;
-  onMessageChange: (msg: string) => void;
-  onSendMessage: () => void;
-  
-  // Seer power
-  seerTarget: string | null;
-  seerResult: SeerResult | null;
-  hasUsedSeerPower: boolean;
-  isUsingSeerPower: boolean;
-  seerError: string | null;
-  onSelectSeerTarget: (id: string | null) => void;
-  onUseSeerPower: () => void;
-  
-  // Witch
-  gameCode: string;
-  gamePhase: number;
-}
-
-export function NightPhaseLayout({
-  currentPlayerId,
-  currentPlayer,
-  currentRole,
-  roleConfig,
-  isWolf,
-  isSeer,
-  isLittleGirl,
-  isWitch,
-  wolves,
-  alivePlayers,
-  nightTarget,
-  confirmedNightTarget,
-  hasNightVoted,
-  isNightVoting,
-  nightVoteError,
-  onSelectNightTarget,
-  onSubmitNightVote,
-  wolfMessages,
-  newMessage,
-  isSendingMessage,
-  onMessageChange,
-  onSendMessage,
-  seerTarget,
-  seerResult,
-  hasUsedSeerPower,
-  isUsingSeerPower,
-  seerError,
-  onSelectSeerTarget,
-  onUseSeerPower,
-  gameCode,
-  gamePhase,
-}: NightPhaseLayoutProps) {
-  const isAlive = currentPlayer?.is_alive !== false;
+export function NightPhaseLayout() {
+  const {
+    game,
+    currentPlayerId,
+    currentPlayer,
+    currentRole,
+    roleConfig,
+    isWolf,
+    isSeer,
+    isLittleGirl,
+    isWitch,
+    wolves,
+    alivePlayers,
+    isAlive,
+    nightActions,
+    wolfChat,
+  } = useGame();
 
   return (
     <div className="space-y-4">
       {/* Night atmosphere instruction */}
-      <Card className={cn(
-        "border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 to-slate-900/50"
-      )}>
+      <Card
+        className={cn(
+          'border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 to-slate-900/50'
+        )}
+      >
         <CardContent className="pt-5 pb-4">
           <div className="text-center">
             <p className="text-3xl mb-2">🌙</p>
             <h3 className="font-bold text-white mb-2">La nuit tombe sur le village</h3>
             <p className="text-slate-400 text-sm">
               {isWolf
-                ? "Concertez-vous avec votre meute pour choisir une victime."
+                ? 'Concertez-vous avec votre meute pour choisir une victime.'
                 : isSeer
-                ? "Vous pouvez sonder l'âme d'un joueur."
-                : isWitch
-                ? "Utilisez vos potions avec sagesse."
-                : isLittleGirl
-                ? "Vous espionnez discrètement les loups..."
-                : "Le village dort. Attendez le lever du jour..."}
+                  ? "Vous pouvez sonder l'âme d'un joueur."
+                  : isWitch
+                    ? 'Utilisez vos potions avec sagesse.'
+                    : isLittleGirl
+                      ? 'Vous espionnez discrètement les loups...'
+                      : 'Le village dort. Attendez le lever du jour...'}
             </p>
           </div>
         </CardContent>
       </Card>
 
       {/* Player's Role Card */}
-      {currentRole && roleConfig && (
-        <PlayerRoleCard role={currentRole} roleConfig={roleConfig} />
-      )}
+      {currentRole && roleConfig && <PlayerRoleCard role={currentRole} roleConfig={roleConfig} />}
 
       {/* Wolf teammates */}
       {isWolf && <WolfPack wolves={wolves} />}
@@ -141,26 +76,26 @@ export function NightPhaseLayout({
         <WolfNightVote
           alivePlayers={alivePlayers}
           wolves={wolves}
-          nightTarget={nightTarget}
-          confirmedNightTarget={confirmedNightTarget}
-          hasNightVoted={hasNightVoted}
-          isNightVoting={isNightVoting}
-          nightVoteError={nightVoteError}
-          onSelectTarget={onSelectNightTarget}
-          onSubmitVote={onSubmitNightVote}
+          nightTarget={nightActions.nightTarget}
+          confirmedNightTarget={nightActions.confirmedNightTarget}
+          hasNightVoted={nightActions.hasNightVoted}
+          isNightVoting={nightActions.isNightVoting}
+          nightVoteError={nightActions.nightVoteError}
+          onSelectTarget={nightActions.setNightTarget}
+          onSubmitVote={nightActions.submitNightVote}
         />
       )}
 
       {/* Wolf Chat - Also visible to Petite Fille (read-only) */}
       {(isWolf || isLittleGirl) && (
         <WolfChatPanel
-          messages={wolfMessages}
-          newMessage={newMessage}
-          isSendingMessage={isSendingMessage}
+          messages={wolfChat.wolfMessages}
+          newMessage={wolfChat.newMessage}
+          isSendingMessage={wolfChat.isSendingMessage}
           currentPlayerId={currentPlayerId}
           isAlive={isAlive}
-          onMessageChange={onMessageChange}
-          onSendMessage={onSendMessage}
+          onMessageChange={wolfChat.setNewMessage}
+          onSendMessage={wolfChat.sendWolfMessage}
           readOnly={isLittleGirl}
         />
       )}
@@ -170,13 +105,13 @@ export function NightPhaseLayout({
         <SeerPowerPanel
           alivePlayers={alivePlayers}
           currentPlayerId={currentPlayerId}
-          seerTarget={seerTarget}
-          seerResult={seerResult}
-          hasUsedSeerPower={hasUsedSeerPower}
-          isUsingSeerPower={isUsingSeerPower}
-          seerError={seerError}
-          onSelectTarget={onSelectSeerTarget}
-          onUsePower={onUseSeerPower}
+          seerTarget={nightActions.seerTarget}
+          seerResult={nightActions.seerResult}
+          hasUsedSeerPower={nightActions.hasUsedSeerPower}
+          isUsingSeerPower={nightActions.isUsingSeerPower}
+          seerError={nightActions.seerError}
+          onSelectTarget={nightActions.setSeerTarget}
+          onUsePower={nightActions.useSeerPower}
         />
       )}
 
@@ -185,8 +120,8 @@ export function NightPhaseLayout({
         <WitchNightPanel
           alivePlayers={alivePlayers}
           currentPlayerId={currentPlayerId}
-          gameCode={gameCode}
-          gamePhase={gamePhase}
+          gameCode={game.code}
+          gamePhase={game.current_phase ?? 1}
         />
       )}
 

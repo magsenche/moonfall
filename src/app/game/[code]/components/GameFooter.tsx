@@ -1,20 +1,16 @@
 /**
  * GameFooter - Common footer section
- * 
- * Contains:
- * - MJ Controls (if MJ)
- * - Missions Section (collapsible)
- * - Players List
- * - MJ Overview (if MJ, non-auto mode)
- * - Wallet & Shop (collapsible)
+ *
+ * Uses GameContext - no props needed.
+ * Contains: MJ Controls, Missions, Players List, Wallet & Shop.
  */
 
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui';
-import type { Role, GameWithPlayers, Mission, PartialPlayer } from '../hooks';
 import { getShop, type ShopItem, type ShopPlayerData } from '@/lib/api';
+import { useGame } from '../context';
 
 import { MJControls } from './MJControls';
 import { MJOverview } from './MJOverview';
@@ -23,84 +19,40 @@ import { PlayersList } from './PlayersList';
 import { PlayerWallet } from './PlayerWallet';
 import { Shop } from './Shop';
 
-interface GameFooterProps {
-  // Game data
-  game: GameWithPlayers;
-  roles: Role[];
-  
-  // Player info
-  currentPlayerId: string | null;
-  currentPlayer: PartialPlayer | null | undefined;
-  isMJ: boolean;
-  isAutoMode: boolean;
-  isWolf: boolean;
-  wolves: PartialPlayer[];
-  
-  // MJ Controls
-  gameStatus: string;
-  wolfVoteCount: { voted: number; total: number };
-  nightVoteResolveError: string | null;
-  showForceConfirm: boolean;
-  isChangingPhase: boolean;
-  onChangePhase: (phase: string) => void;
-  onResolveVote: () => void;
-  onResolveNightVote: () => void;
-  onCancelForce: () => void;
-  
-  // Missions
-  missions: Mission[];
-  showMissionForm: boolean;
-  onShowMissionForm: (show: boolean) => void;
-  onMissionCreated: () => void;
-  onMissionUpdate: () => void;
-  
-  // Shop
-  shopRefreshKey: number;
-  onShopRefresh: () => void;
-}
+export function GameFooter() {
+  const {
+    game,
+    roles,
+    currentPlayerId,
+    currentPlayer,
+    isMJ,
+    isAutoMode,
+    isWolf,
+    wolves,
+    players,
+    alivePlayers,
+    isAlive,
+    gameStatus,
+    nightActions,
+    voting,
+    missions,
+    actions,
+    ui,
+  } = useGame();
 
-export function GameFooter({
-  game,
-  roles,
-  currentPlayerId,
-  currentPlayer,
-  isMJ,
-  isAutoMode,
-  isWolf,
-  wolves,
-  gameStatus,
-  wolfVoteCount,
-  nightVoteResolveError,
-  showForceConfirm,
-  isChangingPhase,
-  onChangePhase,
-  onResolveVote,
-  onResolveNightVote,
-  onCancelForce,
-  missions,
-  showMissionForm,
-  onShowMissionForm,
-  onMissionCreated,
-  onMissionUpdate,
-  shopRefreshKey,
-  onShopRefresh,
-}: GameFooterProps) {
   const [showWallet, setShowWallet] = useState(false);
-  
+
   // Prefetch shop data for quick access
   const [shopItems, setShopItems] = useState<ShopItem[]>([]);
   const [playerShopData, setPlayerShopData] = useState<ShopPlayerData | null>(null);
   const [isShopLoading, setIsShopLoading] = useState(true);
-  
-  const players = game.players.filter(p => !p.is_mj);
-  const alivePlayers = players.filter(p => p.is_alive !== false);
-  const isAlive = currentPlayer?.is_alive !== false;
+
   const showWalletAndShop = currentPlayerId && (!isMJ || isAutoMode) && isAlive;
-  
+
   // Prefetch shop data when component mounts (not when expanded)
   const fetchShopData = useCallback(async () => {
     if (!currentPlayerId || !showWalletAndShop) return;
-    
+
     setIsShopLoading(true);
     try {
       const response = await getShop(game.code, currentPlayerId);
@@ -112,21 +64,23 @@ export function GameFooter({
       setIsShopLoading(false);
     }
   }, [game.code, currentPlayerId, showWalletAndShop]);
-  
+
   useEffect(() => {
     fetchShopData();
-  }, [fetchShopData, gameStatus, shopRefreshKey]);
-  
+  }, [fetchShopData, gameStatus, ui.shopRefreshKey]);
+
   // Handle refresh from child components
   const handleShopRefresh = useCallback(() => {
     fetchShopData();
-    onShopRefresh();
-  }, [fetchShopData, onShopRefresh]);
-  
+    ui.refreshShop();
+  }, [fetchShopData, ui]);
+
   // Summary for collapsed state
   const points = playerShopData?.points ?? 0;
   const unusedPowersCount = playerShopData?.unusedPowers?.length ?? 0;
-  const availableItemsCount = shopItems.filter(i => i.can_buy).length;
+  const availableItemsCount = shopItems.filter((i) => i.can_buy).length;
+
+  const isChangingPhase = nightActions.isChangingPhase || voting.isChangingPhase;
 
   return (
     <div className="space-y-4 mt-6">
@@ -134,14 +88,14 @@ export function GameFooter({
       {isMJ && gameStatus !== 'terminee' && (
         <MJControls
           gameStatus={gameStatus}
-          wolfVoteCount={wolfVoteCount}
-          nightVoteResolveError={nightVoteResolveError}
-          showForceConfirm={showForceConfirm}
+          wolfVoteCount={nightActions.wolfVoteCount}
+          nightVoteResolveError={nightActions.nightVoteResolveError}
+          showForceConfirm={nightActions.showForceConfirm}
           isChangingPhase={isChangingPhase}
-          onChangePhase={onChangePhase}
-          onResolveVote={onResolveVote}
-          onResolveNightVote={onResolveNightVote}
-          onCancelForce={onCancelForce}
+          onChangePhase={actions.changePhase}
+          onResolveVote={voting.resolveVote}
+          onResolveNightVote={nightActions.resolveNightVote}
+          onCancelForce={() => nightActions.setShowForceConfirm(false)}
           isAutoMode={isAutoMode}
         />
       )}
@@ -169,7 +123,7 @@ export function GameFooter({
               </span>
             )}
           </Button>
-          
+
           {showWallet && (
             <div className="space-y-3">
               <PlayerWallet
@@ -197,16 +151,16 @@ export function GameFooter({
       {/* Missions Section - Available in auto mode with restrictions */}
       {gameStatus !== 'terminee' && (
         <MissionsSection
-          missions={missions}
+          missions={missions.missions}
           players={players}
           currentPlayerId={currentPlayerId}
           isMJ={isMJ}
           isAutoMode={isAutoMode}
-          showMissionForm={showMissionForm}
+          showMissionForm={missions.showMissionForm}
           gameCode={game.code}
-          onShowMissionForm={onShowMissionForm}
-          onMissionCreated={onMissionCreated}
-          onMissionUpdate={onMissionUpdate}
+          onShowMissionForm={missions.setShowMissionForm}
+          onMissionCreated={ui.refreshShop}
+          onMissionUpdate={ui.refreshShop}
         />
       )}
 
@@ -223,11 +177,7 @@ export function GameFooter({
 
       {/* MJ Overview Panel - Hidden in Auto-Garou mode */}
       {isMJ && !isAutoMode && (
-        <MJOverview
-          players={players}
-          roles={roles}
-          alivePlayers={alivePlayers}
-        />
+        <MJOverview players={players} roles={roles} alivePlayers={alivePlayers} />
       )}
     </div>
   );

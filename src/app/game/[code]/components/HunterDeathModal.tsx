@@ -1,6 +1,8 @@
 /**
  * HunterDeathModal - Modal that appears when the Hunter dies
- * Allows the hunter to choose someone to take down with them
+ *
+ * Uses GameContext - no props needed.
+ * Allows the hunter to choose someone to take down with them.
  */
 
 'use client';
@@ -8,40 +10,30 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import type { PlayerWithRole } from '../hooks/types';
+import { useGame } from '../context';
 
-interface HunterDeathModalProps {
-  alivePlayers: PlayerWithRole[];
-  hunterId: string;
-  gameCode: string;
-  onShotComplete: (targetName: string, targetRole: string | undefined, gameOver: boolean, winner?: string) => void;
-}
+export function HunterDeathModal() {
+  const { game, currentPlayerId, alivePlayers, ui } = useGame();
 
-export function HunterDeathModal({
-  alivePlayers,
-  hunterId,
-  gameCode,
-  onShotComplete,
-}: HunterDeathModalProps) {
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Filter out the hunter from targets
-  const validTargets = alivePlayers.filter(p => p.id !== hunterId && !p.is_mj);
+  const validTargets = alivePlayers.filter((p) => p.id !== currentPlayerId && !p.is_mj);
 
   const handleShoot = async () => {
-    if (!selectedTarget) return;
+    if (!selectedTarget || !currentPlayerId) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(`/api/games/${gameCode}/power/hunter`, {
+      const response = await fetch(`/api/games/${game.code}/power/hunter`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          hunterId,
+          hunterId: currentPlayerId,
           targetId: selectedTarget,
         }),
       });
@@ -52,7 +44,10 @@ export function HunterDeathModal({
         throw new Error(data.error || 'Erreur lors du tir');
       }
 
-      onShotComplete(data.target, data.targetRole, data.gameOver, data.winner);
+      // Close modal and mark as processed
+      ui.setShowHunterModal(false);
+      ui.setHunterModalProcessed(true);
+      // Note: gameWinner is set via the game_ended event detection in context
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
       setIsLoading(false);
@@ -66,11 +61,9 @@ export function HunterDeathModal({
           <div className="text-6xl mb-2">🏹</div>
           <CardTitle className="text-amber-400 text-2xl">Tir du Chasseur</CardTitle>
           <p className="text-slate-300 mt-2">
-            Tu es mort, mais tu peux emporter quelqu'un avec toi !
+            Tu es mort, mais tu peux emporter quelqu&apos;un avec toi !
           </p>
-          <p className="text-amber-300/70 text-sm mt-1">
-            Choisis ta cible rapidement...
-          </p>
+          <p className="text-amber-300/70 text-sm mt-1">Choisis ta cible rapidement...</p>
         </CardHeader>
         <CardContent>
           {error && (
@@ -86,10 +79,10 @@ export function HunterDeathModal({
                 onClick={() => setSelectedTarget(player.id)}
                 disabled={isLoading}
                 className={cn(
-                  "w-full p-3 rounded-lg border text-left transition-all",
+                  'w-full p-3 rounded-lg border text-left transition-all',
                   selectedTarget === player.id
-                    ? "border-amber-500 bg-amber-500/20 text-white"
-                    : "border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-600"
+                    ? 'border-amber-500 bg-amber-500/20 text-white'
+                    : 'border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-600'
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -114,7 +107,8 @@ export function HunterDeathModal({
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">
-                🎯 Tirer sur {selectedTarget ? validTargets.find(p => p.id === selectedTarget)?.pseudo : '...'}
+                🎯 Tirer sur{' '}
+                {selectedTarget ? validTargets.find((p) => p.id === selectedTarget)?.pseudo : '...'}
               </span>
             )}
           </Button>

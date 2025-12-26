@@ -109,6 +109,7 @@ components/
 - ❌ Ne PAS requêter sans filtrer par `game_id` → risque de data leak
 
 ### Patterns existants à réutiliser
+- **GameContext** : `app/game/[code]/context/GameContext.tsx` → `useGame()` hook pour accéder à tout l'état du jeu
 - API client : `lib/api/client.ts` (apiGet, apiPost, apiPatch, apiDelete)
 - Sessions joueur : `lib/utils/player-session.ts`
 - Hooks game : `app/game/[code]/hooks/` (useVoting, useTimer, etc.)
@@ -141,8 +142,10 @@ src/
 │   │   └── login/page.tsx       # Login (email → OTP)
 │   ├── game/[code]/
 │   │   ├── page.tsx             # Page serveur (fetch initial)
-│   │   ├── game-client.tsx      # Client principal (orchestrateur)
-│   │   ├── hooks/               # Hooks spécialisés (refactorisé 24/12/2025)
+│   │   ├── game-client.tsx      # Wrapper léger (~30 lignes)
+│   │   ├── context/             # 🆕 React Context (refactorisé 26/12/2025)
+│   │   │   └── GameContext.tsx  # GameProvider + useGame() hook (~580 lignes)
+│   │   ├── hooks/               # Hooks spécialisés
 │   │   │   ├── types.ts         # Types partagés pour le game
 │   │   │   ├── useGameRealtime  # Subscriptions Supabase
 │   │   │   ├── usePlayerSession # Session localStorage + recovery
@@ -153,7 +156,8 @@ src/
 │   │   │   ├── useGameSettings  # Settings MJ
 │   │   │   ├── useTimer         # Countdown phase
 │   │   │   └── useAutoGarou     # Auto mode (no MJ) progression
-│   │   └── components/          # Composants UI game
+│   │   └── components/          # Composants UI game (tous utilisent useGame())
+│   │       ├── GameLayout       # 🆕 Orchestrateur UI principal
 │   │       ├── LobbyView        # Écran d'attente
 │   │       ├── PlayersList      # Liste joueurs
 │   │       ├── PlayerRoleCard   # Carte rôle perso
