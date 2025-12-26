@@ -2,12 +2,14 @@
  * GameLayout - Main game UI orchestrator
  *
  * Uses GameContext to render the appropriate view based on game state.
+ * Uses TimerContext for auto-garou mode timer expiration.
  * All child components use useGame() - no prop drilling!
  */
 
 'use client';
 
-import { useGame } from '../context';
+import { useGame, useTimerContext } from '../context';
+import { useAutoGarou } from '../hooks';
 import { getRoleConfig } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import { GameOver, TipToast, RulesButton } from '@/components/game';
@@ -27,11 +29,23 @@ export function GameLayout() {
     roles,
     gameStatus,
     currentPlayerId,
+    isAutoMode,
     sessionRecovery,
     tips,
     ui,
     router,
   } = useGame();
+  
+  const { isExpired } = useTimerContext();
+
+  // Auto-Garou mode: automatic phase transitions when timer expires
+  useAutoGarou({
+    gameCode: game.code,
+    gameStatus: gameStatus as 'lobby' | 'jour' | 'nuit' | 'conseil' | 'terminee',
+    isAutoMode,
+    isExpired,
+    currentPlayerId,
+  });
 
   // ─────────────────────────────────────────────────────────────────────────────
   // RENDER: Session Recovery

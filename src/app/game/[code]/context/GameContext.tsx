@@ -31,13 +31,11 @@ import {
 import {
   usePlayerSession,
   useGameRealtime,
-  useTimer,
   useVoting,
   useNightActions,
   useWolfChat,
   useMissions,
   useGameSettings,
-  useAutoGarou,
   type GameWithPlayers,
   type Role,
   type PartialPlayer,
@@ -56,9 +54,7 @@ export interface GameContextType {
   roles: Role[];
   gameStatus: string;
 
-  // Timer
-  timeRemaining: number | null;
-  isExpired: boolean;
+  // Timer display flag (actual timer values come from useTimerContext)
   showTimer: boolean;
 
   // Player state
@@ -272,14 +268,6 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Timer
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  const { timeRemaining, isExpired } = useTimer({
-    phaseEndsAt: game.phase_ends_at,
-  });
-
-  // ─────────────────────────────────────────────────────────────────────────────
   // Derived State
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -364,18 +352,6 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
     currentPlayerId,
     isMJ,
     gameStatus: game.status || 'lobby',
-  });
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Auto-Garou Mode
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  useAutoGarou({
-    gameCode: game.code,
-    gameStatus: (game.status || 'lobby') as 'lobby' | 'jour' | 'nuit' | 'conseil' | 'terminee',
-    isAutoMode,
-    isExpired,
-    currentPlayerId,
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -501,9 +477,7 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
       roles,
       gameStatus,
 
-      // Timer
-      timeRemaining,
-      isExpired,
+      // Timer display flag
       showTimer,
 
       // Player
@@ -637,8 +611,6 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
       game,
       roles,
       gameStatus,
-      timeRemaining,
-      isExpired,
       showTimer,
       currentPlayerId,
       currentPlayer,

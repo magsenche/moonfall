@@ -1,30 +1,23 @@
 /**
  * GameHeader - Unified header with game name, phase badge, and timer
  *
- * Uses GameContext - no props needed.
+ * Uses GameContext for game state and TimerContext for timer values.
+ * TimerContext is isolated so only this component re-renders each second.
  */
 
 'use client';
 
 import { cn } from '@/lib/utils';
 import { GamePhaseBadge } from '@/components/game';
-import { useGame } from '../context';
+import { useGame, useTimerContext } from '../context';
 
 interface GameHeaderProps {
   className?: string;
 }
 
 export function GameHeader({ className }: GameHeaderProps) {
-  const { game, gameStatus, timeRemaining, showTimer } = useGame();
-
-  const isUrgent = timeRemaining !== null && timeRemaining <= 30;
-  const isWarning = timeRemaining !== null && timeRemaining <= 60 && timeRemaining > 30;
-
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const secs = (seconds % 60).toString().padStart(2, '0');
-    return `${mins}:${secs}`;
-  };
+  const { game, gameStatus, showTimer } = useGame();
+  const { timeRemaining, isUrgent, isWarning, formattedTime } = useTimerContext();
 
   return (
     <header className={cn('mb-6', className)}>
@@ -51,7 +44,7 @@ export function GameHeader({ className }: GameHeaderProps) {
             )}
           >
             <span className="text-xs">⏱</span>
-            {formatTime(timeRemaining)}
+            {formattedTime}
           </div>
         )}
       </div>
