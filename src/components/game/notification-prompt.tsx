@@ -22,7 +22,7 @@ export function NotificationPrompt({ playerId, onPermissionChange }: Notificatio
           await subscribeToPush(playerId);
           setSubscribeStatus('success');
         } catch {
-          console.log('[Notifications] Auto-subscribe failed, will retry on user action');
+          // Auto-subscribe failed, will retry on user action
         }
       }
     };

@@ -86,7 +86,6 @@ export function useNotifications(options?: UseNotificationsOptions): UseNotifica
       const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/',
       });
-      console.log('[Notifications] Service Worker registered:', registration.scope);
       setSwRegistration(registration);
       setIsRegistered(true);
       return registration;
@@ -195,7 +194,6 @@ export function useNotifications(options?: UseNotificationsOptions): UseNotifica
           userVisibleOnly: true,
           applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
         });
-        console.log('[Push] New subscription created');
       }
 
       // Extract keys from subscription
@@ -233,7 +231,6 @@ export function useNotifications(options?: UseNotificationsOptions): UseNotifica
         return false;
       }
 
-      console.log('[Push] Subscription saved successfully');
       setIsPushSubscribed(true);
       return true;
     } catch (error) {

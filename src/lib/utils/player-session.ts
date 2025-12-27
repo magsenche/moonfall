@@ -108,7 +108,6 @@ export function migrateOldSession(): void {
         joinedAt: Date.now(),
       });
       localStorage.removeItem(OLD_KEY);
-      console.log('[Session] Migrated old session format');
     } catch {
       localStorage.removeItem(OLD_KEY);
     }

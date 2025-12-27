@@ -129,7 +129,6 @@ function getNotificationInfo(event_type: string, data: Record<string, unknown>):
 Deno.serve(async (req) => {
   try {
     const payload: GamePhaseChangePayload = await req.json()
-    console.log('[Push] Received payload:', JSON.stringify(payload, null, 2))
 
     // Only process game events
     if (payload.table !== 'game_events') {
@@ -144,7 +143,6 @@ Deno.serve(async (req) => {
     // Check if this is a notification-worthy event
     const notificationInfo = getNotificationInfo(event_type, data as Record<string, unknown> || {})
     if (!notificationInfo) {
-      console.log('[Push] Event type not configured for notifications:', event_type, data)
       return new Response(JSON.stringify({ message: 'Event type not configured' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -173,7 +171,6 @@ Deno.serve(async (req) => {
       .eq('game_id', game_id)
 
     if (!allPlayers || allPlayers.length === 0) {
-      console.log('[Push] No players found')
       return new Response(JSON.stringify({ message: 'No players to notify' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -189,14 +186,12 @@ Deno.serve(async (req) => {
       const assignedPlayerIds = eventData.assigned_player_ids as string[] | undefined
       if (assignedPlayerIds && assignedPlayerIds.length > 0) {
         targetPlayers = allPlayers.filter(p => assignedPlayerIds.includes(p.id))
-        console.log(`[Push] Mission created - notifying ${targetPlayers.length} assigned players`)
       }
     } else if (event_type === 'mission_validate' || event_type === 'mission_fail') {
       // For mission completion, notify the winner/assigned player
       const targetId = payload.record.target_id
       if (targetId) {
         targetPlayers = allPlayers.filter(p => p.id === targetId)
-        console.log(`[Push] Mission ${event_type} - notifying target player`)
       }
     }
 
@@ -226,17 +221,13 @@ Deno.serve(async (req) => {
       index === self.findIndex(s => s.endpoint === sub.endpoint)
     )
 
-    console.log(`[Push] Found ${subscriptions.length} subscriptions (${subsByPlayer?.length || 0} by player, ${subsByUser?.length || 0} by user)`)
-
     if (!subscriptions || subscriptions.length === 0) {
-      console.log('[Push] No push subscriptions found')
       return new Response(JSON.stringify({ message: 'No subscriptions' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
     }
 
-    console.log(`[Push] Sending to ${subscriptions.length} subscriptions`)
 
     // Prepare notification payload
     const notificationPayload = JSON.stringify({
@@ -265,7 +256,6 @@ Deno.serve(async (req) => {
           }
           
           await webpush.sendNotification(pushSubscription, notificationPayload)
-          console.log('[Push] Sent to:', sub.endpoint.slice(0, 50) + '...')
           return { success: true, endpoint: sub.endpoint }
         } catch (error) {
           console.error('[Push] Failed for:', sub.endpoint.slice(0, 50), error)
@@ -276,7 +266,6 @@ Deno.serve(async (req) => {
               .from('push_subscriptions')
               .delete()
               .eq('id', sub.id)
-            console.log('[Push] Deleted invalid subscription:', sub.id)
           }
           
           return { success: false, endpoint: sub.endpoint, error: error.message }
@@ -286,8 +275,6 @@ Deno.serve(async (req) => {
 
     const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length
     const failed = results.length - successful
-
-    console.log(`[Push] Results: ${successful} sent, ${failed} failed`)
 
     return new Response(JSON.stringify({
       message: 'Push notifications sent',

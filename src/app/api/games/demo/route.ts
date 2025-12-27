@@ -26,8 +26,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { pseudo } = body;
 
-    console.log('[DEMO] Creating demo game for pseudo:', pseudo);
-
     if (!pseudo) {
       return NextResponse.json(
         { error: 'Un pseudo est requis' },
@@ -36,7 +34,6 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient();
-    console.log('[DEMO] Supabase client created');
 
     // Generate a unique game code
     let code = generateGameCode();
@@ -84,14 +81,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (gameError) {
-      console.error('[DEMO] Error creating demo game:', gameError);
+      console.error('Error creating demo game:', gameError);
       return NextResponse.json(
         { error: 'Erreur lors de la création de la partie démo', details: gameError.message },
         { status: 500 }
       );
     }
 
-    console.log('[DEMO] Game created:', game.id, game.code);
 
     // Add the user as a regular player (not MJ, since autoMode is on)
     const { data: player, error: playerError } = await supabase
@@ -106,15 +102,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (playerError || !player) {
-      console.error('[DEMO] Error adding player:', playerError);
+      console.error('Error adding player:', playerError);
       await supabase.from('games').delete().eq('id', game.id);
       return NextResponse.json(
         { error: 'Erreur lors de l\'ajout du joueur', details: playerError?.message },
         { status: 500 }
       );
     }
-
-    console.log('[DEMO] Player added:', player.id, player.pseudo);
 
     // Add bots
     const bots = BOT_NAMES.map(name => ({
@@ -129,15 +123,13 @@ export async function POST(request: NextRequest) {
       .insert(bots);
 
     if (botsError) {
-      console.error('[DEMO] Error creating bots:', botsError);
+      console.error('Error creating bots:', botsError);
       await supabase.from('games').delete().eq('id', game.id);
       return NextResponse.json(
         { error: 'Erreur lors de la création des bots', details: botsError.message },
         { status: 500 }
       );
     }
-
-    console.log('[DEMO] Bots added successfully');
 
     // Get all roles for distribution
     const { data: roles, error: rolesError } = await supabase
@@ -146,15 +138,13 @@ export async function POST(request: NextRequest) {
       .order('name');
 
     if (rolesError || !roles || roles.length === 0) {
-      console.error('[DEMO] Error fetching roles:', rolesError);
+      console.error('Error fetching roles:', rolesError);
       await supabase.from('games').delete().eq('id', game.id);
       return NextResponse.json(
         { error: 'Impossible de récupérer les rôles', details: rolesError?.message },
         { status: 500 }
       );
     }
-
-    console.log('[DEMO] Roles fetched:', roles.length);
 
     // Get all players (including bots)
     const { data: allPlayers, error: playersError } = await supabase
@@ -163,7 +153,7 @@ export async function POST(request: NextRequest) {
       .eq('game_id', game.id);
 
     if (playersError || !allPlayers) {
-      console.error('[DEMO] Error fetching players:', playersError);
+      console.error('Error fetching players:', playersError);
       await supabase.from('games').delete().eq('id', game.id);
       return NextResponse.json(
         { error: 'Impossible de récupérer les joueurs', details: playersError?.message },
@@ -172,7 +162,6 @@ export async function POST(request: NextRequest) {
     }
 
     const playerCount = allPlayers.length;
-    console.log('[DEMO] Total players:', playerCount);
 
     // Basic role distribution for demo (6 players)
     // 2 loups, 1 voyante, 3 villageois
@@ -181,15 +170,13 @@ export async function POST(request: NextRequest) {
     const villageoisRole = roles.find(r => r.name === 'villageois');
 
     if (!loupRole || !voyanteRole || !villageoisRole) {
-      console.error('[DEMO] Missing base roles:', { loupRole: !!loupRole, voyanteRole: !!voyanteRole, villageoisRole: !!villageoisRole });
+      console.error('Missing base roles:', { loupRole: !!loupRole, voyanteRole: !!voyanteRole, villageoisRole: !!villageoisRole });
       await supabase.from('games').delete().eq('id', game.id);
       return NextResponse.json(
         { error: 'Rôles de base introuvables' },
         { status: 500 }
       );
     }
-
-    console.log('[DEMO] Base roles found');
 
     // Shuffle players
     const shuffledPlayers = [...allPlayers].sort(() => Math.random() - 0.5);
@@ -213,7 +200,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Update players with roles
-    console.log('[DEMO] Assigning roles to players...');
     for (const assignment of roleAssignments) {
       const { error: assignError } = await supabase
         .from('players')
@@ -221,11 +207,9 @@ export async function POST(request: NextRequest) {
         .eq('id', assignment.id);
       
       if (assignError) {
-        console.error('[DEMO] Error assigning role:', assignError);
+        console.error('Error assigning role:', assignError);
       }
     }
-
-    console.log('[DEMO] Roles assigned successfully');
 
     // Start the game with proper phase timer
     const nightDurationMs = (demoSettings.nightDurationMinutes ?? 2) * 60 * 1000;
@@ -242,14 +226,12 @@ export async function POST(request: NextRequest) {
       .eq('id', game.id);
 
     if (updateError) {
-      console.error('[DEMO] Error starting game:', updateError);
+      console.error('Error starting game:', updateError);
       return NextResponse.json(
         { error: 'Erreur lors du démarrage de la partie', details: updateError.message },
         { status: 500 }
       );
     }
-
-    console.log('[DEMO] Game started successfully');
 
     // Log the event
     await supabase.from('game_events').insert({
@@ -258,8 +240,6 @@ export async function POST(request: NextRequest) {
       data: { mode: 'demo', started_by: pseudo },
     });
 
-    console.log('[DEMO] Demo game creation completed:', game.code);
-
     return NextResponse.json({
       success: true,
       code: game.code,
@@ -267,7 +247,7 @@ export async function POST(request: NextRequest) {
       message: 'Partie démo créée et lancée !',
     });
   } catch (error) {
-    console.error('[DEMO] Unexpected error in demo route:', error);
+    console.error('Unexpected error in demo route:', error);
     return NextResponse.json(
       { error: 'Une erreur inattendue est survenue', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

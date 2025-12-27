@@ -112,7 +112,6 @@ export function useMissions({
           filter: `game_id=eq.${gameId}`,
         },
         () => {
-          console.log('[Realtime] missions table changed');
           fetchMissions();
         }
       )
@@ -130,7 +129,6 @@ export function useMissions({
           table: 'mission_assignments',
         },
         () => {
-          console.log('[Realtime] mission_assignments changed');
           fetchMissions();
         }
       )
@@ -148,7 +146,6 @@ export function useMissions({
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('[Visibility] App returned to foreground, refetching missions');
         fetchMissions();
       }
     };

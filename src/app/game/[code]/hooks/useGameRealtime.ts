@@ -125,7 +125,6 @@ export function useGameRealtime({ game, onGameUpdate, onPlayersChange }: UseGame
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('[iOS PWA] App returned to foreground, refetching...');
         refetchGame();
         onPlayersChange?.(); // Also refresh shop/wallet
       }
