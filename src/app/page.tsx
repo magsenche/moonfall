@@ -375,27 +375,30 @@ export default function HomePage() {
 
               {/* Demo Mode Button */}
               <MotionButton 
-                variant="ghost"
+                variant="sticker"
                 className={cn(
-                  "w-full text-base py-4",
-                  "bg-zinc-800/50 border border-amber-500/50 hover:bg-amber-900/30",
-                  "text-amber-400 hover:text-amber-300"
+                  "w-full text-lg py-6",
+                  "bg-amber-600 border-amber-400 hover:bg-amber-500"
                 )}
                 onClick={handleDemoMode}
                 isLoading={isLoading}
               >
-                🧪 Tester une partie (Démo)
+                🧪 Démo rapide
               </MotionButton>
 
-              {/* Demo description */}
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-center text-xs text-slate-500 px-4"
+
+              {/* Roles Gallery Button */}
+              <MotionButton 
+                variant="ghost"
+                className={cn(
+                  "w-full text-base py-4",
+                  "bg-zinc-800/50 border border-indigo-500/50 hover:bg-indigo-900/30",
+                  "text-indigo-400 hover:text-indigo-300"
+                )}
+                onClick={() => router.push('/roles')}
               >
-                Le mode démo lance une partie solo avec des bots pour découvrir le jeu
-              </motion.p>
+                🃏 Galerie de Rôles
+              </MotionButton>
             </motion.div>
           )}
         </AnimatePresence>
