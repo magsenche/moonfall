@@ -68,7 +68,7 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto py-8">
       {/* Background overlay */}
       <motion.div 
         initial={{ opacity: 0 }}
@@ -105,7 +105,7 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-lg mx-4">
+      <div className="relative z-10 w-full max-w-lg mx-4 my-auto">
         {/* Victory announcement */}
         <AnimatePresence>
           {showResults && (

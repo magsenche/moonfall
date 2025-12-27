@@ -65,8 +65,8 @@ export function useAutoGarou({
         // Resolve vote also transitions to 'nuit'
         await apiResolveVote(gameCode);
       } else if (gameStatus === 'nuit') {
-        // Resolve night also transitions to 'jour'
-        await apiResolveNightVote(gameCode, false);
+        // Resolve night also transitions to 'jour' (force in auto mode)
+        await apiResolveNightVote(gameCode, true);
       } else if (gameStatus === 'jour') {
         // Day → Council: just change phase (no resolution needed)
         await apiChangePhase(gameCode, nextPhase);
