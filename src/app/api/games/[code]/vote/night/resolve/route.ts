@@ -63,6 +63,205 @@ async function forceBotWolfVotes(gameId: string, phase: number, aliveWolves: { i
   }
 }
 
+/**
+ * Auto-activate bot witch potions during night
+ * Bot witches have a chance to save the wolf target and/or poison someone
+ */
+async function autoBotWitchPotions(supabase: Awaited<ReturnType<typeof createClient>>, gameId: string, phase: number) {
+  // Find alive bot witches
+  const { data: witches } = await supabase
+    .from("players")
+    .select("id, pseudo, role:roles(id, name)")
+    .eq("game_id", gameId)
+    .eq("is_alive", true);
+
+  const botWitches = witches?.filter(
+    w => w.pseudo.startsWith('🤖') && (w.role as { name: string } | null)?.name === 'sorciere'
+  ) || [];
+
+  if (botWitches.length === 0) return;
+
+  // Get the sorciere role powers
+  const { data: witchPowers } = await supabase
+    .from("powers")
+    .select("id, name")
+    .eq("role_id", (botWitches[0].role as { id: string }).id);
+
+  const lifePower = witchPowers?.find(p => p.name === 'potion_vie');
+  const deathPower = witchPowers?.find(p => p.name === 'potion_mort');
+
+  if (!lifePower || !deathPower) return;
+
+  for (const witch of botWitches) {
+    // Check if potions already used by this witch
+    const { data: usedPowers } = await supabase
+      .from("power_uses")
+      .select("power_id")
+      .eq("game_id", gameId)
+      .eq("player_id", witch.id);
+
+    const usedPowerIds = new Set(usedPowers?.map(p => p.power_id) ?? []);
+    const hasLifePotion = !usedPowerIds.has(lifePower.id);
+    const hasDeathPotion = !usedPowerIds.has(deathPower.id);
+
+    if (!hasLifePotion && !hasDeathPotion) continue; // No potions left
+
+    // Get wolf target from votes
+    const { data: wolfVotes } = await supabase
+      .from("votes")
+      .select("target_id")
+      .eq("game_id", gameId)
+      .eq("vote_type", "nuit_loup")
+      .eq("phase", phase);
+
+    const voteCounts: Record<string, number> = {};
+    for (const vote of wolfVotes || []) {
+      if (vote.target_id) {
+        voteCounts[vote.target_id] = (voteCounts[vote.target_id] || 0) + 1;
+      }
+    }
+
+    let wolfTargetId: string | null = null;
+    let maxVotes = 0;
+    for (const [id, count] of Object.entries(voteCounts)) {
+      if (count > maxVotes) {
+        maxVotes = count;
+        wolfTargetId = id;
+      }
+    }
+
+    // Bot decision: 50% chance to save wolf target if they have life potion
+    if (hasLifePotion && wolfTargetId && Math.random() < 0.5) {
+      await supabase.from("power_uses").insert({
+        game_id: gameId,
+        player_id: witch.id,
+        power_id: lifePower.id,
+        phase,
+        result: { action: 'saved_wolf_target', target_id: wolfTargetId },
+      });
+    }
+
+    // Bot decision: 30% chance to poison a random player if they have death potion
+    if (hasDeathPotion && Math.random() < 0.3) {
+      // Get all alive players except the witch
+      const { data: alivePlayers } = await supabase
+        .from("players")
+        .select("id")
+        .eq("game_id", gameId)
+        .eq("is_alive", true)
+        .neq("id", witch.id);
+
+      if (alivePlayers && alivePlayers.length > 0) {
+        const randomTarget = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+        
+        await supabase.from("power_uses").insert({
+          game_id: gameId,
+          player_id: witch.id,
+          power_id: deathPower.id,
+          target_id: randomTarget.id,
+          phase,
+          result: { action: 'poisoned', target_id: randomTarget.id },
+        });
+      }
+    }
+  }
+}
+
+/**
+ * Auto-activate bot hunter power when they die
+ * Hunters shoot a random alive player when eliminated
+ */
+async function autoBotHunterShoot(supabase: Awaited<ReturnType<typeof createClient>>, gameId: string, deadPlayerId: string, phase: number) {
+  // Check if dead player is a bot hunter
+  const { data: deadPlayer } = await supabase
+    .from("players")
+    .select("id, pseudo, role:roles(id, name)")
+    .eq("id", deadPlayerId)
+    .single();
+
+  if (!deadPlayer || !deadPlayer.pseudo.startsWith('🤖')) return null;
+  
+  const role = deadPlayer.role as { id: string; name: string } | null;
+  if (!role || role.name !== 'chasseur') return null;
+
+  // Get the tir_mortel power
+  const { data: hunterPower } = await supabase
+    .from("powers")
+    .select("id")
+    .eq("role_id", role.id)
+    .eq("name", "tir_mortel")
+    .single();
+
+  if (!hunterPower) return null;
+
+  // Check if already used
+  const { data: powerUse } = await supabase
+    .from("power_uses")
+    .select("id")
+    .eq("game_id", gameId)
+    .eq("player_id", deadPlayerId)
+    .eq("power_id", hunterPower.id)
+    .maybeSingle();
+
+  if (powerUse) return null; // Already used
+
+  // Get all alive players (random target)
+  const { data: alivePlayers } = await supabase
+    .from("players")
+    .select("id, pseudo")
+    .eq("game_id", gameId)
+    .eq("is_alive", true);
+
+  if (!alivePlayers || alivePlayers.length === 0) return null;
+
+  // Pick random target
+  const randomTarget = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+
+  // Kill the target
+  const { data: shotVictim } = await supabase
+    .from("players")
+    .update({
+      is_alive: false,
+      death_reason: "tir_chasseur",
+      death_at: new Date().toISOString(),
+    })
+    .eq("id", randomTarget.id)
+    .select("pseudo, role:roles(name)")
+    .single();
+
+  if (!shotVictim) return null;
+
+  // Record power use
+  await supabase.from("power_uses").insert({
+    game_id: gameId,
+    player_id: deadPlayerId,
+    power_id: hunterPower.id,
+    target_id: randomTarget.id,
+    phase,
+    result: { auto_bot: true },
+  });
+
+  // Log event
+  await supabase.from("game_events").insert({
+    game_id: gameId,
+    event_type: "hunter_shot",
+    data: {
+      hunter_id: deadPlayerId,
+      hunter_name: deadPlayer.pseudo,
+      victim_id: randomTarget.id,
+      victim_name: shotVictim.pseudo,
+      victim_role: (shotVictim.role as { name: string } | null)?.name,
+      auto_bot: true,
+    },
+  });
+
+  return {
+    victimId: randomTarget.id,
+    victimPseudo: shotVictim.pseudo,
+    victimRole: (shotVictim.role as { name: string } | null)?.name,
+  };
+}
+
 // GET - Get wolf vote status (for MJ)
 export async function GET(
   request: NextRequest,
@@ -162,6 +361,9 @@ export async function POST(
 
   // LAZY VOTING: Force bot wolves to vote before resolution
   await forceBotWolfVotes(game.id, game.current_phase ?? 1, aliveWolves);
+
+  // BOT WITCH AUTO-ACTIVATION: Make bot witches use their potions randomly
+  await autoBotWitchPotions(supabase, game.id, game.current_phase ?? 1);
 
   // Get night votes (refresh after lazy voting)
   const { data: votes } = await supabase
@@ -432,6 +634,9 @@ export async function POST(
     },
   });
 
+  // Check if victim was a bot hunter and auto-shoot
+  const hunterShot = await autoBotHunterShoot(supabase, game.id, victimId, game.current_phase ?? 1);
+
   // Also process witch death potion if used (and not the same target as wolves)
   let poisonVictimName: string | null = null;
   if (witchDeathPotion?.target_id && witchDeathPotion.target_id !== victimId) {
@@ -500,6 +705,7 @@ export async function POST(
       success: true,
       victim: victim.pseudo,
       victimRole: (victim.role as { name: string } | null)?.name,
+      hunterShot,
       gameOver: true,
       winner,
     });
@@ -519,6 +725,7 @@ export async function POST(
     success: true,
     victim: victim.pseudo,
     victimRole: (victim.role as { name: string } | null)?.name,
+    hunterShot,
     gameOver: false,
   });
 }

@@ -62,12 +62,18 @@ export function useNightActions({
   const previousStatusRef = useRef<string>(gameStatus);
   useEffect(() => {
     if (gameStatus !== previousStatusRef.current) {
+      // Wolf vote reset
       setHasNightVoted(false);
       setNightTarget(null);
       setConfirmedNightTarget(null);
       setWolfVoteCount({ voted: 0, total: 0 });
       setNightVoteResolveError(null);
       setShowForceConfirm(false);
+      // Seer power reset (for new night)
+      setSeerTarget(null);
+      setSeerResult(null);
+      setHasUsedSeerPower(false);
+      setSeerError(null);
       previousStatusRef.current = gameStatus;
     }
   }, [gameStatus]);
@@ -198,7 +204,15 @@ export function useNightActions({
         if (powerUses) {
           const history = powerUses
             .filter(use => use.result)
-            .map(use => use.result as SeerResult);
+            .map(use => {
+              // DB stores snake_case, but SeerResult uses camelCase
+              const result = use.result as Record<string, unknown>;
+              return {
+                targetName: (result.target_name ?? result.targetName) as string,
+                roleName: (result.role_name ?? result.roleName) as string,
+                team: result.team as string,
+              };
+            });
           setSeerHistory(history);
         }
       } catch (err) {

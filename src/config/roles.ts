@@ -136,6 +136,16 @@ export function getRoleConfig(roleId: string): RoleConfig {
   return FALLBACK_CONFIGS[roleId] || { ...UNKNOWN_ROLE, id: roleId, name: roleId };
 }
 
+// Get role display name (user-friendly name)
+export function getRoleDisplayName(roleId: string): string {
+  return FALLBACK_CONFIGS[roleId]?.displayName || roleId;
+}
+
+// Get role icon
+export function getRoleIcon(roleId: string): string {
+  return FALLBACK_CONFIGS[roleId]?.assets.icon || '❓';
+}
+
 // Get role assets only
 export function getRoleAssets(roleId: string): RoleAssets {
   return getRoleConfig(roleId).assets;

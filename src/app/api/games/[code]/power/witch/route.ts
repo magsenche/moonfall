@@ -46,6 +46,56 @@ export async function GET(
     return NextResponse.json({ error: "Pas une sorcière" }, { status: 403 });
   }
 
+  // Force bot wolves to vote before witch checks (so witch can see the target)
+  const { data: aliveWolves } = await supabase
+    .from("players")
+    .select("id, pseudo, role:roles(team)")
+    .eq("game_id", game.id)
+    .eq("is_alive", true);
+
+  const wolves = aliveWolves?.filter(
+    (p) => (p.role as { team: string } | null)?.team === "loups"
+  ) || [];
+
+  if (wolves.length > 0) {
+    // Get existing votes
+    const { data: existingVotes } = await supabase
+      .from('votes')
+      .select('voter_id')
+      .eq('game_id', game.id)
+      .eq('phase', game.current_phase ?? 1)
+      .eq('vote_type', 'nuit_loup');
+
+    const votedIds = new Set(existingVotes?.map(v => v.voter_id) ?? []);
+
+    // Find bot wolves who haven't voted
+    const botWolves = wolves.filter(
+      w => w.pseudo.startsWith('🤖') && !votedIds.has(w.id)
+    );
+
+    if (botWolves.length > 0) {
+      // Get all alive non-wolf players as potential targets
+      const nonWolfTargets = aliveWolves?.filter(
+        p => (p.role as { team: string } | null)?.team !== 'loups'
+      ) ?? [];
+
+      if (nonWolfTargets.length > 0) {
+        // Pick one random target for ALL bot wolves
+        const randomTarget = nonWolfTargets[Math.floor(Math.random() * nonWolfTargets.length)];
+
+        const botVotes = botWolves.map(bot => ({
+          game_id: game.id,
+          voter_id: bot.id,
+          target_id: randomTarget.id,
+          vote_type: 'nuit_loup' as const,
+          phase: game.current_phase ?? 1,
+        }));
+
+        await supabase.from('votes').insert(botVotes);
+      }
+    }
+  }
+
   // Get wolf votes for this phase (to know the target)
   const { data: wolfVotes } = await supabase
     .from("votes")

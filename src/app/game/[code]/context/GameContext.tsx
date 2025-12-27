@@ -339,6 +339,7 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
     gameStatus: game.status || 'lobby',
     currentPlayerId,
     isWolf,
+    isLittleGirl,
   });
 
   const missionsHook = useMissions({

@@ -53,4 +53,5 @@ export * from './Shop';
 export * from './VoteResults';
 export * from './HunterDeathModal';
 export * from './WitchNightPanel';
+export * from './SeerHistoryPanel';
 export * from './GameLayout';

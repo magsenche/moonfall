@@ -20,6 +20,7 @@ import { LobbyView } from './LobbyView';
 import { NightPhaseLayout } from './NightPhaseLayout';
 import { DayPhaseLayout } from './DayPhaseLayout';
 import { CouncilPhaseLayout } from './CouncilPhaseLayout';
+import { SeerHistoryPanel } from './SeerHistoryPanel';
 
 export function GameLayout() {
   const {
@@ -31,6 +32,8 @@ export function GameLayout() {
     tips,
     ui,
     router,
+    isSeer,
+    nightActions,
   } = useGame();
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -107,6 +110,13 @@ export function GameLayout() {
             {gameStatus === 'conseil' && <CouncilPhaseLayout />}
           </motion.div>
         </AnimatePresence>
+
+        {/* Seer History Panel - visible in all phases except night (shown in NightPhaseLayout) */}
+        {isSeer && gameStatus !== 'nuit' && nightActions.seerHistory.length > 0 && (
+          <div className="mt-4">
+            <SeerHistoryPanel seerHistory={nightActions.seerHistory} compact />
+          </div>
+        )}
 
         {/* Common Footer - Floating action bar at bottom */}
         <GameFooter />

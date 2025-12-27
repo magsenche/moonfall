@@ -18,6 +18,7 @@ interface UseWolfChatOptions {
   gameStatus: string;
   currentPlayerId: string | null;
   isWolf: boolean;
+  isLittleGirl?: boolean;
 }
 
 export function useWolfChat({
@@ -26,6 +27,7 @@ export function useWolfChat({
   gameStatus,
   currentPlayerId,
   isWolf,
+  isLittleGirl = false,
 }: UseWolfChatOptions) {
   const supabase = createClient();
   
@@ -33,9 +35,12 @@ export function useWolfChat({
   const [newMessage, setNewMessage] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
 
+  // Can read wolf chat (wolf or little girl)
+  const canReadWolfChat = isWolf || isLittleGirl;
+
   // Fetch wolf messages
   const fetchWolfMessages = useCallback(async () => {
-    if (!isWolf) return;
+    if (!canReadWolfChat) return;
     
     try {
       const data = await getWolfChat(gameCode);
@@ -43,7 +48,7 @@ export function useWolfChat({
     } catch (err) {
       console.error('Fetch wolf messages error:', err);
     }
-  }, [gameCode, isWolf]);
+  }, [gameCode, canReadWolfChat]);
 
   // Send wolf message
   const sendWolfMessage = useCallback(async () => {
@@ -62,8 +67,8 @@ export function useWolfChat({
 
   // Realtime subscription for wolf chat
   useEffect(() => {
-    // Only subscribe if game is in progress and player is wolf
-    if (gameStatus === 'lobby' || gameStatus === 'terminee' || !isWolf) return;
+    // Only subscribe if game is in progress and player can read wolf chat
+    if (gameStatus === 'lobby' || gameStatus === 'terminee' || !canReadWolfChat) return;
 
     // Initial fetch
     fetchWolfMessages();
@@ -85,7 +90,7 @@ export function useWolfChat({
     return () => {
       supabase.removeChannel(chatChannel);
     };
-  }, [gameId, gameStatus, isWolf, supabase, fetchWolfMessages]);
+  }, [gameId, gameStatus, canReadWolfChat, supabase, fetchWolfMessages]);
 
   return {
     wolfMessages,

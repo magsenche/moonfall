@@ -92,14 +92,22 @@ export function WolfChatPanel({
                     className={cn(
                       "p-3 rounded-xl max-w-[85%] border",
                       "shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]",
-                      isOwn
-                        ? "bg-red-900/40 border-red-500/50 ml-auto"
-                        : "bg-zinc-800 border-zinc-600/50"
+                      readOnly
+                        ? "bg-zinc-800 border-zinc-600/50" // All messages look the same for Petite Fille
+                        : isOwn
+                          ? "bg-red-900/40 border-red-500/50 ml-auto"
+                          : "bg-zinc-800 border-zinc-600/50"
                     )}
                   >
-                    {!isOwn && (
+                    {/* Hide wolf pseudo from Petite Fille */}
+                    {!readOnly && !isOwn && (
                       <p className="text-xs text-red-400 font-bold mb-1">
                         🐺 {msg.player?.pseudo}
+                      </p>
+                    )}
+                    {readOnly && (
+                      <p className="text-xs text-rose-400/60 font-medium mb-1">
+                        🐺 ???
                       </p>
                     )}
                     <p className="text-white text-sm">{msg.message}</p>
