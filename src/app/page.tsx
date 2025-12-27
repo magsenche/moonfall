@@ -399,6 +399,19 @@ export default function HomePage() {
               >
                 🃏 Galerie de Rôles
               </MotionButton>
+
+              {/* Tutorial Button */}
+              <MotionButton 
+                variant="ghost"
+                className={cn(
+                  "w-full text-base py-4",
+                  "bg-zinc-800/50 border border-pink-500/50 hover:bg-pink-900/30",
+                  "text-pink-400 hover:text-pink-300"
+                )}
+                onClick={() => router.push('/tutorial')}
+              >
+                📖 Comment jouer ?
+              </MotionButton>
             </motion.div>
           )}
         </AnimatePresence>
