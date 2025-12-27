@@ -3,6 +3,66 @@ import { NextRequest, NextResponse } from "next/server";
 import { PHASE_DURATIONS } from "@/types/game";
 import type { GameSettings } from "@/types/game";
 
+/**
+ * Lazy Voting: Force bot wolves to vote randomly before resolution
+ * Wolves should vote on the same target to be effective
+ */
+async function forceBotWolfVotes(gameId: string, phase: number, aliveWolves: { id: string; pseudo?: string }[]) {
+  // Get existing votes
+  const supabase = createClient();
+  const { data: existingVotes } = await supabase
+    .from('votes')
+    .select('voter_id, target_id')
+    .eq('game_id', gameId)
+    .eq('phase', phase)
+    .eq('vote_type', 'nuit_loup');
+
+  const votedIds = new Set(existingVotes?.map(v => v.voter_id) ?? []);
+
+  // Get all alive wolves with their pseudos
+  const { data: wolfPlayers } = await supabase
+    .from('players')
+    .select('id, pseudo')
+    .in('id', aliveWolves.map(w => w.id));
+
+  if (!wolfPlayers) return;
+
+  // Find bot wolves who haven't voted
+  const botWolves = wolfPlayers.filter(
+    p => p.pseudo.startsWith('🤖') && !votedIds.has(p.id)
+  );
+
+  if (botWolves.length === 0) return;
+
+  // Get all alive non-wolf players as potential targets
+  const { data: allPlayers } = await supabase
+    .from('players')
+    .select('id, role:roles(team)')
+    .eq('game_id', gameId)
+    .eq('is_alive', true);
+
+  const nonWolfTargets = allPlayers?.filter(
+    p => (p.role as { team: string } | null)?.team !== 'loups'
+  ) ?? [];
+
+  if (nonWolfTargets.length === 0) return;
+
+  // Pick one random target for ALL bot wolves (they vote together)
+  const randomTarget = nonWolfTargets[Math.floor(Math.random() * nonWolfTargets.length)];
+
+  const botVotes = botWolves.map(bot => ({
+    game_id: gameId,
+    voter_id: bot.id,
+    target_id: randomTarget.id,
+    vote_type: 'nuit_loup' as const,
+    phase,
+  }));
+
+  if (botVotes.length > 0) {
+    await supabase.from('votes').insert(botVotes);
+  }
+}
+
 // GET - Get wolf vote status (for MJ)
 export async function GET(
   request: NextRequest,
@@ -100,7 +160,10 @@ export async function POST(
     (p) => (p.role as { team: string } | null)?.team === "loups"
   ) || [];
 
-  // Get night votes
+  // LAZY VOTING: Force bot wolves to vote before resolution
+  await forceBotWolfVotes(game.id, game.current_phase ?? 1, aliveWolves);
+
+  // Get night votes (refresh after lazy voting)
   const { data: votes } = await supabase
     .from("votes")
     .select("voter_id, target_id")
