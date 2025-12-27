@@ -67,10 +67,10 @@ export async function POST(
 ) {
   const { code } = await params;
 
-  // Get game
+  // Get game with settings
   const { data: game, error: gameError } = await supabase
     .from('games')
-    .select('id, status, current_phase')
+    .select('id, status, current_phase, settings')
     .eq('code', code)
     .single();
 
@@ -84,6 +84,10 @@ export async function POST(
       { status: 400 }
     );
   }
+
+  // Get settings for night duration
+  const settings = (game.settings || {}) as { autoMode?: boolean; nightDurationMinutes?: number };
+  const isAutoMode = settings.autoMode ?? false;
 
   const currentPhase = game.current_phase ?? 1;
 
@@ -338,13 +342,20 @@ export async function POST(
     });
   }
 
-  // Transition to night (no timer for night - wolves act when ready)
+  // Transition to night
+  // In auto mode, night phase has a timer. In normal mode, no timer (wolves act when ready)
+  let nightPhaseEndsAt: string | null = null;
+  if (isAutoMode) {
+    const nightDurationSeconds = (settings.nightDurationMinutes ?? 2) * 60;
+    nightPhaseEndsAt = new Date(Date.now() + nightDurationSeconds * 1000).toISOString();
+  }
+
   await supabase
     .from('games')
     .update({
       status: 'nuit',
       current_phase: currentPhase + 1,
-      phase_ends_at: null, // Clear timer for night phase
+      phase_ends_at: nightPhaseEndsAt,
     })
     .eq('id', game.id);
 

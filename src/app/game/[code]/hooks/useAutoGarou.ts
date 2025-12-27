@@ -60,15 +60,18 @@ export function useAutoGarou({
     hasTriggeredRef.current = true;
 
     try {
-      // First resolve any pending votes/actions
+      // Resolve votes/actions (these endpoints also handle phase transitions)
       if (gameStatus === 'conseil') {
+        // Resolve vote also transitions to 'nuit'
         await apiResolveVote(gameCode);
       } else if (gameStatus === 'nuit') {
+        // Resolve night also transitions to 'jour'
         await apiResolveNightVote(gameCode, false);
+      } else if (gameStatus === 'jour') {
+        // Day → Council: just change phase (no resolution needed)
+        await apiChangePhase(gameCode, nextPhase);
       }
-
-      // Then transition to next phase
-      await apiChangePhase(gameCode, nextPhase);
+      // Note: conseil → nuit and nuit → jour transitions are handled by their resolve endpoints
     } catch (err) {
       console.error('[AutoGarou] Transition error:', err);
       hasTriggeredRef.current = false; // Allow retry
