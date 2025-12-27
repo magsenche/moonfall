@@ -5,7 +5,6 @@
 🔗 **Production :** https://moonfall.vercel.app
 
 ## Concept
-
 Chaque joueur reçoit un rôle secret. Missions IRL + conseils réguliers avec éliminations par vote.
 
 ---
@@ -18,52 +17,7 @@ Docs centralisées dans [`docs/`](../docs/README.md) :
 
 ---
 
-## Stack Technique
-
-| Composant | Choix |
-|-----------|-------|
-| Framework | Next.js 16 (App Router, React 19, React Compiler) |
-| Styling | Tailwind CSS 4 |
-| Database | Supabase (PostgreSQL, Frankfurt) |
-| Auth | Supabase Auth (optionnel - sessions localStorage suffisent) |
-| Realtime | Supabase Realtime (postgres_changes) |
-| Storage | Supabase Storage (3 buckets) |
-| Notifications | Web Push (VAPID keys) + Edge Functions |
-| Hébergement | Vercel (CD sur push main) |
-| Repo | github.com/magsenche/moonfall |
-
----
-
-## Architecture Principles (Code Quality)
-
-### 🎯 Maintainability First
-
-Before implementing any new feature, follow these principles:
-
-1. **Search Before Create**
-   - Grep the codebase for similar patterns before writing new code
-   - Check if existing utilities, hooks, or components can be reused or extended
-   - Look for opportunities to extract shared logic into reusable modules
-
-2. **DRY (Don't Repeat Yourself)**
-   - If you find yourself copying code, extract it into a shared function/component
-   - Common patterns should live in `lib/utils/`, `lib/hooks/`, or `components/ui/`
-   - API patterns should be consistent across all routes
-
-3. **Single Responsibility**
-   - Each file should do one thing well
-   - Large components (>300 lines) should be split into smaller focused components
-   - Keep API routes thin: extract business logic into `lib/` modules
-
-4. **Refactor Opportunistically**
-   - When touching existing code, improve it if reasonable
-   - Remove dead code and unused imports
-   - Consolidate duplicate logic discovered during development
-
-5. **State Colocation**
-   - Keep state as close as possible to where it's used
-   - Avoid prop drilling >2 levels; consider context or composition
-   - Reset related states together (see `useEffect` for phase changes)
+## 🏗️ Architecture & Best Practices
 
 ### 📁 Code Organization
 
@@ -76,9 +30,48 @@ lib/
 └── roles/        # Role-specific logic (extensible pattern)
 
 components/
-├── ui/           # Generic, reusable (Button, Card, Input)
+├── ui/           # Generic, reusable (Button, Card, Input, MotionCard, MotionButton)
 └── game/         # Domain-specific, composable
 ```
+
+### 🎯 Maintainability Principles
+
+1. **Search Before Create** - Grep codebase for similar patterns before writing new code
+2. **DRY** - Extract shared logic into `lib/utils/`, `lib/hooks/`, or `components/ui/`
+3. **Single Responsibility** - Each file does one thing well, split large components (>300 lines)
+4. **Refactor Opportunistically** - Improve touched code, remove dead code
+5. **State Colocation** - Keep state close to where it's used, avoid prop drilling >2 levels
+
+### Core Principles
+1. **GameContext** : État global du jeu (`useGame()`). Évite le prop drilling.
+2. **TimerContext** : Isolé pour la performance. Seuls `GameHeader` et `GameLogic` se re-rendent chaque seconde.
+3. **UI Y2K/Sticker** : Esthétique "scrapbook" avec `framer-motion` (animations, drag, rotate).
+4. **Config-driven** : Rôles et paramètres gérés en DB ou via config objects.
+
+### Structure du Projet
+
+```
+src/
+├── app/
+│   ├── game/[code]/
+│   │   ├── context/             # GameContext + TimerContext
+│   │   ├── components/          # Composants UI (GameLayout, PhaseTimer...)
+│   │   └── hooks/               # Logique métier (useVoting, useNightActions...)
+├── components/
+│   ├── game/                    # Composants métier (RoleCard, MissionCard, MissionsDrawer)
+│   └── ui/                      # Composants base (MotionButton, MotionCard)
+├── lib/
+│   ├── api/                     # Client API centralisé (typed functions)
+│   ├── help/                    # Textes d'aide et tips
+│   └── roles/                   # Handlers logiques par rôle
+```
+
+### Conventions UI (Y2K Style)
+- Utiliser `MotionCard` et `MotionButton` (variant `sticker`).
+- Animations fluides via `framer-motion` (`AnimatePresence`, `layout`).
+- Feedback tactile et visuel fort (bordures épaisses, ombres dures).
+- **Mobile First** : Touch targets > 44px, modales bottom-sheet.
+
 
 ### ✅ Before Committing
 
@@ -86,6 +79,23 @@ components/
 - [ ] Related code is colocated
 - [ ] New patterns are documented if non-obvious
 - [ ] Build passes (`npm run build`)
+
+---
+
+## Stack Technique
+
+| Composant | Choix |
+|-----------|-------|
+| Framework | Next.js 16 (App Router, React 19, React Compiler) |
+| Styling | Tailwind CSS 4 |
+| Animation | Framer Motion |
+| Database | Supabase (PostgreSQL, Frankfurt) |
+| Auth | Supabase Auth (optionnel - sessions localStorage suffisent) |
+| Realtime | Supabase Realtime (postgres_changes) |
+| Storage | Supabase Storage (3 buckets) |
+| Notifications | Web Push (VAPID keys) + Edge Functions |
+| Hébergement | Vercel (CD sur push main) |
+| Repo | github.com/magsenche/moonfall |
 
 ---
 
@@ -97,6 +107,7 @@ components/
 - ❌ Ne PAS utiliser `any` en TypeScript → typer avec `src/types/`
 - ❌ Ne PAS créer de nouveaux composants UI génériques → réutiliser `components/ui/`
 - ❌ Ne PAS faire de prop drilling >2 niveaux → utiliser context ou composition
+- ❌ Ne PAS consommer `useTimerContext` dans des composants inutiles → provoque re-render 1/sec
 
 ### UI / UX
 - ❌ Ne PAS mettre du texte anglais dans l'UI → tout en **français**
@@ -110,10 +121,19 @@ components/
 
 ### Patterns existants à réutiliser
 - **GameContext** : `app/game/[code]/context/GameContext.tsx` → `useGame()` hook pour accéder à tout l'état du jeu
+- **TimerContext** : Isolé pour éviter les re-renders inutiles
 - API client : `lib/api/client.ts` (apiGet, apiPost, apiPatch, apiDelete)
 - Sessions joueur : `lib/utils/player-session.ts`
 - Hooks game : `app/game/[code]/hooks/` (useVoting, useTimer, etc.)
 - Aide/Help : `lib/help/` (role-details, phase-descriptions, tips)
+
+---
+
+## 🛠️ Instructions Spécifiques
+
+- **Modification de Phase** : Toujours utiliser l'API `/api/games/[code]/phase` ou les fonctions de résolution (`resolveVote`).
+- **Nouveaux Rôles** : Ajouter entrée dans `roles` DB + Handler `lib/roles/` + Config `config/roles.ts`.
+- **Performance** : Ne pas consommer `useTimerContext` dans des composants qui n'en ont pas besoin.
 
 
 ---
@@ -129,7 +149,56 @@ components/
 
 ---
 
-## Architecture
+## ✅ État d'Avancement
+
+### Fonctionnalités principales
+- **Jeu complet** : Lobby → Jour → Conseil → Nuit → Victoire (Timer & Auto-switch).
+- **Mode Auto-Garou** : Le MJ joue aussi, phases automatiques, résolution auto des votes.
+- **Mode Démo** : Création instantanée avec bots et missions d'entraînement.
+- **Missions & Shop** : Système de points, shop de pouvoirs (Immunité, Vision, etc.), Templates en DB.
+- **Realtime** : Synchronisation instantanée (Votes, Chat Loups, Missions).
+- **UI** : Design Y2K complet, MissionsDrawer flottant, Galerie de rôles.
+- **PWA** : notifications push, refresh iOS, sessions multi-jeux.
+- **Aide in-game** : modales rôles, tooltips phases, règles, tips contextuels.
+
+→ Détails : voir `docs/` (ROLES.md, MISSIONS_DESIGN.md, HELP_SYSTEM.md, etc.)
+
+### Rôles Implémentés
+| Rôle | Status | Particularité |
+|------|--------|---------------|
+| Villageois | ✅ | Vote simple |
+| Loup-Garou | ✅ | Chat privé + Vote nuit |
+| Voyante | ✅ | Historique des visions + Panel nuit |
+| Petite Fille | ✅ | Chat loups en lecture seule (pseudos anonymes) |
+| Sorcière | ✅ | Potions Vie/Mort (Panel nuit) |
+| Chasseur | ✅ | Tir mortel à la mort (Modal) |
+| Ancien | ✅ | Survit 1x aux loups (Passif) |
+
+### ⏳ À Faire
+
+**Nouveaux rôles :**
+- [ ] Salvateur (protège un joueur la nuit)
+- [ ] Cupidon (amoureux liés - complexe)
+
+### 📋 Backlog
+
+**Priorité haute :**
+- [ ] Valider notifications push en conditions réelles (test multi-appareils iOS)
+- [ ] Tester partie complète avec ~10 joueurs réels
+- [ ] Pouvoirs ciblés UI (wolf_vision, silence avec sélection cible)
+- [ ] **Mode Loup-Garou Infini** (voir docs/INFINITE_MODE.md)
+  - [ ] Respawn des morts avec nouveau rôle
+  - [ ] Système de points individuels
+  - [ ] Leaderboard temps réel
+  - [ ] Conditions de victoire (timer/score/tours)
+
+**Backlog général :**
+- [ ] PWA offline support
+- [ ] Custom assets (images rôles, avatars)
+
+---
+
+## Architecture détaillée
 
 ### Structure du Projet
 
@@ -242,60 +311,6 @@ supabase/
 2. **Modulaire** : Chaque rôle = handler indépendant
 3. **Types générés** : `npm run supabase:types` après chaque migration
 4. **Extensible** : Prévu pour custom assets/images
-
----
-
-## Rôles Implémentés
-
-| Rôle | Équipe | Pouvoir |
-|------|--------|---------|
-| Villageois | 🔵 Village | Aucun |
-| Loup-Garou | 🔴 Loups | Dévore un villageois chaque nuit |
-| Voyante | 🔵 Village | Voit un rôle chaque nuit |
-| Petite Fille | 🔵 Village | Lit le chat des loups (lecture seule) |
-| Ancien | 🔵 Village | Survit à la 1ère attaque des loups |
-| Chasseur | 🔵 Village | Tire sur quelqu'un quand il meurt |
-| Sorcière | 🔵 Village | Potion de vie + potion de mort |
-
-**Futurs rôles préparés :** Cupidon, Salvateur, Loup Blanc, Ange...
-
----
-
-## État d'Avancement
-
-### Fonctionnalités principales
-
-- **Jeu complet** : Lobby → Jour → Conseil → Nuit → Victoire (avec timer)
-- **8 rôles** : Villageois, Loup-Garou, Voyante, Petite Fille, Ancien, Chasseur, Sorcière + extensible
-- **Missions IRL** : individuelles, collectives, compétitives, enchères + points + shop
-- **Mode Auto-Garou** : partie sans MJ dédié (phases automatiques)
-- **Realtime** : votes, chat loups, missions via Supabase
-- **PWA** : notifications push, refresh iOS, sessions multi-jeux
-- **Aide in-game** : modales rôles, tooltips phases, règles, tips contextuels
-
-→ Détails : voir `docs/` (ROLES.md, MISSIONS_DESIGN.md, HELP_SYSTEM.md, etc.)
-
-### ⏳ À Faire
-
-**Nouveaux rôles :**
-- [ ] Cupidon (amoureux liés - complexe)
-- [ ] Salvateur (protège un joueur la nuit)
-
-### 📋 Backlog
-
-**Priorité haute :**
-- [ ] Valider notifications push en conditions réelles (test multi-appareils iOS)
-- [ ] Tester partie complète avec ~10 joueurs réels
-- [ ] Pouvoirs ciblés UI (wolf_vision, silence avec sélection cible)
-- [ ] **Mode Loup-Garou Infini** (voir docs/INFINITE_MODE.md)
-  - [ ] Respawn des morts avec nouveau rôle
-  - [ ] Système de points individuels
-  - [ ] Leaderboard temps réel
-  - [ ] Conditions de victoire (timer/score/tours)
-
-**Backlog général :**
-- [ ] PWA offline support
-- [ ] Custom assets (images rôles, avatars)
 
 ---
 

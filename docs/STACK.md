@@ -2,20 +2,47 @@
 
 > Vue d'ensemble de la stack et guide d'installation.
 
-## Stack
+## Core
 
 | Composant | Technologie | Version |
 |-----------|-------------|---------|
-| Framework | Next.js (App Router) | 16.x |
+| Framework | Next.js (App Router, Server Actions) | 16.x |
 | React | React + React Compiler | 19.x |
+| Langage | TypeScript | 5.x |
 | Styling | Tailwind CSS | 4.x |
-| Database | Supabase (PostgreSQL) | - |
-| Auth | Supabase Auth (optionnel) | - |
-| Realtime | Supabase Realtime | - |
-| Storage | Supabase Storage | - |
-| Notifications | Web Push (VAPID) | - |
-| Hébergement | Vercel | - |
 | Package Manager | npm | - |
+
+## UI & Animation (Y2K Overhaul)
+
+| Composant | Technologie |
+|-----------|-------------|
+| Animation | Framer Motion (transitions, cartes 3D, interactions) |
+| Design System | Composants "Sticker", Glassmorphism, typographie "Inter" |
+| Composants clés | `MotionCard`, `MotionButton`, `PhaseBackground` |
+
+## Backend & Data (Supabase)
+
+| Service | Usage |
+|---------|-------|
+| Database | PostgreSQL (14 tables, RLS) |
+| Auth | OTP / Anonyme |
+| Realtime | Channels (game state, chat, votes) |
+| Storage | Avatars, Assets (3 buckets) |
+| Edge Functions | Notifications Push |
+
+## Features PWA
+
+- **Service Worker** : Gestion du cache et des notifications
+- **Web Push** : Notifications VAPID (changements de phase, missions)
+- **iOS Support** : Gestion du cycle de vie (visibility change refresh), safe-areas
+
+## Outils Dev
+
+- **Bots** : API pour ajouter/retirer des bots (`/api/games/[code]/bots`)
+- **Demo Mode** : Route dédiée pour créer une partie test instantanée
+- **Hébergement** : Vercel (CD sur push main)
+
+---
 
 ## Installation
 

@@ -1,16 +1,6 @@
 # Système de Missions - Game Design
 
-> Document de conception pour le système de missions IRL de Moonfall.
-
-## 🎯 Vision
-
-Les missions sont le cœur de l'expérience IRL. Elles doivent :
-- Forcer les interactions entre joueurs
-- Créer du **drama** et des situations mémorables
-- Donner un avantage stratégique aux gagnants
-- Permettre aux loups de saboter subtilement
-
----
+> Missions IRL, système de points et boutique de pouvoirs.
 
 ## ✅ État d'implémentation
 
@@ -28,12 +18,76 @@ Les missions sont le cœur de l'expérience IRL. Elles doivent :
 | **Shop de pouvoirs** | ✅ **Implémenté** (6 pouvoirs achetables) |
 | **Support Mode Auto-Garou** | ✅ **Implémenté** (collective, competitive, auction) |
 | **Auto-refresh Wallet/Shop** | ✅ **Implémenté** (après gain de points) |
+| **UI MissionsDrawer** | ✅ **Implémenté** (bouton flottant 📋, Badges) |
 | Missions collectives (succès/échec village) | ⚠️ Partiel (validation MJ uniquement) |
 | Variables dans énoncés ({player_name}) | ❌ À faire |
 
 ---
 
-## 📋 Types de Missions
+## 🎯 Vision
+
+Les missions sont le cœur de l'expérience IRL. Elles doivent :
+- Forcer les interactions entre joueurs
+- Créer du **drama** et des situations mémorables
+- Donner un avantage stratégique aux gagnants
+- Permettre aux loups de saboter subtilement
+
+---
+
+## � Économie (Shop)
+
+Les points gagnés permettent d'acheter des pouvoirs utilisables immédiatement ou au conseil.
+
+| Item | Coût | Effet | Implémenté |
+|------|------|-------|------------|
+| 🛡️ **Immunité** | 20 pts | Protège du vote au prochain conseil | ✅ Oui |
+| ✌️ **Vote Double** | 10 pts | Vote compte x2 | ✅ Oui |
+| 👁️ **Vision Loup** | 15 pts | Révèle si un joueur est loup ou villageois | ✅ Oui |
+| 🎭 **Vote Anonyme** | 8 pts | Cache ton vote | ✅ Oui |
+| 🤫 **Silence** | 12 pts | Mute un joueur pendant 2 min | ✅ Oui |
+| ❓ **Question MJ** | 5 pts | Pose une question oui/non au MJ | ✅ Oui |
+
+**Pouvoirs actifs automatiquement :**
+- `immunity` et `double_vote` sont vérifiés lors de la résolution du vote conseil
+- `wolf_vision` révèle immédiatement si la cible est loup ou non
+
+---
+
+## 🤖 Missions en Mode Auto-Garou
+
+En mode **Auto-Garou** (partie sans MJ dédié), les missions sont disponibles avec certaines adaptations :
+
+### Types autorisés
+
+| Type | Disponible | Raison |
+|------|------------|--------|
+| `collective` | ✅ Oui | Tout le village participe ensemble |
+| `competitive` | ✅ Oui | Auto-assignée à tous les joueurs |
+| `auction` | ✅ Oui | Enchères ouvertes à tous |
+| `individual` | ❌ Non | Nécessite assignation manuelle |
+
+### Validations autorisées
+
+| Validation | Disponible | Raison |
+|------------|------------|--------|
+| `mj` | ✅ Oui | Le créateur (qui joue) peut valider |
+| `first_wins` | ✅ Oui | Auto-validation |
+| `best_score` | ✅ Oui | Auto-validation |
+| `auto` | ✅ Oui | Auto-validation |
+| `upload` | ❌ Non | Nécessite validation MJ |
+| `external` | ❌ Non | Nécessite validation MJ |
+
+### Comportement
+
+- Le **créateur de partie** (MJ) joue comme un joueur normal : il peut voter, enchérir, utiliser le shop
+- Le MJ conserve ses pouvoirs de gestion : valider missions, passer les phases, clôturer enchères
+- Les missions **compétitives** sont automatiquement assignées à tous les joueurs vivants
+- L'UI n'affiche pas la section d'assignation manuelle des joueurs
+- Un message informatif explique les restrictions du mode Auto-Garou
+
+---
+
+## �📋 Types de Missions
 
 ### 1. Missions Individuelles (`individual`)
 Un joueur assigné doit accomplir une tâche.

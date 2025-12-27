@@ -2,65 +2,25 @@
 
 > Game design des rôles, pouvoirs et équipes.
 
-## Équipes
-
-| Équipe | Objectif | Couleur |
-|--------|----------|---------|
-| 🔵 Village | Éliminer tous les loups | Bleu |
-| 🔴 Loups | Égaler ou dépasser le nombre de villageois | Rouge |
-| ⚪ Solo | Objectif personnel (ex: Ange = mourir au 1er vote) | Gris |
-
----
-
-## Rôles MVP
-
-### Villageois
-| | |
-|---|---|
-| **Équipe** | 🔵 Village |
-| **Pouvoir** | Aucun |
-| **Description** | Simple villageois. Vote le jour pour éliminer les suspects. |
-
-### Loup-Garou
-| | |
-|---|---|
-| **Équipe** | 🔴 Loups |
-| **Pouvoir** | Dévore un villageois chaque nuit |
-| **Phase** | Nuit |
-| **Description** | Se réunit avec les autres loups la nuit pour choisir une victime. Chat privé entre loups. |
-
-### Voyante
-| | |
-|---|---|
-| **Équipe** | 🔵 Village |
-| **Pouvoir** | Voit le rôle d'un joueur chaque nuit |
-| **Phase** | Nuit |
-| **Limite** | 1 vision par nuit |
-| **Description** | Peut découvrir le rôle d'un joueur. Information précieuse mais doit rester discrète. |
-
----
-
-## Rôles implémentés - Adaptés IRL 🎮
-
-> **Note importante** : Ces rôles sont adaptés pour une expérience **IRL** où les joueurs ne peuvent pas vraiment "fermer les yeux". Les mécaniques sont repensées pour fonctionner via l'app.
+## Rôles Implémentés 🎮
 
 ### Rôles Village (7 rôles)
 
-| Rôle | Pouvoir IRL | Status |
-|------|-------------|--------|
-| **Villageois** | Aucun | ✅ Implémenté |
-| **Voyante** | Voit le rôle d'un joueur chaque nuit | ✅ Implémenté |
-| **Petite Fille** | Accès en lecture seule au chat des loups | ✅ Implémenté |
-| **Ancien** | Survit à la première attaque des loups (auto) | ✅ Implémenté |
-| **Chasseur** | À sa mort, choisit un joueur à emporter | ✅ Implémenté |
-| **Sorcière** | Potion de vie + potion de mort | ✅ Implémenté |
-| **Salvateur** | Protège un joueur chaque nuit | ⏳ À faire |
+| Rôle | Pouvoir IRL | Status | Notes Techniques |
+|------|-------------|--------|------------------|
+| **Villageois** | Aucun | ✅ Implémenté | Vote standard |
+| **Voyante** | Voit le rôle d'un joueur chaque nuit | ✅ Implémenté | Historique persistant, icône équipe |
+| **Petite Fille** | Accès lecture seule chat loups | ✅ Implémenté | Pseudos loups masqués ("🐺 ???") |
+| **Ancien** | Survit à la 1ère attaque | ✅ Implémenté | Passif géré par `resolveNightVote` |
+| **Chasseur** | Tire à sa mort | ✅ Implémenté | `HunterDeathModal` + API dédiée |
+| **Sorcière** | Potions Vie/Mort | ✅ Implémenté | `WitchNightPanel`, 1 usage unique/potion |
+| **Salvateur** | Protège un joueur | ⏳ À faire | - |
 
-### Rôles Loups (1 rôle)
+### Rôles Loups
 
-| Rôle | Pouvoir IRL | Status |
-|------|-------------|--------|
-| **Loup-Garou** | Dévore un villageois chaque nuit, chat privé | ✅ Implémenté |
+| Rôle | Pouvoir IRL | Status | Notes Techniques |
+|------|-------------|--------|------------------|
+| **Loup-Garou** | Dévore un villageois, chat privé | ✅ Implémenté | Vote de nuit majoritaire |
 
 ### Rôles futurs
 
@@ -74,7 +34,17 @@
 
 ---
 
-## Architecture technique
+## Équipes
+
+| Équipe | Objectif | Couleur |
+|--------|----------|---------|
+| 🔵 Village | Éliminer tous les loups | Bleu |
+| 🔴 Loups | Égaler ou dépasser le nombre de villageois | Rouge |
+| ⚪ Solo | Objectif personnel (ex: Ange = mourir au 1er vote) | Gris |
+
+---
+
+## Architecture Technique
 
 ### Base de données
 
@@ -147,6 +117,17 @@ VALUES
 | `src/lib/roles/voyante.ts` | Handler Voyante |
 | `src/config/roles.ts` | Config UI (couleurs, icônes) |
 | `src/components/game/role-badge.tsx` | Affichage rôle |
+
+### Composants UI
+
+- `PlayerRoleCard` : Carte 3D flippable avec persistance localStorage.
+- `RoleDetailModal` : Aide contextuelle détaillée.
+- `SeerHistoryPanel` : Rétrospective des visions pour la Voyante.
+
+### Interactions Spécifiques
+
+- **Voyante vs Changement de Phase** : L'état "pouvoir utilisé" est reset à chaque nouvelle nuit. L'historique est conservé.
+- **Bots** : Les bots (mode démo/test) votent automatiquement pour ne pas bloquer la partie ("Lazy Voting").
 
 ---
 
