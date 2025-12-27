@@ -107,6 +107,7 @@ export const VALIDATION_TYPE_LABELS: Record<MissionValidationType, string> = {
   external: 'Jeu externe',
   first_wins: 'Premier gagnant',
   best_score: 'Meilleur score',
+  self: 'Auto-validation',
 };
 
 export const REWARD_TYPE_LABELS: Record<RewardType, string> = {

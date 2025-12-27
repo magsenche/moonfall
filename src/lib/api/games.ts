@@ -303,10 +303,10 @@ export function missionBidAction(gameCode: string, missionId: string, playerId: 
   });
 }
 
-export function submitMissionScore(gameCode: string, missionId: string, playerId: string, score: number) {
+export function submitMissionScore(gameCode: string, missionId: string, playerId: string, score?: number) {
   return apiPost<SubmitMissionResponse>(`/api/games/${gameCode}/missions/${missionId}/submit`, {
     playerId,
-    score,
+    ...(score !== undefined && { score }),
   });
 }
 

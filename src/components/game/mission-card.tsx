@@ -138,7 +138,20 @@ export function MissionCard({
       setIsSubmitting(false);
     }
   };
+  const handleSelfValidation = async () => {
+    setIsSubmitting(true);
+    setError(null);
 
+    try {
+      // Submit without score for self-validation
+      await submitMissionScore(gameCode, mission.id, currentPlayerId);
+      onUpdate();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Erreur');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const handleMJAction = async (action: 'validate' | 'fail' | 'cancel' | 'close_bidding' | 'declare_winner' | 'declare_failure', winnerId?: string) => {
     setIsSubmitting(true);
     setError(null);
@@ -337,6 +350,19 @@ export function MissionCard({
                 </div>
               )}
             </div>
+          )}
+
+          {/* Self-validation button for demo missions */}
+          {!isAuction && isActive && isAssigned && !hasSubmitted && 
+            mission.validation_type === 'self' && (
+            <Button
+              size="sm"
+              onClick={handleSelfValidation}
+              disabled={isSubmitting}
+              className="bg-emerald-600/80 hover:bg-emerald-500 border border-emerald-500/50"
+            >
+              {isSubmitting ? '⏳ Validation...' : '✓ Valider'}
+            </Button>
           )}
 
           {/* Score submission for competitive missions */}

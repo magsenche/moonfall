@@ -257,6 +257,7 @@ export type Database = {
           mission_type: Database["public"]["Enums"]["mission_type"]
           penalty_description: string | null
           reward_description: string | null
+          reward_points: number | null
           reward_type: Database["public"]["Enums"]["reward_type"] | null
           sabotage_allowed: boolean | null
           sort_order: number | null
@@ -278,6 +279,7 @@ export type Database = {
           mission_type?: Database["public"]["Enums"]["mission_type"]
           penalty_description?: string | null
           reward_description?: string | null
+          reward_points?: number | null
           reward_type?: Database["public"]["Enums"]["reward_type"] | null
           sabotage_allowed?: boolean | null
           sort_order?: number | null
@@ -299,6 +301,7 @@ export type Database = {
           mission_type?: Database["public"]["Enums"]["mission_type"]
           penalty_description?: string | null
           reward_description?: string | null
+          reward_points?: number | null
           reward_type?: Database["public"]["Enums"]["reward_type"] | null
           sabotage_allowed?: boolean | null
           sort_order?: number | null
@@ -328,6 +331,7 @@ export type Database = {
           result_data: Json | null
           reward_data: Json | null
           reward_description: string | null
+          reward_points: number | null
           reward_type: Database["public"]["Enums"]["reward_type"] | null
           sabotage_allowed: boolean | null
           started_at: string | null
@@ -361,6 +365,7 @@ export type Database = {
           result_data?: Json | null
           reward_data?: Json | null
           reward_description?: string | null
+          reward_points?: number | null
           reward_type?: Database["public"]["Enums"]["reward_type"] | null
           sabotage_allowed?: boolean | null
           started_at?: string | null
@@ -394,6 +399,7 @@ export type Database = {
           result_data?: Json | null
           reward_data?: Json | null
           reward_description?: string | null
+          reward_points?: number | null
           reward_type?: Database["public"]["Enums"]["reward_type"] | null
           sabotage_allowed?: boolean | null
           started_at?: string | null
@@ -1060,6 +1066,7 @@ export type Database = {
         | "external"
         | "first_wins"
         | "best_score"
+        | "self"
       power_phase: "nuit" | "jour" | "mort" | "debut"
       reward_type:
         | "wolf_hint"
@@ -1230,6 +1237,7 @@ export const Constants = {
         "external",
         "first_wins",
         "best_score",
+        "self",
       ],
       power_phase: ["nuit", "jour", "mort", "debut"],
       reward_type: [

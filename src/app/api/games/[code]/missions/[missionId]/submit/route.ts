@@ -92,6 +92,55 @@ export async function POST(
   }
 
   // Handle auto-validation types
+  if (mission.validation_type === 'self') {
+    // Self-validation: auto-success and award points immediately
+    await supabase
+      .from('missions')
+      .update({
+        status: 'success',
+        winner_player_id: playerId,
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', missionId);
+
+    // Award points to player
+    if (mission.reward_points && mission.reward_points > 0) {
+      const { data: player } = await supabase
+        .from('players')
+        .select('mission_points')
+        .eq('id', playerId)
+        .single();
+
+      if (player) {
+        await supabase
+          .from('players')
+          .update({
+            mission_points: (player.mission_points || 0) + mission.reward_points,
+          })
+          .eq('id', playerId);
+      }
+    }
+
+    await supabase.from('game_events').insert({
+      game_id: game.id,
+      actor_id: playerId,
+      event_type: 'mission_won',
+      data: {
+        mission_id: missionId,
+        title: mission.title,
+        validation_type: 'self',
+        points_awarded: mission.reward_points,
+      },
+    });
+
+    return NextResponse.json({ 
+      assignment: updatedAssignment,
+      isWinner: true,
+      pointsAwarded: mission.reward_points,
+      message: `Mission réussie ! +${mission.reward_points} points 🎉`,
+    });
+  }
+
   if (mission.validation_type === 'first_wins') {
     // First submission wins - mark mission as success
     await supabase

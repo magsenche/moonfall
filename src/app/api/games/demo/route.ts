@@ -240,6 +240,9 @@ export async function POST(request: NextRequest) {
       data: { mode: 'demo', started_by: pseudo },
     });
 
+    // Create demo missions for the player to test the system
+    await createDemoMissions(supabase, game.id, player.id);
+
     return NextResponse.json({
       success: true,
       code: game.code,
@@ -252,5 +255,89 @@ export async function POST(request: NextRequest) {
       { error: 'Une erreur inattendue est survenue', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Create simple demo missions with auto-validation
+ * These missions help the player test the mission & shop system
+ */
+async function createDemoMissions(supabase: Awaited<ReturnType<typeof createClient>>, gameId: string, playerId: string) {
+  const demoMissions = [
+    {
+      title: '🎯 Mission de Bienvenue',
+      description: 'Première mission ! Clique sur "Soumettre" pour valider et gagner 10 points.',
+      difficulty: 1,
+      time_limit_seconds: null,
+      reward_points: 10,
+      validation_type: 'self' as const, // Auto-validation
+    },
+    {
+      title: '🧠 Quiz Express',
+      description: 'Combien de loups-garous y a-t-il dans cette partie ? (Réponse: 2)',
+      difficulty: 2,
+      time_limit_seconds: 120,
+      reward_points: 15,
+      validation_type: 'self' as const,
+    },
+    {
+      title: '🎭 Teste ton Rôle',
+      description: 'Quel est ton rôle secret ? Regarde ta carte de rôle et soumets cette mission.',
+      difficulty: 1,
+      time_limit_seconds: null,
+      reward_points: 10,
+      validation_type: 'self' as const,
+    },
+    {
+      title: '🛒 Découvre le Shop',
+      description: 'Va dans le shop (icône panier) et découvre les objets disponibles. Soumets quand c\'est fait !',
+      difficulty: 2,
+      time_limit_seconds: null,
+      reward_points: 20,
+      validation_type: 'self' as const,
+    },
+    {
+      title: '🎮 Maître du Jeu',
+      description: 'Vote au conseil et utilise tes points dans le shop. Mission avancée !',
+      difficulty: 3,
+      time_limit_seconds: null,
+      reward_points: 25,
+      validation_type: 'self' as const,
+    },
+  ];
+
+  // Create missions one by one, assigning them directly to the player
+  for (let i = 0; i < demoMissions.length; i++) {
+    const missionData = demoMissions[i];
+    
+    // Create the mission
+    const { data: mission, error: missionError } = await supabase
+      .from('missions')
+      .insert({
+        game_id: gameId,
+        type: 'demo', // Mark as demo mission
+        status: 'in_progress', // Active immediately
+        ...missionData,
+      })
+      .select()
+      .single();
+
+    if (missionError || !mission) {
+      console.error('Error creating demo mission:', missionError);
+      continue;
+    }
+
+    // Assign it to the player immediately (status: 'assigned' = ready to do)
+    const { error: assignError } = await supabase
+      .from('mission_assignments')
+      .insert({
+        mission_id: mission.id,
+        player_id: playerId,
+        status: 'assigned',
+      });
+
+    if (assignError) {
+      console.error('Error assigning demo mission:', assignError);
+    }
   }
 }
