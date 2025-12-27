@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MotionButton, Button, Input, MotionCard, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import { MotionButton, Input, MotionCard, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { OnboardingTooltips } from '@/components/game';
 import { cn } from '@/lib/utils';
 import { 
@@ -13,7 +13,7 @@ import {
   migrateOldSession,
   type PlayerSession 
 } from '@/lib/utils/player-session';
-import { joinGame, rejoinGame, ApiError } from '@/lib/api';
+import { joinGame, rejoinGame, createDemoGame, ApiError } from '@/lib/api';
 
 type Mode = 'home' | 'create' | 'join';
 
@@ -140,6 +140,32 @@ export default function HomePage() {
   const handleForgetGame = (session: PlayerSession) => {
     clearSessionForGame(session.gameCode);
     setSessions(getAllSessions());
+  };
+
+  const handleDemoMode = async () => {
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      // Generate a random demo pseudo
+      const demoPseudo = `Joueur ${Math.floor(Math.random() * 1000)}`;
+      
+      const data = await createDemoGame(demoPseudo);
+
+      // Save player session
+      savePlayerSession({
+        playerId: data.playerId,
+        gameCode: data.code,
+        pseudo: demoPseudo,
+      });
+
+      // Redirect to game
+      router.push(`/game/${data.code}`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Une erreur est survenue');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -346,6 +372,30 @@ export default function HomePage() {
               >
                 🚀 Rejoindre une partie
               </MotionButton>
+
+              {/* Demo Mode Button */}
+              <MotionButton 
+                variant="ghost"
+                className={cn(
+                  "w-full text-base py-4",
+                  "bg-zinc-800/50 border border-amber-500/50 hover:bg-amber-900/30",
+                  "text-amber-400 hover:text-amber-300"
+                )}
+                onClick={handleDemoMode}
+                isLoading={isLoading}
+              >
+                🧪 Tester une partie (Démo)
+              </MotionButton>
+
+              {/* Demo description */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-center text-xs text-slate-500 px-4"
+              >
+                Le mode démo lance une partie solo avec des bots pour découvrir le jeu
+              </motion.p>
             </motion.div>
           )}
         </AnimatePresence>

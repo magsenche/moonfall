@@ -441,3 +441,18 @@ export function removeBots(gameCode: string, mjPlayerId: string) {
     mjPlayerId,
   });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Demo Mode
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface DemoGameResponse {
+  success: boolean;
+  code: string;
+  playerId: string;
+  message: string;
+}
+
+export function createDemoGame(pseudo: string) {
+  return apiPost<DemoGameResponse>('/api/games/demo', { pseudo });
+}
