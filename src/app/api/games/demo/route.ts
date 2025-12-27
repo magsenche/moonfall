@@ -64,9 +64,9 @@ export async function POST(request: NextRequest) {
     const demoSettings = {
       ...DEFAULT_GAME_SETTINGS,
       autoMode: true,
-      councilIntervalMinutes: 2, // 2 minutes day phase for demo
-      nightDurationMinutes: 1.5, // 1.5 minutes night for demo
-      voteDurationMinutes: 1, // 1 minute council for demo
+      councilIntervalMinutes: 0.25, // 15 seconds day phase for demo (fast)
+      nightDurationMinutes: 0.5, // 30 seconds night for demo
+      voteDurationMinutes: 0.5, // 30 seconds council for demo
     };
 
     const { data: game, error: gameError } = await supabase
