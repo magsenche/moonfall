@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { GamePhaseBadge } from '@/components/game';
 import { useGame, useTimerContext } from '../context';
+import { QuitGameButton } from './QuitGameButton';
 
 interface GameHeaderProps {
   className?: string;
@@ -21,7 +22,10 @@ export function GameHeader({ className }: GameHeaderProps) {
   const { timeRemaining, isUrgent, isWarning, formattedTime } = useTimerContext();
 
   return (
-    <header className={cn('mb-6', className)}>
+    <header className={cn('mb-6 relative', className)}>
+      {/* Quit Button */}
+      <QuitGameButton />
+
       {/* Game Name - Y2K style */}
       <motion.h1 
         initial={{ opacity: 0, y: -20 }}
