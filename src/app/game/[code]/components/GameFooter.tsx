@@ -158,6 +158,7 @@ export function GameFooter() {
                   onPointsChange={handleShopRefresh}
                   playerData={playerShopData}
                   isLoading={isShopLoading}
+                  players={alivePlayers}
                 />
                 <Shop
                   gameCode={game.code}
