@@ -10,6 +10,8 @@ const BOT_NAMES = [
   '🤖 Charlie',
   '🤖 Diana',
   '🤖 Eve',
+  '🤖 Frank',
+  '🤖 Grace',
 ];
 
 /**
@@ -17,7 +19,7 @@ const BOT_NAMES = [
  * 
  * Creates a game with:
  * - The user as a player (not MJ)
- * - 5 bots to fill the game
+ * - 7 bots to fill the game (8 players total)
  * - autoMode enabled (no MJ needed)
  * - Starts the game immediately
  */
@@ -163,14 +165,24 @@ export async function POST(request: NextRequest) {
 
     const playerCount = allPlayers.length;
 
-    // Basic role distribution for demo (6 players)
-    // 2 loups, 1 voyante, 3 villageois
+    // Basic role distribution for demo (8 players)
+    // 2 loups, 4 personnages à pouvoir (voyante, sorcière, chasseur, petite fille), 2 villageois
     const loupRole = roles.find(r => r.name === 'loup_garou');
     const voyanteRole = roles.find(r => r.name === 'voyante');
+    const sorciereRole = roles.find(r => r.name === 'sorciere');
+    const chasseurRole = roles.find(r => r.name === 'chasseur');
+    const petiteFilleRole = roles.find(r => r.name === 'petite_fille');
     const villageoisRole = roles.find(r => r.name === 'villageois');
 
-    if (!loupRole || !voyanteRole || !villageoisRole) {
-      console.error('Missing base roles:', { loupRole: !!loupRole, voyanteRole: !!voyanteRole, villageoisRole: !!villageoisRole });
+    if (!loupRole || !voyanteRole || !sorciereRole || !chasseurRole || !petiteFilleRole || !villageoisRole) {
+      console.error('Missing base roles:', { 
+        loupRole: !!loupRole, 
+        voyanteRole: !!voyanteRole, 
+        sorciereRole: !!sorciereRole,
+        chasseurRole: !!chasseurRole,
+        petiteFilleRole: !!petiteFilleRole,
+        villageoisRole: !!villageoisRole 
+      });
       await supabase.from('games').delete().eq('id', game.id);
       return NextResponse.json(
         { error: 'Rôles de base introuvables' },
@@ -181,16 +193,22 @@ export async function POST(request: NextRequest) {
     // Shuffle players
     const shuffledPlayers = [...allPlayers].sort(() => Math.random() - 0.5);
 
-    // Assign roles
+    // Assign roles: 2 loups + 4 à pouvoir + 2 villageois
     const roleAssignments = [];
     for (let i = 0; i < playerCount; i++) {
       let roleId;
       if (i < 2) {
         roleId = loupRole.id; // First 2 are wolves
       } else if (i === 2) {
-        roleId = voyanteRole.id; // Third is seer
+        roleId = voyanteRole.id; // Seer
+      } else if (i === 3) {
+        roleId = sorciereRole.id; // Witch
+      } else if (i === 4) {
+        roleId = chasseurRole.id; // Hunter
+      } else if (i === 5) {
+        roleId = petiteFilleRole.id; // Little Girl
       } else {
-        roleId = villageoisRole.id; // Rest are villagers
+        roleId = villageoisRole.id; // Last 2 are villagers
       }
 
       roleAssignments.push({
@@ -239,6 +257,23 @@ export async function POST(request: NextRequest) {
       event_type: 'game_started',
       data: { mode: 'demo', started_by: pseudo },
     });
+
+    // Add demo messages to wolf chat (for Little Girl to see)
+    const wolves = roleAssignments.filter(ra => ra.role_id === loupRole.id);
+    if (wolves.length > 0) {
+      const wolfMessages = [
+        { player_id: wolves[0].id, message: "J'ai faim 🐺" },
+        { player_id: wolves[1]?.id || wolves[0].id, message: "On graille qui ce soir ? 🍽️" },
+      ];
+
+      for (const msg of wolfMessages) {
+        await supabase.from('wolf_chat').insert({
+          game_id: game.id,
+          player_id: msg.player_id,
+          message: msg.message,
+        });
+      }
+    }
 
     // Create demo missions for the player to test the system
     await createDemoMissions(supabase, game.id, player.id);
