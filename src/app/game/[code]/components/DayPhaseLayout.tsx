@@ -14,6 +14,7 @@ import { useGame } from '../context';
 import { PlayerRoleCard } from './PlayerRoleCard';
 import { AssassinPowerPanel } from './AssassinPowerPanel';
 import { WildChildModelPanel } from './WildChildModelPanel';
+import { CupidonLoversPanel } from './CupidonLoversPanel';
 
 export function DayPhaseLayout() {
   const { 
@@ -24,6 +25,7 @@ export function DayPhaseLayout() {
     isWolf,
     isAssassin,
     isWildChild,
+    isCupidon,
     alivePlayers,
     isAlive,
   } = useGame();
@@ -77,6 +79,16 @@ export function DayPhaseLayout() {
       {/* Wild Child Model Status (visible during day too) */}
       {isWildChild && isAlive && (
         <WildChildModelPanel
+          alivePlayers={alivePlayers}
+          currentPlayerId={currentPlayerId}
+          gameCode={game.code}
+          gamePhase={game.current_phase ?? 1}
+        />
+      )}
+
+      {/* Cupidon Lovers Panel (can choose lovers during first day) */}
+      {isCupidon && isAlive && (
+        <CupidonLoversPanel
           alivePlayers={alivePlayers}
           currentPlayerId={currentPlayerId}
           gameCode={game.code}

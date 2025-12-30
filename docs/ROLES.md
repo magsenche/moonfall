@@ -4,7 +4,7 @@
 
 ## Rôles Implémentés 🎮
 
-### Rôles Village (10 rôles)
+### Rôles Village (11 rôles)
 
 | Rôle | Pouvoir IRL | Status | Notes Techniques |
 |------|-------------|--------|------------------|
@@ -17,6 +17,7 @@
 | **Salvateur** | Protège un joueur chaque nuit | ✅ Implémenté | `SalvateurNightPanel`, pas 2x de suite même cible |
 | **Trublion** | Échange les rôles de 2 joueurs | ✅ Implémenté | `TrublionNightPanel`, 1x par partie |
 | **Enfant Sauvage** | Devient loup si modèle meurt | ✅ Implémenté | `WildChildModelPanel`, transformation auto |
+| **Cupidon** | Désigne 2 amoureux en début de partie | ✅ Implémenté | `CupidonLoversPanel`, mort par chagrin liée |
 
 ### Rôles Loups
 
@@ -34,7 +35,6 @@
 
 | Rôle | Équipe | Pouvoir IRL |
 |------|--------|-------------|
-| **Cupidon** | 🔵 Village | En début de partie, désigne 2 amoureux. Si l'un meurt → l'autre meurt aussi (notification) |
 | **Loup Blanc** | ⚪ Solo | Loup-garou visible dans le chat loup, mais une nuit sur deux peut tuer un loup secrètement |
 | **Ange** | ⚪ Solo | Gagne immédiatement s'il est éliminé au **premier** conseil. Sinon devient Villageois. |
 | **Corbeau** | 🔵 Village | Chaque nuit, désigne un joueur qui aura +2 votes contre lui au prochain conseil |

@@ -80,6 +80,7 @@ export interface GameContextType {
   isAssassin: boolean;
   isTrublion: boolean;
   isWildChild: boolean;
+  isCupidon: boolean;
 
   // Mode flags
   isAutoMode: boolean;
@@ -301,6 +302,7 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
   const isAssassin = currentRole?.name === 'assassin';
   const isTrublion = currentRole?.name === 'trublion';
   const isWildChild = currentRole?.name === 'enfant_sauvage';
+  const isCupidon = currentRole?.name === 'cupidon';
   const isAlive = currentPlayer?.is_alive !== false;
 
   const wolves = useMemo(() => {
@@ -513,6 +515,7 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
       isAssassin,
       isTrublion,
       isWildChild,
+      isCupidon,
 
       // Mode flags
       isAutoMode,

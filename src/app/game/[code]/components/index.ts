@@ -58,6 +58,7 @@ export * from './GameLayout';
 
 // New roles panels
 export * from './SalvateurNightPanel';
+export * from './CupidonLoversPanel';
 export * from './AssassinPowerPanel';
 export * from './TrublionNightPanel';
 export * from './WildChildModelPanel';

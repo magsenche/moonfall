@@ -22,6 +22,7 @@ import {
   SalvateurNightPanel,
   TrublionNightPanel,
   WildChildModelPanel,
+  CupidonLoversPanel,
 } from './index';
 
 export function NightPhaseLayout() {
@@ -37,6 +38,7 @@ export function NightPhaseLayout() {
     isSalvateur,
     isTrublion,
     isWildChild,
+    isCupidon,
     wolves,
     alivePlayers,
     isAlive,
@@ -45,7 +47,7 @@ export function NightPhaseLayout() {
   } = useGame();
 
   // Check if player has a special night role
-  const hasNightRole = isWolf || isSeer || isWitch || isLittleGirl || isSalvateur || isTrublion || isWildChild;
+  const hasNightRole = isWolf || isSeer || isWitch || isLittleGirl || isSalvateur || isTrublion || isWildChild || isCupidon;
 
   return (
     <div className="space-y-4">
@@ -82,9 +84,11 @@ export function NightPhaseLayout() {
                         ? '🔀 Semez le chaos en échangeant des rôles !'
                         : isWildChild
                           ? '🧒 Votre modèle est-il toujours en vie ?'
-                          : isLittleGirl
-                            ? '👀 Vous espionnez discrètement les loups...'
-                            : '😴 Le village dort. Attendez le lever du jour...'}
+                          : isCupidon
+                            ? '💘 Choisissez deux joueurs qui tomberont amoureux !'
+                            : isLittleGirl
+                              ? '👀 Vous espionnez discrètement les loups...'
+                              : '😴 Le village dort. Attendez le lever du jour...'}
             </p>
           </div>
         </CardContent>
@@ -174,6 +178,16 @@ export function NightPhaseLayout() {
       {/* Wild Child Model Selection/Status */}
       {isWildChild && isAlive && (
         <WildChildModelPanel
+          alivePlayers={alivePlayers}
+          currentPlayerId={currentPlayerId}
+          gameCode={game.code}
+          gamePhase={game.current_phase ?? 1}
+        />
+      )}
+
+      {/* Cupidon Lovers Selection (first night) */}
+      {isCupidon && isAlive && (
+        <CupidonLoversPanel
           alivePlayers={alivePlayers}
           currentPlayerId={currentPlayerId}
           gameCode={game.code}

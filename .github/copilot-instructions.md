@@ -177,11 +177,11 @@ src/
 | Assassin | ✅ | Solo - Tue 1 joueur (1x/partie), gagne seul |
 | Trublion | ✅ | Échange rôles de 2 joueurs (1x/partie) |
 | Enfant Sauvage | ✅ | Devient loup si son modèle meurt |
+| Cupidon | ✅ | Désigne 2 amoureux liés (mort par chagrin) |
 
 ### ⏳ À Faire
 
 **Nouveaux rôles :**
-- [ ] Cupidon (amoureux liés - complexe)
 - [ ] Corbeau (+2 votes contre un joueur)
 - [ ] Loup Blanc (loup solo qui peut tuer un loup)
 - [ ] Ange (gagne s'il meurt au 1er conseil)

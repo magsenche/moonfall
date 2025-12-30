@@ -62,6 +62,64 @@ async function forceBotVotes(gameId: string, phase: number) {
 }
 
 /**
+ * Check if dead player has a lover and kill them too (heartbreak death)
+ * Returns the lover's info if they died, null otherwise
+ */
+async function checkLoverDeath(gameId: string, deadPlayerId: string) {
+  // Check if dead player was in a lovers pair
+  const { data: loversMatch } = await supabase
+    .from("lovers")
+    .select("id, player1_id, player2_id")
+    .eq("game_id", gameId)
+    .or(`player1_id.eq.${deadPlayerId},player2_id.eq.${deadPlayerId}`)
+    .maybeSingle();
+
+  if (!loversMatch) return null;
+
+  // Find the partner
+  const partnerId = loversMatch.player1_id === deadPlayerId 
+    ? loversMatch.player2_id 
+    : loversMatch.player1_id;
+
+  // Check if partner is still alive
+  const { data: partner } = await supabase
+    .from("players")
+    .select("id, pseudo, is_alive, role:roles(name)")
+    .eq("id", partnerId)
+    .single();
+
+  if (!partner || !partner.is_alive) return null;
+
+  // Kill the partner from heartbreak
+  await supabase
+    .from("players")
+    .update({
+      is_alive: false,
+      death_reason: "chagrin",
+      death_at: new Date().toISOString(),
+    })
+    .eq("id", partnerId);
+
+  // Log the heartbreak death event
+  await supabase.from("game_events").insert({
+    game_id: gameId,
+    event_type: "lover_heartbreak_death",
+    data: {
+      lover_id: partnerId,
+      lover_name: partner.pseudo,
+      lover_role: (partner.role as { name: string } | null)?.name,
+      dead_partner_id: deadPlayerId,
+    },
+  });
+
+  return {
+    loverId: partnerId,
+    loverPseudo: partner.pseudo,
+    loverRole: (partner.role as { name: string } | null)?.name,
+  };
+}
+
+/**
  * Check if dead player was a Wild Child's model and transform the child into a wolf
  */
 async function checkWildChildTransformation(gameId: string, deadPlayerId: string) {
@@ -453,12 +511,25 @@ export async function POST(
       // Check if dead player was a Wild Child's model
       await checkWildChildTransformation(game.id, player.id);
 
+      // Check if eliminated player has a lover (heartbreak death)
+      const loverDeath = await checkLoverDeath(game.id, player.id);
+
       // Check if eliminated player was a bot hunter and auto-shoot
       hunterShot = await autoBotHunterShoot(game.id, player.id, currentPhase);
       
-      // If hunter shot someone, also check for Wild Child transformation
+      // If hunter shot someone, also check for Wild Child transformation and lover
       if (hunterShot?.victimId) {
         await checkWildChildTransformation(game.id, hunterShot.victimId);
+        await checkLoverDeath(game.id, hunterShot.victimId);
+      }
+
+      // If lover died, also check for Wild Child transformation and hunter
+      if (loverDeath?.loverId) {
+        await checkWildChildTransformation(game.id, loverDeath.loverId);
+        const loverHunterShot = await autoBotHunterShoot(game.id, loverDeath.loverId, currentPhase);
+        if (loverHunterShot?.victimId) {
+          await checkWildChildTransformation(game.id, loverHunterShot.victimId);
+        }
       }
     }
   }
