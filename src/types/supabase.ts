@@ -1181,6 +1181,10 @@ export type Database = {
         | "external"
         | "photo"
         | "auction"
+        | "comportement"
+        | "physique"
+        | "gameplay"
+        | "viral"
       mission_status:
         | "pending"
         | "in_progress"
@@ -1351,6 +1355,10 @@ export const Constants = {
         "external",
         "photo",
         "auction",
+        "comportement",
+        "physique",
+        "gameplay",
+        "viral",
       ],
       mission_status: [
         "pending",
