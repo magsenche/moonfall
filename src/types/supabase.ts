@@ -797,6 +797,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean | null
           name: string
+          points_multiplier: number | null
           short_description: string | null
           team: Database["public"]["Enums"]["team_type"]
         }
@@ -812,6 +813,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean | null
           name: string
+          points_multiplier?: number | null
           short_description?: string | null
           team: Database["public"]["Enums"]["team_type"]
         }
@@ -827,10 +829,74 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean | null
           name?: string
+          points_multiplier?: number | null
           short_description?: string | null
           team?: Database["public"]["Enums"]["team_type"]
         }
         Relationships: []
+      }
+      salvateur_protections: {
+        Row: {
+          created_at: string | null
+          game_id: string
+          id: string
+          phase: number
+          protected_player_id: string
+          salvateur_player_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          game_id: string
+          id?: string
+          phase: number
+          protected_player_id: string
+          salvateur_player_id: string
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string
+          id?: string
+          phase?: number
+          protected_player_id?: string
+          salvateur_player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salvateur_protections_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salvateur_protections_protected_player_id_fkey"
+            columns: ["protected_player_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "salvateur_protections_protected_player_id_fkey"
+            columns: ["protected_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salvateur_protections_salvateur_player_id_fkey"
+            columns: ["salvateur_player_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "salvateur_protections_salvateur_player_id_fkey"
+            columns: ["salvateur_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shop_items: {
         Row: {
@@ -943,6 +1009,69 @@ export type Database = {
           {
             foreignKeyName: "votes_voter_id_fkey"
             columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wild_child_models: {
+        Row: {
+          child_player_id: string
+          created_at: string | null
+          game_id: string
+          id: string
+          model_player_id: string
+          transformed: boolean | null
+        }
+        Insert: {
+          child_player_id: string
+          created_at?: string | null
+          game_id: string
+          id?: string
+          model_player_id: string
+          transformed?: boolean | null
+        }
+        Update: {
+          child_player_id?: string
+          created_at?: string | null
+          game_id?: string
+          id?: string
+          model_player_id?: string
+          transformed?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wild_child_models_child_player_id_fkey"
+            columns: ["child_player_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "wild_child_models_child_player_id_fkey"
+            columns: ["child_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wild_child_models_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wild_child_models_model_player_id_fkey"
+            columns: ["model_player_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "wild_child_models_model_player_id_fkey"
+            columns: ["model_player_id"]
             isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
@@ -1084,6 +1213,7 @@ export type Database = {
         | "silence"
         | "extra_life"
         | "role_swap"
+        | "role_change"
       team_type: "village" | "loups" | "solo"
       vote_type: "jour" | "nuit_loup" | "pouvoir"
     }
@@ -1257,6 +1387,7 @@ export const Constants = {
         "silence",
         "extra_life",
         "role_swap",
+        "role_change",
       ],
       team_type: ["village", "loups", "solo"],
       vote_type: ["jour", "nuit_loup", "pouvoir"],

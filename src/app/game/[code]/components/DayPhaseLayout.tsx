@@ -12,9 +12,21 @@ import { MotionCard, CardContent } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { useGame } from '../context';
 import { PlayerRoleCard } from './PlayerRoleCard';
+import { AssassinPowerPanel } from './AssassinPowerPanel';
+import { WildChildModelPanel } from './WildChildModelPanel';
 
 export function DayPhaseLayout() {
-  const { currentRole, roleConfig, isWolf } = useGame();
+  const { 
+    game,
+    currentPlayerId,
+    currentRole, 
+    roleConfig, 
+    isWolf,
+    isAssassin,
+    isWildChild,
+    alivePlayers,
+    isAlive,
+  } = useGame();
 
   return (
     <div className="space-y-4">
@@ -39,9 +51,11 @@ export function DayPhaseLayout() {
               Le jour se lève
             </h3>
             <p className="text-slate-300 text-sm">
-              {isWolf
-                ? '🐺 Mêlez-vous aux villageois et détournez les soupçons...'
-                : '👀 Discutez avec les autres villageois et trouvez les loups-garous !'}
+              {isAssassin
+                ? '🗡️ Choisissez le bon moment pour frapper...'
+                : isWolf
+                  ? '🐺 Mêlez-vous aux villageois et détournez les soupçons...'
+                  : '👀 Discutez avec les autres villageois et trouvez les loups-garous !'}
             </p>
           </div>
         </CardContent>
@@ -49,6 +63,26 @@ export function DayPhaseLayout() {
 
       {/* Player's Role Card */}
       {currentRole && roleConfig && <PlayerRoleCard role={currentRole} roleConfig={roleConfig} />}
+
+      {/* Assassin Power (can use during day) */}
+      {isAssassin && isAlive && (
+        <AssassinPowerPanel
+          alivePlayers={alivePlayers}
+          currentPlayerId={currentPlayerId}
+          gameCode={game.code}
+          gamePhase={game.current_phase ?? 1}
+        />
+      )}
+
+      {/* Wild Child Model Status (visible during day too) */}
+      {isWildChild && isAlive && (
+        <WildChildModelPanel
+          alivePlayers={alivePlayers}
+          currentPlayerId={currentPlayerId}
+          gameCode={game.code}
+          gamePhase={game.current_phase ?? 1}
+        />
+      )}
 
       {/* Discussion tips */}
       <MotionCard 

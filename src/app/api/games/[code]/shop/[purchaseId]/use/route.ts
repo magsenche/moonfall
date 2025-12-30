@@ -134,12 +134,60 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       break;
     }
 
-    case 'mj_question':
+    case 'role_change': {
+      // Get current player's role
+      const { data: currentPlayer } = await supabase
+        .from('players')
+        .select('id, pseudo, role_id')
+        .eq('id', playerId)
+        .eq('game_id', game.id)
+        .single();
+
+      if (!currentPlayer) {
+        return NextResponse.json({ error: 'Player not found' }, { status: 404 });
+      }
+
+      // Get all active roles except current one and MJ-only roles
+      const { data: availableRoles } = await supabase
+        .from('roles')
+        .select('id, name, display_name, team, icon')
+        .eq('is_active', true)
+        .neq('id', currentPlayer.role_id ?? '');
+
+      if (!availableRoles || availableRoles.length === 0) {
+        return NextResponse.json({ error: 'No roles available for change' }, { status: 400 });
+      }
+
+      // Pick a random role
+      const randomIndex = Math.floor(Math.random() * availableRoles.length);
+      const newRole = availableRoles[randomIndex];
+
+      // Update player's role
+      const { error: roleUpdateError } = await supabase
+        .from('players')
+        .update({ role_id: newRole.id })
+        .eq('id', playerId);
+
+      if (roleUpdateError) {
+        return NextResponse.json({ error: 'Failed to change role' }, { status: 500 });
+      }
+
+      const isNowWolf = newRole.team === 'loups';
       result = {
-        message: `❓ Tu peux poser une question oui/non au MJ.`,
-        awaiting_question: true,
+        old_role_id: currentPlayer.role_id,
+        new_role: {
+          id: newRole.id,
+          name: newRole.name,
+          display_name: newRole.display_name,
+          team: newRole.team,
+          icon: newRole.icon,
+        },
+        message: isNowWolf 
+          ? `🎲 Nouveau rôle : ${newRole.icon} ${newRole.display_name} ! Tu es maintenant un LOUP ! 🐺`
+          : `🎲 Nouveau rôle : ${newRole.icon} ${newRole.display_name} !`,
       };
       break;
+    }
 
     default:
       result = {

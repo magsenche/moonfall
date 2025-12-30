@@ -166,19 +166,25 @@ src/
 ### Rôles Implémentés
 | Rôle | Status | Particularité |
 |------|--------|---------------|
-| Villageois | ✅ | Vote simple |
+| Villageois | ✅ | Vote simple, **x1.5 points missions** |
 | Loup-Garou | ✅ | Chat privé + Vote nuit |
 | Voyante | ✅ | Historique des visions + Panel nuit |
 | Petite Fille | ✅ | Chat loups en lecture seule (pseudos anonymes) |
 | Sorcière | ✅ | Potions Vie/Mort (Panel nuit) |
 | Chasseur | ✅ | Tir mortel à la mort (Modal) |
 | Ancien | ✅ | Survit 1x aux loups (Passif) |
+| Salvateur | ✅ | Protège 1 joueur/nuit (pas 2x de suite même cible) |
+| Assassin | ✅ | Solo - Tue 1 joueur (1x/partie), gagne seul |
+| Trublion | ✅ | Échange rôles de 2 joueurs (1x/partie) |
+| Enfant Sauvage | ✅ | Devient loup si son modèle meurt |
 
 ### ⏳ À Faire
 
 **Nouveaux rôles :**
-- [ ] Salvateur (protège un joueur la nuit)
 - [ ] Cupidon (amoureux liés - complexe)
+- [ ] Corbeau (+2 votes contre un joueur)
+- [ ] Loup Blanc (loup solo qui peut tuer un loup)
+- [ ] Ange (gagne s'il meurt au 1er conseil)
 
 ### 📋 Backlog
 
@@ -186,11 +192,11 @@ src/
 - [ ] Valider notifications push en conditions réelles (test multi-appareils iOS)
 - [ ] Tester partie complète avec ~10 joueurs réels
 - [ ] Pouvoirs ciblés UI (wolf_vision, silence avec sélection cible)
-- [ ] **Mode Loup-Garou Infini** (voir docs/INFINITE_MODE.md)
-  - [ ] Respawn des morts avec nouveau rôle
-  - [ ] Système de points individuels
-  - [ ] Leaderboard temps réel
-  - [ ] Conditions de victoire (timer/score/tours)
+
+**Mode Infini (voir docs/INFINITE_MODE.md) :**
+- [ ] Respawn des morts avec nouveau rôle
+- [ ] Système de points individuels
+- [ ] Leaderboard temps réel
 
 **Backlog général :**
 - [ ] PWA offline support
@@ -298,7 +304,7 @@ supabase/
 - `vote_type`: jour, nuit_loup, pouvoir
 - `power_phase`: nuit, jour, mort
 - `mission_status`: pending, in_progress, success, failed, cancelled
-- `shop_effect_type`: immunity, double_vote, wolf_vision, anonymous_vote, mj_question, silence
+- `shop_effect_type`: immunity, double_vote, wolf_vision, anonymous_vote, silence, extra_life, role_swap, role_change
 
 **Storage Buckets :**
 - `role-assets` - Illustrations rôles (5MB, public)

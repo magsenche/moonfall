@@ -62,6 +62,69 @@ async function forceBotVotes(gameId: string, phase: number) {
 }
 
 /**
+ * Check if dead player was a Wild Child's model and transform the child into a wolf
+ */
+async function checkWildChildTransformation(gameId: string, deadPlayerId: string) {
+  // Check if dead player was someone's model
+  const { data: wildChildModel } = await supabase
+    .from("wild_child_models")
+    .select("id, child_player_id, transformed")
+    .eq("game_id", gameId)
+    .eq("model_player_id", deadPlayerId)
+    .eq("transformed", false)
+    .maybeSingle();
+
+  if (!wildChildModel) return null;
+
+  // Check if the wild child is still alive
+  const { data: wildChild } = await supabase
+    .from("players")
+    .select("id, pseudo, is_alive, role:roles(name)")
+    .eq("id", wildChildModel.child_player_id)
+    .single();
+
+  if (!wildChild || !wildChild.is_alive) return null;
+
+  // Get the loup_garou role id
+  const { data: wolfRole } = await supabase
+    .from("roles")
+    .select("id")
+    .eq("name", "loup_garou")
+    .single();
+
+  if (!wolfRole) return null;
+
+  // Transform the wild child into a wolf!
+  await supabase
+    .from("players")
+    .update({ role_id: wolfRole.id })
+    .eq("id", wildChildModel.child_player_id);
+
+  // Mark as transformed
+  await supabase
+    .from("wild_child_models")
+    .update({ transformed: true })
+    .eq("id", wildChildModel.id);
+
+  // Log the transformation event
+  await supabase.from("game_events").insert({
+    game_id: gameId,
+    event_type: "wild_child_transformed",
+    data: {
+      child_id: wildChildModel.child_player_id,
+      child_name: wildChild.pseudo,
+      model_id: deadPlayerId,
+      new_role: "loup_garou",
+    },
+  });
+
+  return {
+    childId: wildChildModel.child_player_id,
+    childPseudo: wildChild.pseudo,
+  };
+}
+
+/**
  * Auto-activate bot hunter power when they die
  * Hunters shoot a random alive player when eliminated
  */
@@ -387,8 +450,16 @@ export async function POST(
         },
       });
 
+      // Check if dead player was a Wild Child's model
+      await checkWildChildTransformation(game.id, player.id);
+
       // Check if eliminated player was a bot hunter and auto-shoot
       hunterShot = await autoBotHunterShoot(game.id, player.id, currentPhase);
+      
+      // If hunter shot someone, also check for Wild Child transformation
+      if (hunterShot?.victimId) {
+        await checkWildChildTransformation(game.id, hunterShot.victimId);
+      }
     }
   }
 

@@ -55,3 +55,9 @@ export * from './HunterDeathModal';
 export * from './WitchNightPanel';
 export * from './SeerHistoryPanel';
 export * from './GameLayout';
+
+// New roles panels
+export * from './SalvateurNightPanel';
+export * from './AssassinPowerPanel';
+export * from './TrublionNightPanel';
+export * from './WildChildModelPanel';

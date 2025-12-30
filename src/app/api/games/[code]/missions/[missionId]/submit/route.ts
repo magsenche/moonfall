@@ -103,22 +103,24 @@ export async function POST(
       })
       .eq('id', missionId);
 
-    // Award points to player
+    // Award points to player using the SQL function (applies role multiplier)
+    let pointsAwarded = 0;
     if (mission.reward_points && mission.reward_points > 0) {
+      const { data: result } = await supabase.rpc('award_mission_points', {
+        p_player_id: playerId,
+        p_points: mission.reward_points,
+        p_reason: 'mission_self_validation',
+      });
+      
+      // Get the actual points awarded (with multiplier applied)
       const { data: player } = await supabase
         .from('players')
-        .select('mission_points')
+        .select('mission_points, roles!inner(points_multiplier)')
         .eq('id', playerId)
         .single();
-
-      if (player) {
-        await supabase
-          .from('players')
-          .update({
-            mission_points: (player.mission_points || 0) + mission.reward_points,
-          })
-          .eq('id', playerId);
-      }
+      
+      const multiplier = (player?.roles as unknown as { points_multiplier: number })?.points_multiplier ?? 1;
+      pointsAwarded = Math.round(mission.reward_points * multiplier);
     }
 
     await supabase.from('game_events').insert({
@@ -129,15 +131,18 @@ export async function POST(
         mission_id: missionId,
         title: mission.title,
         validation_type: 'self',
-        points_awarded: mission.reward_points,
+        points_awarded: pointsAwarded,
+        base_points: mission.reward_points,
       },
     });
 
     return NextResponse.json({ 
       assignment: updatedAssignment,
       isWinner: true,
-      pointsAwarded: mission.reward_points,
-      message: `Mission réussie ! +${mission.reward_points} points 🎉`,
+      pointsAwarded: pointsAwarded,
+      message: pointsAwarded > (mission.reward_points ?? 0)
+        ? `Mission réussie ! +${pointsAwarded} points (x1.5 Villageois) 🎉`
+        : `Mission réussie ! +${pointsAwarded} points 🎉`,
     });
   }
 

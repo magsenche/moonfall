@@ -64,6 +64,69 @@ async function forceBotWolfVotes(gameId: string, phase: number, aliveWolves: { i
 }
 
 /**
+ * Check if dead player was a Wild Child's model and transform the child into a wolf
+ */
+async function checkWildChildTransformation(supabase: Awaited<ReturnType<typeof createClient>>, gameId: string, deadPlayerId: string) {
+  // Check if dead player was someone's model
+  const { data: wildChildModel } = await supabase
+    .from("wild_child_models")
+    .select("id, child_player_id, transformed")
+    .eq("game_id", gameId)
+    .eq("model_player_id", deadPlayerId)
+    .eq("transformed", false)
+    .maybeSingle();
+
+  if (!wildChildModel) return null;
+
+  // Check if the wild child is still alive
+  const { data: wildChild } = await supabase
+    .from("players")
+    .select("id, pseudo, is_alive, role:roles(name)")
+    .eq("id", wildChildModel.child_player_id)
+    .single();
+
+  if (!wildChild || !wildChild.is_alive) return null;
+
+  // Get the loup_garou role id
+  const { data: wolfRole } = await supabase
+    .from("roles")
+    .select("id")
+    .eq("name", "loup_garou")
+    .single();
+
+  if (!wolfRole) return null;
+
+  // Transform the wild child into a wolf!
+  await supabase
+    .from("players")
+    .update({ role_id: wolfRole.id })
+    .eq("id", wildChildModel.child_player_id);
+
+  // Mark as transformed
+  await supabase
+    .from("wild_child_models")
+    .update({ transformed: true })
+    .eq("id", wildChildModel.id);
+
+  // Log the transformation event
+  await supabase.from("game_events").insert({
+    game_id: gameId,
+    event_type: "wild_child_transformed",
+    data: {
+      child_id: wildChildModel.child_player_id,
+      child_name: wildChild.pseudo,
+      model_id: deadPlayerId,
+      new_role: "loup_garou",
+    },
+  });
+
+  return {
+    childId: wildChildModel.child_player_id,
+    childPseudo: wildChild.pseudo,
+  };
+}
+
+/**
  * Auto-activate bot witch potions during night
  * Bot witches have a chance to save the wolf target and/or poison someone
  */
@@ -517,6 +580,50 @@ export async function POST(
     });
   }
 
+  // Check if Salvateur protected the victim
+  let salvateurSaved = false;
+  const { data: protection } = await supabase
+    .from("salvateur_protections")
+    .select("id, salvateur_player_id")
+    .eq("game_id", game.id)
+    .eq("protected_player_id", victimId)
+    .eq("phase", game.current_phase ?? 1)
+    .maybeSingle();
+
+  if (protection) {
+    salvateurSaved = true;
+
+    // Log the event
+    await supabase.from("game_events").insert({
+      game_id: game.id,
+      event_type: "salvateur_saved",
+      data: {
+        saved_id: victimId,
+        saved_name: victimInfo.pseudo,
+        salvateur_id: protection.salvateur_player_id,
+      },
+    });
+
+    // Transition to day without killing
+    const phaseEndsAt = new Date(Date.now() + jourDurationSeconds * 1000).toISOString();
+    await supabase
+      .from("games")
+      .update({ status: "jour", phase_ends_at: phaseEndsAt })
+      .eq("id", game.id);
+
+    await supabase.from("game_events").insert({
+      game_id: game.id,
+      event_type: "phase_change",
+      data: { from: "nuit", to: "jour", salvateurSaved: true },
+    });
+
+    return NextResponse.json({
+      success: true,
+      salvateurSaved: true,
+      message: `${victimInfo.pseudo} a été protégé par le Salvateur !`,
+    });
+  }
+
   // Check if Witch used life potion this phase
   const { data: witchLifePotion } = await supabase
     .from("power_uses")
@@ -634,6 +741,9 @@ export async function POST(
     },
   });
 
+  // Check if victim was a Wild Child's model → transform the child into a wolf
+  const wildChildTransformed = await checkWildChildTransformation(supabase, game.id, victimId);
+
   // Check if victim was a bot hunter and auto-shoot
   const hunterShot = await autoBotHunterShoot(supabase, game.id, victimId, game.current_phase ?? 1);
 
@@ -662,6 +772,9 @@ export async function POST(
           victim_role: (poisonVictim.role as { name: string } | null)?.name,
         },
       });
+
+      // Check if poison victim was a Wild Child's model
+      await checkWildChildTransformation(supabase, game.id, witchDeathPotion.target_id);
     }
   }
 

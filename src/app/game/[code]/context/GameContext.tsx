@@ -76,6 +76,10 @@ export interface GameContextType {
   isLittleGirl: boolean;
   isHunter: boolean;
   isWitch: boolean;
+  isSalvateur: boolean;
+  isAssassin: boolean;
+  isTrublion: boolean;
+  isWildChild: boolean;
 
   // Mode flags
   isAutoMode: boolean;
@@ -293,6 +297,10 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
   const isLittleGirl = currentRole?.name === 'petite_fille';
   const isHunter = currentRole?.name === 'chasseur';
   const isWitch = currentRole?.name === 'sorciere';
+  const isSalvateur = currentRole?.name === 'salvateur';
+  const isAssassin = currentRole?.name === 'assassin';
+  const isTrublion = currentRole?.name === 'trublion';
+  const isWildChild = currentRole?.name === 'enfant_sauvage';
   const isAlive = currentPlayer?.is_alive !== false;
 
   const wolves = useMemo(() => {
@@ -501,6 +509,10 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
       isLittleGirl,
       isHunter,
       isWitch,
+      isSalvateur,
+      isAssassin,
+      isTrublion,
+      isWildChild,
 
       // Mode flags
       isAutoMode,
@@ -629,6 +641,10 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
       isLittleGirl,
       isHunter,
       isWitch,
+      isSalvateur,
+      isAssassin,
+      isTrublion,
+      isWildChild,
       isAutoMode,
       voting,
       nightActionsHook,

@@ -3,14 +3,13 @@
  * Y2K Sticker aesthetic
  *
  * Uses GameContext - no props needed.
- * Shows role-specific actions for wolves, seer, witch, etc.
+ * Shows role-specific actions for wolves, seer, witch, salvateur, trublion, wild child, etc.
  */
 
 'use client';
 
 import { motion } from 'framer-motion';
 import { MotionCard, CardContent } from '@/components/ui';
-import { cn } from '@/lib/utils';
 import { useGame } from '../context';
 
 import {
@@ -20,25 +19,33 @@ import {
   WolfChatPanel,
   SeerPowerPanel,
   WitchNightPanel,
+  SalvateurNightPanel,
+  TrublionNightPanel,
+  WildChildModelPanel,
 } from './index';
 
 export function NightPhaseLayout() {
   const {
     game,
     currentPlayerId,
-    currentPlayer,
     currentRole,
     roleConfig,
     isWolf,
     isSeer,
     isLittleGirl,
     isWitch,
+    isSalvateur,
+    isTrublion,
+    isWildChild,
     wolves,
     alivePlayers,
     isAlive,
     nightActions,
     wolfChat,
   } = useGame();
+
+  // Check if player has a special night role
+  const hasNightRole = isWolf || isSeer || isWitch || isLittleGirl || isSalvateur || isTrublion || isWildChild;
 
   return (
     <div className="space-y-4">
@@ -69,9 +76,15 @@ export function NightPhaseLayout() {
                   ? "👁️ Vous pouvez sonder l'âme d'un joueur."
                   : isWitch
                     ? '🧪 Utilisez vos potions avec sagesse.'
-                    : isLittleGirl
-                      ? '👀 Vous espionnez discrètement les loups...'
-                      : '😴 Le village dort. Attendez le lever du jour...'}
+                    : isSalvateur
+                      ? '🛡️ Protégez un villageois des loups.'
+                      : isTrublion
+                        ? '🔀 Semez le chaos en échangeant des rôles !'
+                        : isWildChild
+                          ? '🧒 Votre modèle est-il toujours en vie ?'
+                          : isLittleGirl
+                            ? '👀 Vous espionnez discrètement les loups...'
+                            : '😴 Le village dort. Attendez le lever du jour...'}
             </p>
           </div>
         </CardContent>
@@ -138,8 +151,38 @@ export function NightPhaseLayout() {
         />
       )}
 
+      {/* Salvateur Protection */}
+      {isSalvateur && isAlive && (
+        <SalvateurNightPanel
+          alivePlayers={alivePlayers}
+          currentPlayerId={currentPlayerId}
+          gameCode={game.code}
+          gamePhase={game.current_phase ?? 1}
+        />
+      )}
+
+      {/* Trublion Role Swap */}
+      {isTrublion && isAlive && (
+        <TrublionNightPanel
+          alivePlayers={alivePlayers}
+          currentPlayerId={currentPlayerId}
+          gameCode={game.code}
+          gamePhase={game.current_phase ?? 1}
+        />
+      )}
+
+      {/* Wild Child Model Selection/Status */}
+      {isWildChild && isAlive && (
+        <WildChildModelPanel
+          alivePlayers={alivePlayers}
+          currentPlayerId={currentPlayerId}
+          gameCode={game.code}
+          gamePhase={game.current_phase ?? 1}
+        />
+      )}
+
       {/* Villagers just wait */}
-      {!isWolf && !isSeer && !isWitch && !isLittleGirl && (
+      {!hasNightRole && (
         <MotionCard 
           variant="sticker" 
           rotation={0.5}

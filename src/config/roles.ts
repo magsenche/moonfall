@@ -118,6 +118,42 @@ const FALLBACK_CONFIGS: Record<string, RoleConfig> = {
     shortDescription: 'Survit à une attaque',
     assets: { icon: '👴', color: 'text-stone-400', bgColor: 'bg-stone-500/20' },
   },
+  salvateur: {
+    id: 'salvateur',
+    name: 'salvateur',
+    displayName: 'Salvateur',
+    team: 'village',
+    description: 'Chaque nuit, protège un joueur de l\'attaque des loups. Ne peut pas protéger la même personne deux nuits de suite.',
+    shortDescription: 'Protège un joueur la nuit',
+    assets: { icon: '🛡️', color: 'text-cyan-400', bgColor: 'bg-cyan-500/20' },
+  },
+  assassin: {
+    id: 'assassin',
+    name: 'assassin',
+    displayName: 'Assassin',
+    team: 'solo',
+    description: 'Joue seul. Peut tuer un joueur une fois dans la partie. Gagne s\'il est le dernier survivant.',
+    shortDescription: 'Tue un joueur, gagne seul',
+    assets: { icon: '🗡️', color: 'text-rose-400', bgColor: 'bg-rose-500/20' },
+  },
+  trublion: {
+    id: 'trublion',
+    name: 'trublion',
+    displayName: 'Trublion',
+    team: 'village',
+    description: 'Une fois par partie, échange secrètement les rôles de deux autres joueurs pendant la nuit.',
+    shortDescription: 'Échange les rôles de 2 joueurs',
+    assets: { icon: '🔀', color: 'text-violet-400', bgColor: 'bg-violet-500/20' },
+  },
+  enfant_sauvage: {
+    id: 'enfant_sauvage',
+    name: 'enfant_sauvage',
+    displayName: 'Enfant Sauvage',
+    team: 'village',
+    description: 'Choisit un modèle au début de la partie. Si son modèle meurt, il devient un Loup-Garou.',
+    shortDescription: 'Devient loup si son modèle meurt',
+    assets: { icon: '🧒', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20' },
+  },
 };
 
 // Unknown role fallback

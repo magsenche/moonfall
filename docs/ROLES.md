@@ -4,17 +4,19 @@
 
 ## Rôles Implémentés 🎮
 
-### Rôles Village (7 rôles)
+### Rôles Village (10 rôles)
 
 | Rôle | Pouvoir IRL | Status | Notes Techniques |
 |------|-------------|--------|------------------|
-| **Villageois** | Aucun | ✅ Implémenté | Vote standard |
+| **Villageois** | Aucun | ✅ Implémenté | Vote standard, **x1.5 mission points** ✅ |
 | **Voyante** | Voit le rôle d'un joueur chaque nuit | ✅ Implémenté | Historique persistant, icône équipe |
 | **Petite Fille** | Accès lecture seule chat loups | ✅ Implémenté | Pseudos loups masqués ("🐺 ???") |
 | **Ancien** | Survit à la 1ère attaque | ✅ Implémenté | Passif géré par `resolveNightVote` |
 | **Chasseur** | Tire à sa mort | ✅ Implémenté | `HunterDeathModal` + API dédiée |
 | **Sorcière** | Potions Vie/Mort | ✅ Implémenté | `WitchNightPanel`, 1 usage unique/potion |
-| **Salvateur** | Protège un joueur | ⏳ À faire | - |
+| **Salvateur** | Protège un joueur chaque nuit | ✅ Implémenté | `SalvateurNightPanel`, pas 2x de suite même cible |
+| **Trublion** | Échange les rôles de 2 joueurs | ✅ Implémenté | `TrublionNightPanel`, 1x par partie |
+| **Enfant Sauvage** | Devient loup si modèle meurt | ✅ Implémenté | `WildChildModelPanel`, transformation auto |
 
 ### Rôles Loups
 
@@ -22,12 +24,17 @@
 |------|-------------|--------|------------------|
 | **Loup-Garou** | Dévore un villageois, chat privé | ✅ Implémenté | Vote de nuit majoritaire |
 
+### Rôles Solo
+
+| Rôle | Pouvoir IRL | Status | Notes Techniques |
+|------|-------------|--------|------------------|
+| **Assassin** | Tue un joueur (1x), gagne seul | ✅ Implémenté | `AssassinPowerPanel`, utilisable jour/nuit |
+
 ### Rôles futurs
 
 | Rôle | Équipe | Pouvoir IRL |
 |------|--------|-------------|
 | **Cupidon** | 🔵 Village | En début de partie, désigne 2 amoureux. Si l'un meurt → l'autre meurt aussi (notification) |
-| **Salvateur** | 🔵 Village | Chaque nuit, protège un joueur. Si les loups le ciblent → survit. Ne peut pas se protéger 2x de suite. |
 | **Loup Blanc** | ⚪ Solo | Loup-garou visible dans le chat loup, mais une nuit sur deux peut tuer un loup secrètement |
 | **Ange** | ⚪ Solo | Gagne immédiatement s'il est éliminé au **premier** conseil. Sinon devient Villageois. |
 | **Corbeau** | 🔵 Village | Chaque nuit, désigne un joueur qui aura +2 votes contre lui au prochain conseil |
@@ -142,15 +149,7 @@ Algorithme actuel dans `/api/games/[code]/start/` :
 
 ---
 
-## 🔧 Implémentation des nouveaux rôles
-
-> Les rôles Petite Fille, Ancien, Chasseur et Sorcière sont maintenant **implémentés**. Voir les fichiers :
-> - `src/app/game/[code]/components/HunterDeathModal.tsx`
-> - `src/app/game/[code]/components/WitchNightPanel.tsx`
-> - `src/app/api/games/[code]/power/hunter/` et `witch/`
-> - `src/lib/help/role-details.ts` pour les descriptions
-
-### Cupidon 💘 (Complexe - À faire)
+## 🔧 Rôle à implémenter : Cupidon 💘
 
 **Concept IRL** : Désigne 2 amoureux en début de partie.
 
@@ -211,38 +210,16 @@ async function checkLoversDeath(deadPlayerId: string) {
 
 ---
 
-## ✅ Implémenté
+## ⏳ À faire - Futurs rôles
 
-- [x] Distribution des 3 rôles MVP (Villageois, Loup-Garou, Voyante)
-- [x] Handlers de rôles avec interface extensible
-- [x] Pouvoir Voyante (voir un rôle la nuit)
-- [x] Chat privé des loups
-- [x] Vote nuit des loups
-- [x] Distribution custom par MJ (settings partie)
-- [x] **Petite Fille** - Lecture seule chat loups
-- [x] **Ancien** - Survit 1x à l'attaque des loups (pouvoir passif `elder_survival`)
-- [x] **Chasseur** - Emporte quelqu'un à sa mort (HunterDeathModal + API)
-- [x] **Sorcière** - Potions vie/mort (WitchNightPanel + API)
-
-## 🔄 En cours
-
-(Aucun)
-
-## ⏳ À faire - Rôles IRL
-
-### Priorité 1 (Moyen)
-- [ ] **Salvateur** - Protège un joueur la nuit
-
-### Priorité 2 (Complexe)
-- [ ] **Cupidon** - Amoureux liés
+### Priorité haute
+- [ ] **Cupidon** - Amoureux liés (complexe, voir section dédiée ci-dessus)
 
 ### Backlog
-- [ ] **Corbeau** - +2 votes contre un joueur
+- [ ] **Corbeau** - +2 votes contre un joueur désigné
 - [ ] **Loup Blanc** - Loup solo qui peut tuer un loup
 - [ ] **Ange** - Gagne s'il meurt au 1er conseil
 
 ---
 
-*Voir aussi: [INFINITE_MODE.md](./INFINITE_MODE.md) pour le mode respawn*
-
-*Voir aussi: [MISSIONS_DESIGN.md](./MISSIONS_DESIGN.md)*
+*Dernière mise à jour: 30/12/2025*
