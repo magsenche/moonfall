@@ -1,6 +1,7 @@
 'use client';
 
 import { Component, ReactNode } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import { MotionButton } from '@/components/ui';
 
 interface Props {
@@ -35,10 +36,12 @@ export class ErrorBoundary extends Component<Props, State> {
     // Log to console in development
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
-    // TODO: Send to monitoring service (Sentry, etc.)
-    // if (typeof window !== 'undefined' && window.Sentry) {
-    //   window.Sentry.captureException(error, { extra: errorInfo });
-    // }
+    // Send to Sentry
+    Sentry.captureException(error, {
+      extra: {
+        componentStack: errorInfo.componentStack,
+      },
+    });
   }
 
   handleRetry = () => {

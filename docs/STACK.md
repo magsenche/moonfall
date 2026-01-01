@@ -36,6 +36,15 @@
 - **Web Push** : Notifications VAPID (changements de phase, missions)
 - **iOS Support** : Gestion du cycle de vie (visibility change refresh), safe-areas
 
+## Monitoring & Sécurité
+
+| Composant | Technologie |
+|-----------|-------------|
+| Error Tracking | Sentry (`@sentry/nextjs`) |
+| Rate Limiting | Custom in-memory (création/join parties) |
+| Error Boundary | React ErrorBoundary global |
+| Health Check | `/api/health` endpoint |
+
 ## Outils Dev
 
 - **Bots** : API pour ajouter/retirer des bots (`/api/games/[code]/bots`)
@@ -71,6 +80,9 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
 
 # Web Push (VAPID)
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=BPxxx...
+
+# Sentry (error monitoring - optional but recommended)
+NEXT_PUBLIC_SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
 ```
 
 ## Structure du projet
