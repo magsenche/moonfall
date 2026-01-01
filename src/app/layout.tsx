@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/lib/auth";
+import { ErrorBoundary } from "@/components/ui";
 import "./globals.css";
 
 const inter = Inter({
@@ -12,6 +13,14 @@ export const metadata: Metadata = {
   title: "Moonfall - Loup-Garou Grandeur Nature",
   description: "Jouez au Loup-Garou en conditions réelles avec vos amis",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -37,9 +46,11 @@ export default function RootLayout({
       <body
         className={`${inter.variable} font-sans antialiased bg-slate-950 text-white min-h-screen`}
       >
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

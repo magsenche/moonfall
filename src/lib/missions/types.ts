@@ -98,6 +98,10 @@ export const MISSION_CATEGORY_LABELS: Record<MissionCategory, string> = {
   external: '🎮 Jeu externe',
   photo: '📸 Photo',
   auction: '💰 Enchère',
+  comportement: '🎭 Comportement',
+  physique: '💪 Physique',
+  gameplay: '🎲 Gameplay',
+  viral: '📱 Viral',
 };
 
 export const VALIDATION_TYPE_LABELS: Record<MissionValidationType, string> = {
@@ -126,4 +130,8 @@ export const CATEGORY_ICONS: Record<MissionCategory, string> = {
   external: '🎮',
   photo: '📸',
   auction: '💰',
+  comportement: '🎭',
+  physique: '💪',
+  gameplay: '🎲',
+  viral: '📱',
 };

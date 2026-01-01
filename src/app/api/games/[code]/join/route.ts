@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { rateLimit, getClientIp, RATE_LIMITS } from '@/lib/utils/rate-limit';
 
 // POST /api/games/[code]/join - Join a game or rejoin by pseudo
 export async function POST(
@@ -7,6 +8,24 @@ export async function POST(
   { params }: { params: Promise<{ code: string }> }
 ) {
   try {
+    // Rate limiting
+    const ip = getClientIp(request);
+    const rateLimitResult = rateLimit(`join-game:${ip}`, RATE_LIMITS.joinGame);
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Trop de requêtes. Réessaie dans quelques instants.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rateLimitResult.resetAt),
+          }
+        }
+      );
+    }
+
     const { code } = await params;
     const { pseudo, rejoin } = await request.json();
 

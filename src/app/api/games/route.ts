@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateGameCode } from '@/lib/utils';
+import { rateLimit, getClientIp, RATE_LIMITS } from '@/lib/utils/rate-limit';
 import { DEFAULT_GAME_SETTINGS } from '@/types/game';
 import type { Json } from '@/types/database';
 
 // POST /api/games - Create a new game
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIp(request);
+    const rateLimitResult = rateLimit(`create-game:${ip}`, RATE_LIMITS.createGame);
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Trop de requêtes. Réessaie dans quelques instants.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rateLimitResult.resetAt),
+          }
+        }
+      );
+    }
+
     const { name, pseudo } = await request.json();
 
     if (!name || !pseudo) {
