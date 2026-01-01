@@ -184,13 +184,53 @@ get_logs             # Debug
 
 ---
 
+## Scheduled Jobs (pg_cron)
+
+### cleanup-old-games
+
+Nettoie automatiquement les vieilles parties pour éviter le bloat de la DB.
+
+**Schedule:** `0 3 * * *` (tous les jours à 3h UTC)
+
+**Actions:**
+- Supprime les parties `terminee` de plus de 7 jours
+- Supprime les parties `lobby` abandonnées (pas d'activité depuis 24h)
+
+**Fonction:** `public.cleanup_old_games()`
+
+```sql
+-- Vérifier le job
+SELECT jobname, schedule, active FROM cron.job;
+
+-- Voir l'historique d'exécution
+SELECT * FROM cron.job_run_details 
+ORDER BY start_time DESC LIMIT 10;
+
+-- Exécuter manuellement
+SELECT public.cleanup_old_games();
+```
+
+---
+
+## Optimisations appliquées
+
+### Indexes (migration 005)
+
+- 18 indexes sur les foreign keys (players, votes, wolf_chat, etc.)
+- 4 indexes composites pour les requêtes fréquentes
+- Index partiel sur `players(game_id) WHERE is_alive = true`
+
+### RLS Policies
+
+- Optimisées avec `(SELECT auth.uid())` pour éviter la ré-évaluation
+- Policies dupliquées supprimées
+
+---
+
 ## À faire
 
-- [ ] RLS policies strictes (actuellement anon access pour prototype)
-- [ ] Indexes sur les colonnes fréquemment requêtées
-- [ ] Backup automatique
+- [ ] Backup automatique off-site
 - [ ] Monitoring performances (pg_stat_statements)
-- [ ] Row-level security pour multi-tenant
 
 ---
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 import type { Database } from '@/types/database';
 
 const supabase = createClient<Database>(
@@ -9,23 +10,31 @@ const supabase = createClient<Database>(
 
 type VoteType = Database['public']['Enums']['vote_type'];
 
+const voteSchema = z.object({
+  voterId: z.string().uuid('Voter ID invalide'),
+  targetId: z.string().uuid('Target ID invalide').nullable(),
+  voteType: z.enum(['jour', 'nuit_loup', 'pouvoir']).optional().default('jour'),
+});
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
   const { code } = await params;
   
-  // Parse request body
+  // Parse and validate request body
   const body = await request.json();
-  const { voterId, targetId, voteType = 'jour' } = body as {
-    voterId: string;
-    targetId: string | null;
-    voteType?: VoteType;
-  };
-
-  if (!voterId) {
-    return NextResponse.json({ error: 'Voter ID requis' }, { status: 400 });
+  const parsed = voteSchema.safeParse(body);
+  
+  if (!parsed.success) {
+    const error = parsed.error.errors[0];
+    return NextResponse.json(
+      { error: error.message },
+      { status: 400 }
+    );
   }
+  
+  const { voterId, targetId, voteType } = parsed.data;
 
   // Get game and validate
   const { data: game, error: gameError } = await supabase

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
+import { wolfChatSchema, parseBody } from "@/lib/api/validation";
 
 // GET - Get wolf chat messages
 export async function GET(
@@ -44,14 +45,18 @@ export async function POST(
 ) {
   const { code } = await params;
   const body = await request.json();
-  const { playerId, message } = body;
-
-  if (!playerId || !message?.trim()) {
+  
+  // Validate input
+  const parsed = parseBody(body, wolfChatSchema);
+  
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "playerId et message requis" },
+      { error: parsed.error },
       { status: 400 }
     );
   }
+  
+  const { playerId, message } = parsed.data;
 
   const supabase = createClient();
 

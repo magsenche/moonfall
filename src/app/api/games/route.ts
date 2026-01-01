@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateGameCode } from '@/lib/utils';
 import { rateLimit, getClientIp, RATE_LIMITS } from '@/lib/utils/rate-limit';
+import { createGameSchema, parseBody } from '@/lib/api/validation';
 import { DEFAULT_GAME_SETTINGS } from '@/types/game';
 import type { Json } from '@/types/database';
 
@@ -26,14 +27,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, pseudo } = await request.json();
-
-    if (!name || !pseudo) {
+    // Validate input
+    const body = await request.json();
+    const parsed = parseBody(body, createGameSchema);
+    
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Le nom de la partie et ton pseudo sont requis' },
+        { error: parsed.error },
         { status: 400 }
       );
     }
+    
+    const { name, pseudo } = parsed.data;
 
     const supabase = await createClient();
     

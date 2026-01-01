@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit, getClientIp, RATE_LIMITS } from '@/lib/utils/rate-limit';
+import { joinGameSchema, parseBody } from '@/lib/api/validation';
 
 // POST /api/games/[code]/join - Join a game or rejoin by pseudo
 export async function POST(
@@ -27,14 +28,19 @@ export async function POST(
     }
 
     const { code } = await params;
-    const { pseudo, rejoin } = await request.json();
-
-    if (!pseudo) {
+    
+    // Validate input
+    const body = await request.json();
+    const parsed = parseBody(body, joinGameSchema);
+    
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Un pseudo est requis' },
+        { error: parsed.error },
         { status: 400 }
       );
     }
+    
+    const { pseudo, rejoin } = parsed.data;
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
