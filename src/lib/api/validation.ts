@@ -87,7 +87,7 @@ export const createMissionSchema = z.object({
 /** POST /api/games/[code]/missions/[id]/submit */
 export const submitMissionSchema = z.object({
   playerId: uuidSchema,
-  submissionData: z.record(z.unknown()).optional(),
+  submissionData: z.record(z.string(), z.unknown()).optional(),
 });
 
 /** POST /api/games/[code]/missions/[id]/bid */
@@ -183,7 +183,7 @@ export function parseBody<T>(body: unknown, schema: z.ZodSchema<T>): ParseResult
   
   if (!result.success) {
     // Get first error message
-    const firstError = result.error.errors[0];
+    const firstError = result.error.issues[0];
     const path = firstError.path.join('.');
     const message = path ? `${path}: ${firstError.message}` : firstError.message;
     

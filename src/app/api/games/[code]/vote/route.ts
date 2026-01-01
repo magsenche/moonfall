@@ -27,7 +27,7 @@ export async function POST(
   const parsed = voteSchema.safeParse(body);
   
   if (!parsed.success) {
-    const error = parsed.error.errors[0];
+    const error = parsed.error.issues[0];
     return NextResponse.json(
       { error: error.message },
       { status: 400 }
