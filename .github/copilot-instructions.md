@@ -2,7 +2,7 @@
 
 > App web pour jouer au Loup-Garou IRL avec missions réelles.
 
-🔗 **Production :** https://moonfall.vercel.app
+🔗 **Production :** https://moonfall.fr
 
 ## Concept
 Chaque joueur reçoit un rôle secret. Missions IRL + conseils réguliers avec éliminations par vote.

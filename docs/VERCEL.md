@@ -5,7 +5,7 @@
 ## Configuration
 
 **Projet:** moonfall  
-**URL Production:** https://moonfall.vercel.app  
+**URL Production:** https://moonfall.fr  
 **Dashboard:** https://vercel.com/magsenche/moonfall
 
 ---
@@ -79,8 +79,9 @@ npm run build
 
 | Type | URL |
 |------|-----|
-| Production | moonfall.vercel.app |
-| Custom (futur) | moonfall.app (à configurer) |
+| Production | moonfall.fr |
+| Alias | moonfall.vercel.app |
+| Redirect | www.moonfall.fr → moonfall.fr |
 
 ---
 
@@ -138,9 +139,9 @@ Pour les opérations longues, utiliser des Edge Functions Supabase.
 
 ## À faire
 
-- [ ] Domaine custom moonfall.app
+- [x] Domaine custom moonfall.fr ✅
 - [ ] Vercel Analytics
-- [ ] Error tracking (Sentry)
+- [x] Error tracking (Sentry) ✅
 - [ ] Optimisation des API Routes (Edge Runtime)
 - [ ] Rate limiting sur les endpoints publics
 

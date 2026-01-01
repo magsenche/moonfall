@@ -18,7 +18,7 @@
 
 ## Liens rapides
 
-- 🔗 **Production:** https://moonfall.vercel.app
+- 🔗 **Production:** https://moonfall.fr
 - 📦 **Repo:** https://github.com/magsenche/moonfall
 - 🗄️ **Supabase:** https://supabase.com/dashboard (projet Moonfall)
 - 🚀 **Vercel:** https://vercel.com/magsenche/moonfall
