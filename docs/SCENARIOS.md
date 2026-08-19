@@ -40,7 +40,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 (`src/lib/game/resolution.test.ts`) se lancent avec `npm run test:unit`
 (runner natif `node --test`, aucune dépendance).
 
-## Couverture actuelle (20 scénarios)
+## Couverture actuelle (21 scénarios)
 
 | Scénario | Ce qui est validé |
 |----------|-------------------|
@@ -59,6 +59,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 | `assassin-amoureux` | La cascade chagrin s'applique aussi à un assassinat |
 | `chasseur-amoureux` | La cascade chagrin s'applique aussi au tir du chasseur |
 | `enfant-sauvage` | Transformation en loup à la mort du modèle, chasse avec la meute |
+| `resolution-concurrente` | Verrou de résolution : deux resolve simultanés (nuit puis conseil) → un seul passe (409 pour l'autre), une seule victime |
 | `partie-classique` | Préréglage Classique : composition starter (2🐺 1🔮 1🧙 1🔫 3👨‍🌾 à 8 joueurs), missions et boutique verrouillées côté API, partie jouable |
 | `missions-points` | Compétitives `first_wins`/`best_score` : vainqueur, points crédités (difficulté ×2 × multiplicateur de rôle), soumission unique, non-assigné refusé |
 | `missions-collective` | Tout le village crédité à la validation MJ (loup ×1, villageois ×1.5), échec sans points, création réservée au MJ |

@@ -13,6 +13,7 @@
 
 'use client';
 
+import { useMemo } from 'react';
 import { GameProvider, TimerProvider, useGame, useTimerContext } from './context';
 import { GameLayout } from './components/GameLayout';
 import { useAutoGarou } from './hooks';
@@ -34,12 +35,23 @@ function GameLogic() {
   const { game, gameStatus, isAutoMode, currentPlayerId } = useGame();
   const { isExpired } = useTimerContext();
 
+  // Ordre de secours déterministe et identique sur tous les clients :
+  // MJ en premier (le plus engagé), puis les joueurs par id croissant.
+  const fallbackIndex = useMemo(() => {
+    const ids = game.players.map((p) => p.id).sort();
+    const mjId = game.players.find((p) => p.is_mj)?.id;
+    const ordered = mjId ? [mjId, ...ids.filter((id) => id !== mjId)] : ids;
+    const index = currentPlayerId ? ordered.indexOf(currentPlayerId) : -1;
+    return index >= 0 ? index : ordered.length;
+  }, [game.players, currentPlayerId]);
+
   useAutoGarou({
     gameCode: game.code,
     gameStatus: gameStatus as 'lobby' | 'jour' | 'nuit' | 'conseil' | 'terminee',
     isAutoMode,
     isExpired,
     currentPlayerId,
+    fallbackIndex,
   });
 
   return null; // No UI, just logic

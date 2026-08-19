@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 import { applyDeathCascade, endGameIfVictory } from '@/lib/game/deaths';
 import { isAutoMode, tallyVotes } from '@/lib/game/resolution';
+import { acquirePhaseLock } from '@/lib/game/phaseLock';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -168,7 +169,7 @@ export async function POST(
   // Get game with settings
   const { data: game, error: gameError } = await supabase
     .from('games')
-    .select('id, status, current_phase, settings')
+    .select('id, status, current_phase, settings, phase_ends_at')
     .eq('code', code)
     .single();
 
@@ -181,6 +182,17 @@ export async function POST(
       { error: 'La résolution n\'est possible que pendant le conseil' },
       { status: 400 }
     );
+  }
+
+  // Un seul résolveur à la fois : plusieurs clients auto-résolvent au timer,
+  // sans verrou deux appels simultanés élimineraient deux joueurs
+  const lockAcquired = await acquirePhaseLock(supabase, {
+    id: game.id,
+    status: 'conseil',
+    phase_ends_at: game.phase_ends_at,
+  });
+  if (!lockAcquired) {
+    return NextResponse.json({ error: 'Résolution déjà en cours' }, { status: 409 });
   }
 
   // Get settings for night duration
