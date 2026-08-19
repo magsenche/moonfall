@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../context';
 import { getRoleConfig } from '@/config/roles';
 import { GameOver, TipToast, RulesButton, PhaseBackground, MissionsDrawer } from '@/components/game';
+import { GhostBanner } from './GhostBanner';
 
 import { SessionRecovery } from './SessionRecovery';
 import { HunterDeathModal } from './HunterDeathModal';
@@ -36,6 +37,7 @@ export function GameLayout() {
     nightActions,
     missionsEnabled,
     isAutoMode,
+    isAlive,
   } = useGame();
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -99,6 +101,9 @@ export function GameLayout() {
       <div className="relative z-10 max-w-lg mx-auto px-4 pt-8 pb-24">
         {/* Unified Header - Dynamic Island style */}
         <GameHeader />
+
+        {/* Fantôme : le mort devient spectateur omniscient */}
+        {currentPlayerId && !isAlive && <GhostBanner />}
 
         {/* Phase-specific layout with animations */}
         <AnimatePresence mode="wait">

@@ -25,6 +25,8 @@ interface PlayersListProps {
   isWolf: boolean;
   wolves: PartialPlayer[];
   isAutoMode?: boolean;
+  /** Le spectateur est mort : il devient omniscient et voit tous les rôles */
+  viewerIsDead?: boolean;
 }
 
 export function PlayersList({
@@ -35,6 +37,7 @@ export function PlayersList({
   isWolf,
   wolves,
   isAutoMode = false,
+  viewerIsDead = false,
 }: PlayersListProps) {
   // In Auto-Garou mode, MJ plays too - include them in the list
   const playersToShow = isAutoMode ? players : players.filter(p => !p.is_mj);
@@ -67,8 +70,9 @@ export function PlayersList({
             const playerRole = roles.find(r => r.id === player.role_id);
             const pRoleConfig = playerRole ? getRoleConfig(playerRole.name) : null;
             const isDead = player.is_alive === false;
-            // MJ can see all roles, wolves can see other wolves
-            const canSeeRole = isMJ || isCurrentPlayer || (isWolf && wolves.some(w => w.id === player.id));
+            // MJ and dead viewers see all roles, wolves see other wolves
+            const canSeeRole =
+              isMJ || viewerIsDead || isCurrentPlayer || (isWolf && wolves.some(w => w.id === player.id));
             
             const avatar = getDefaultAvatar(player.id);
             const color = getDefaultColor(player.id);
@@ -87,7 +91,7 @@ export function PlayersList({
                   'shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]',
                   isCurrentPlayer
                     ? 'bg-night-700/50 border-village-400'
-                    : isMJ && playerRole?.team === 'loups'
+                    : (isMJ || viewerIsDead) && playerRole?.team === 'loups'
                       ? 'bg-blood-700/30 border-blood-500/50'
                       : 'bg-night-800/80 border-white/30'
                 )}

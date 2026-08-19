@@ -355,6 +355,7 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
     currentPlayerId,
     isWolf,
     isLittleGirl,
+    isGhost: !!currentPlayer && !isAlive,
   });
 
   const missionsHook = useMissions({

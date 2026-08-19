@@ -49,6 +49,14 @@
 | 🔴 Loups | Égaler ou dépasser le nombre de villageois | Rouge |
 | ⚪ Solo | Objectif personnel (ex: Ange = mourir au 1er vote) | Gris |
 
+### 👻 Les morts
+
+Mourir ne doit pas vouloir dire s'ennuyer : un joueur mort devient
+**spectateur omniscient** — il voit les rôles de tous les joueurs dans la
+liste et lit le chat des loups (lecture seule), avec un bandeau qui lui
+rappelle la règle d'or : les morts ne parlent pas. Règle IRL à annoncer en
+début de partie.
+
 ---
 
 ## Architecture Technique

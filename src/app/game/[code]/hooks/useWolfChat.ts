@@ -19,6 +19,8 @@ interface UseWolfChatOptions {
   currentPlayerId: string | null;
   isWolf: boolean;
   isLittleGirl?: boolean;
+  /** Spectateur mort : lecture seule du chat des loups */
+  isGhost?: boolean;
 }
 
 export function useWolfChat({
@@ -28,6 +30,7 @@ export function useWolfChat({
   currentPlayerId,
   isWolf,
   isLittleGirl = false,
+  isGhost = false,
 }: UseWolfChatOptions) {
   const supabase = createClient();
   
@@ -35,8 +38,8 @@ export function useWolfChat({
   const [newMessage, setNewMessage] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
 
-  // Can read wolf chat (wolf or little girl)
-  const canReadWolfChat = isWolf || isLittleGirl;
+  // Can read wolf chat (wolf, little girl, or ghost spectator)
+  const canReadWolfChat = isWolf || isLittleGirl || isGhost;
 
   // Fetch wolf messages
   const fetchWolfMessages = useCallback(async () => {

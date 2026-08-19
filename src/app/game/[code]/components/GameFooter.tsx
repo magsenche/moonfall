@@ -186,6 +186,7 @@ export function GameFooter() {
         isWolf={isWolf}
         wolves={wolves}
         isAutoMode={isAutoMode}
+        viewerIsDead={!isAlive}
       />
 
       {/* MJ Overview Panel - Hidden in Auto-Garou mode */}
