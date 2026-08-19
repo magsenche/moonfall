@@ -159,12 +159,19 @@ VALUES
 
 ## Distribution des rôles
 
-Algorithme actuel dans `/api/games/[code]/start/` :
+Trois modes dans `/api/games/[code]/start/` :
 
-1. Calculer le nombre de loups (1 pour 4-6 joueurs, 2 pour 7-10, etc.)
-2. Ajouter 1 Voyante
-3. Remplir le reste avec des Villageois
-4. Mélanger et assigner aléatoirement
+1. **Partie classique** (`settings.classicComposition`) — composition starter
+   calculée au démarrage selon le nombre de joueurs présents
+   (`src/lib/game/composition.ts`, pure et testée) : ~1 loup pour 4 joueurs,
+   voyante dès 4, sorcière dès 6, chasseur dès 7, reste villageois. Le
+   préréglage « Classique » du lobby l'active et désactive missions/boutique
+   (`missionsEnabled`/`shopEnabled` à false) pour une première partie épurée.
+2. **Distribution personnalisée** (`settings.rolesDistribution`) — comptes par
+   rôle configurés par le MJ dans le lobby.
+3. **Automatique** (défaut) — ~1/3 loups, 1 voyante, reste villageois.
+
+Dans tous les cas : mélange et assignation aléatoires.
 
 ---
 

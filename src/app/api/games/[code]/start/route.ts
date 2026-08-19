@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { shuffle } from '@/lib/utils/game';
+import { classicComposition } from '@/lib/game/composition';
 import type { GameSettings } from '@/types/game';
 
 // POST /api/games/[code]/start - Start the game and distribute roles
@@ -88,15 +89,31 @@ export async function POST(
 
     const playerCount = players.length;
     const customDistribution = settings.rolesDistribution || {};
-    
+
     // Check if we have a custom distribution configured
     const totalCustomRoles = Object.values(customDistribution).reduce((a, b) => a + b, 0);
-    const useCustomDistribution = totalCustomRoles > 0;
+    const useClassic = settings.classicComposition === true;
+    const useCustomDistribution = !useClassic && totalCustomRoles > 0;
 
     // Build roles array
     let rolesArray: string[] = [];
-    
-    if (useCustomDistribution) {
+
+    if (useClassic) {
+      // Partie classique : composition starter calculée au démarrage selon le
+      // nombre de joueurs présents (robuste aux arrivées tardives dans le lobby)
+      for (const [roleName, count] of Object.entries(classicComposition(playerCount))) {
+        const roleId = roleMap.get(roleName);
+        if (!roleId) {
+          return NextResponse.json(
+            { error: `Rôle requis par la partie classique absent en base : ${roleName}` },
+            { status: 500 }
+          );
+        }
+        for (let i = 0; i < count; i++) {
+          rolesArray.push(roleId);
+        }
+      }
+    } else if (useCustomDistribution) {
       // Use custom distribution from settings
       if (totalCustomRoles !== playerCount) {
         return NextResponse.json(
@@ -204,7 +221,11 @@ export async function POST(
         player_count: playerCount,
         wolf_count: wolfCount,
         custom_distribution: useCustomDistribution,
-        roles_distribution: useCustomDistribution ? customDistribution : 'auto',
+        roles_distribution: useClassic
+          ? 'classique'
+          : useCustomDistribution
+            ? customDistribution
+            : 'auto',
         auto_mode: isAutoMode,
       }
     });
