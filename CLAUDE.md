@@ -31,9 +31,12 @@ Storage, Edge Functions) · Web Push VAPID · Sentry · Vercel (CD sur main) · 
 - `npm run dev` · `npm run build` · `npm run lint`
 - `npx tsc --noEmit` — le vert de `tsc` + `build` est requis avant tout push
 - `npm run supabase:types` — régénère `src/types/supabase.ts` après une migration
-- Pas de suite de tests automatisés à ce jour : la validation se fait par build,
-  tsc, lint et parcours visuel du mode Démo (partie avec bots,
-  `/api/games/[code]/bots`).
+- `npm run scenarios` — runner de scénarios API (logique de jeu de bout en bout,
+  dev server requis ; voir `docs/SCENARIOS.md`) · `npm run test:unit` — tests
+  unitaires des fonctions pures (`node --test`, zéro dépendance).
+- Validation avant push : tsc + build + lint, scénarios verts pour tout
+  changement de logique de jeu, et parcours visuel du mode Démo (partie avec
+  bots, `/api/games/[code]/bots`) pour les changements d'UI.
 - Env local : `cp .env.local.example .env.local` (les clés `NEXT_PUBLIC_SUPABASE_*`
   sont publiques by design ; `SUPABASE_SERVICE_ROLE_KEY` ne quitte jamais
   Vercel/local).
