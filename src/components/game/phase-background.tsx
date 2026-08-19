@@ -1,13 +1,14 @@
 'use client';
 
 /**
- * PhaseBackground - Layered Y2K background with textures and floating elements
- * 
- * Creates an immersive background that changes based on the current game phase.
- * Uses noise overlays, grid patterns, and floating player avatars.
+ * PhaseBackground — décor "Nuit de village".
+ *
+ * Chaque phase a sa propre scène (lune et étoiles la nuit, halo de
+ * soleil le jour, braises au conseil) et le changement de phase se
+ * fait en fondu croisé : c'est LE moment de mise en scène du jeu.
  */
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
 import { getDefaultAvatar, getDefaultColor } from '@/config/players';
@@ -21,39 +22,108 @@ interface PhaseBackgroundProps {
   className?: string;
 }
 
-// Phase-specific color configurations
-const phaseColors = {
-  lobby: {
-    primary: 'from-zinc-900 via-zinc-800 to-zinc-900',
-    blob1: 'bg-indigo-600/20',
-    blob2: 'bg-purple-600/15',
-    accent: 'bg-indigo-500/10',
-  },
-  jour: {
-    primary: 'from-amber-950/50 via-orange-950/30 to-zinc-900',
-    blob1: 'bg-amber-500/20',
-    blob2: 'bg-orange-500/15',
-    accent: 'bg-yellow-500/10',
-  },
-  nuit: {
-    primary: 'from-indigo-950 via-slate-900 to-zinc-950',
-    blob1: 'bg-indigo-800/30',
-    blob2: 'bg-purple-900/25',
-    accent: 'bg-blue-600/10',
-  },
-  conseil: {
-    primary: 'from-purple-950/50 via-red-950/30 to-zinc-900',
-    blob1: 'bg-purple-700/25',
-    blob2: 'bg-red-800/20',
-    accent: 'bg-rose-500/10',
-  },
-  terminee: {
-    primary: 'from-zinc-900 via-slate-800 to-zinc-900',
-    blob1: 'bg-emerald-600/20',
-    blob2: 'bg-teal-600/15',
-    accent: 'bg-green-500/10',
-  },
+const STARS = [
+  { left: '10%', top: '8%', size: 2 },
+  { left: '25%', top: '18%', size: 1 },
+  { left: '38%', top: '6%', size: 1.5 },
+  { left: '52%', top: '14%', size: 1 },
+  { left: '67%', top: '5%', size: 2 },
+  { left: '78%', top: '20%', size: 1 },
+  { left: '90%', top: '10%', size: 1.5 },
+  { left: '18%', top: '38%', size: 1 },
+  { left: '85%', top: '34%', size: 1 },
+  { left: '45%', top: '30%', size: 1 },
+];
+
+/* Dégradé de fond par phase */
+const phaseGradients: Record<GamePhase, string> = {
+  lobby: 'bg-gradient-to-b from-night-900 via-night-950 to-night-950',
+  nuit: 'bg-gradient-to-b from-[#0d1730] via-night-950 to-black',
+  jour: 'bg-gradient-to-b from-[#3a2c14] via-[#1f1a10] to-night-950',
+  conseil: 'bg-gradient-to-b from-[#1a0d12] via-[#140a0e] to-night-950',
+  terminee: 'bg-gradient-to-b from-[#0e1f1a] via-night-950 to-night-950',
 };
+
+/* Décor spécifique à chaque phase, rendu au-dessus du dégradé */
+function PhaseScene({ phase }: { phase: GamePhase }) {
+  switch (phase) {
+    case 'nuit':
+      return (
+        <>
+          {/* Pleine lune */}
+          <motion.div
+            className="absolute right-[8%] top-[6%] w-24 h-24 rounded-full"
+            style={{
+              background:
+                'radial-gradient(circle at 38% 35%, var(--moon-100) 0%, var(--moon-500) 70%, var(--moon-600) 100%)',
+              boxShadow: '0 0 60px 20px rgba(229,189,114,0.15)',
+            }}
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 0.9 }}
+            transition={{ duration: 2, ease: 'easeOut' }}
+          />
+          {/* Étoiles */}
+          {STARS.map((star, i) => (
+            <motion.span
+              key={i}
+              className="absolute rounded-full bg-moon-100"
+              style={{ left: star.left, top: star.top, width: star.size, height: star.size }}
+              animate={{ opacity: [0.2, 0.7, 0.2] }}
+              transition={{ duration: 3 + (i % 3), repeat: Infinity, delay: i * 0.4 }}
+            />
+          ))}
+        </>
+      );
+    case 'jour':
+      return (
+        /* Halo de soleil depuis le haut */
+        <motion.div
+          className="absolute left-1/2 -translate-x-1/2 -top-40 w-[500px] h-[500px] rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(229,189,114,0.25) 0%, rgba(229,189,114,0.08) 45%, transparent 70%)',
+          }}
+          initial={{ opacity: 0, y: -40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 2, ease: 'easeOut' }}
+        />
+      );
+    case 'conseil':
+      return (
+        /* Braises : lueur rouge qui monte du bas de l'écran */
+        <motion.div
+          className="absolute inset-x-0 bottom-0 h-1/2"
+          style={{
+            background:
+              'radial-gradient(ellipse at 50% 110%, rgba(176,58,58,0.3) 0%, rgba(176,58,58,0.1) 45%, transparent 75%)',
+          }}
+          animate={{ opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      );
+    case 'terminee':
+      return (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 top-[10%] w-[400px] h-[400px] rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(110,231,183,0.10) 0%, transparent 70%)',
+          }}
+        />
+      );
+    default:
+      return (
+        /* Lobby : halo lunaire discret */
+        <div
+          className="absolute left-1/2 -translate-x-1/2 -top-40 w-[500px] h-[500px] rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(229,189,114,0.07) 0%, transparent 70%)',
+          }}
+        />
+      );
+  }
+}
 
 // Generate random positions for floating avatars
 function generateFloatingPositions(count: number) {
@@ -67,107 +137,57 @@ function generateFloatingPositions(count: number) {
 }
 
 export function PhaseBackground({ phase, players = [], className }: PhaseBackgroundProps) {
-  const colors = phaseColors[phase];
-  
   // Memoize floating positions based on players
   const floatingPositions = useMemo(() => {
-    const alivePlayers = players.filter(p => p.is_alive !== false && !p.is_mj).slice(0, 6);
-    return generateFloatingPositions(alivePlayers.length);
+    const alive = players.filter(p => p.is_alive !== false && !p.is_mj).slice(0, 6);
+    return generateFloatingPositions(alive.length);
   }, [players]);
-  
+
   const alivePlayers = players.filter(p => p.is_alive !== false && !p.is_mj).slice(0, 6);
 
   return (
     <div className={cn('fixed inset-0 -z-10 overflow-hidden', className)}>
-      {/* Base Gradient */}
-      <div className={cn(
-        'absolute inset-0 bg-gradient-to-b transition-colors duration-1000',
-        colors.primary
-      )} />
-      
+      {/* Scène de phase en fondu croisé */}
+      <AnimatePresence>
+        <motion.div
+          key={phase}
+          className={cn('absolute inset-0', phaseGradients[phase])}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1.5, ease: 'easeInOut' }}
+        >
+          <PhaseScene phase={phase} />
+        </motion.div>
+      </AnimatePresence>
+
       {/* Noise Texture Overlay */}
-      <div 
+      <div
         className="absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           backgroundRepeat: 'repeat',
         }}
       />
-      
-      {/* Grid Pattern */}
-      <div 
-        className="absolute inset-0 opacity-[0.02]"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: '40px 40px',
-        }}
-      />
-      
-      {/* Animated Blobs */}
-      <motion.div
-        className={cn(
-          'absolute w-[500px] h-[500px] rounded-full blur-3xl transition-colors duration-1000',
-          colors.blob1
-        )}
-        animate={{
-          x: [0, 50, 0],
-          y: [0, 30, 0],
-          scale: [1, 1.1, 1],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-        style={{ top: '10%', left: '-10%' }}
-      />
-      
-      <motion.div
-        className={cn(
-          'absolute w-[400px] h-[400px] rounded-full blur-3xl transition-colors duration-1000',
-          colors.blob2
-        )}
-        animate={{
-          x: [0, -40, 0],
-          y: [0, 50, 0],
-          scale: [1, 1.15, 1],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: 2,
-        }}
-        style={{ bottom: '5%', right: '-5%' }}
-      />
-      
-      <motion.div
-        className={cn(
-          'absolute w-[300px] h-[300px] rounded-full blur-3xl transition-colors duration-1000',
-          colors.accent
-        )}
-        animate={{
-          x: [0, 30, 0],
-          y: [0, -40, 0],
-        }}
-        transition={{
-          duration: 12,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: 4,
-        }}
-        style={{ top: '50%', left: '30%' }}
-      />
-      
+
+      {/* Silhouette de colline */}
+      <svg
+        className="absolute bottom-0 left-0 w-full text-black/40"
+        viewBox="0 0 1440 120"
+        preserveAspectRatio="none"
+        fill="currentColor"
+      >
+        <path d="M0,120 L0,80 Q360,20 720,60 T1440,50 L1440,120 Z" />
+      </svg>
+
       {/* Floating Player Avatars */}
       {alivePlayers.map((player, i) => {
         const pos = floatingPositions[i];
         if (!pos) return null;
-        
+
         const avatar = getDefaultAvatar(player.id);
         const color = getDefaultColor(player.id);
-        
+
         return (
           <motion.div
             key={player.id}
@@ -199,7 +219,7 @@ export function PhaseBackground({ phase, players = [], className }: PhaseBackgro
           </motion.div>
         );
       })}
-      
+
       {/* Vignette Effect */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
     </div>

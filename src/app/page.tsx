@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MotionButton, Input, MotionCard, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import { MotionButton, Input, MotionCard, CardHeader, CardTitle, CardDescription, CardContent, MoonLogo, NightSky } from '@/components/ui';
 import { OnboardingTooltips } from '@/components/game';
 import { cn } from '@/lib/utils';
+import { PlusCircle, LogIn, FlaskConical, BookOpen, Layers, GraduationCap, Smartphone, Gamepad2 } from 'lucide-react';
 import { 
   savePlayerSession, 
   getAllSessions, 
@@ -170,77 +171,29 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4 safe-area-top safe-area-bottom">
-      {/* Y2K Background */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        {/* Base gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-zinc-900 to-zinc-950" />
-        
-        {/* Noise texture */}
-        <div 
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          }}
-        />
-        
-        {/* Animated blobs */}
-        <motion.div
-          className="absolute w-[500px] h-[500px] rounded-full blur-3xl bg-indigo-600/20"
-          animate={{ x: [0, 50, 0], y: [0, 30, 0], scale: [1, 1.1, 1] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-          style={{ top: '10%', left: '-10%' }}
-        />
-        <motion.div
-          className="absolute w-[400px] h-[400px] rounded-full blur-3xl bg-purple-600/15"
-          animate={{ x: [0, -40, 0], y: [0, 50, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-          style={{ bottom: '5%', right: '-5%' }}
-        />
-        
-        {/* Grid pattern */}
-        <div 
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                             linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-            backgroundSize: '40px 40px',
-          }}
-        />
-      </div>
+      {/* Fond "Nuit de village" */}
+      <NightSky />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Logo - Y2K Style */}
-        <motion.div 
+        {/* Logo */}
+        <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <motion.div
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            className="inline-block mb-4"
-          >
-            <span className="text-6xl">🌙</span>
-          </motion.div>
-          <h1 className={cn(
-            'text-5xl font-black mb-2 tracking-tight',
-          )}
-            style={{ textShadow: '4px 4px 0px rgba(0,0,0,0.5)' }}
-          >
-            <span className="text-indigo-400">Moon</span>
-            <span className="text-purple-400">fall</span>
+          <div className="inline-block mb-3">
+            <MoonLogo size={76} />
+          </div>
+          <h1 className="font-display text-5xl font-semibold mb-3 text-moon-100">
+            Moonfall
           </h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className={cn(
-              'inline-block px-4 py-1 rounded-full text-sm font-medium',
-              'bg-zinc-800/80 border border-white/20 text-slate-300',
-              'shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]'
-            )}
+            className="text-moon-100/50 text-sm tracking-[0.2em] uppercase"
           >
-            🐺 Loup-Garou Grandeur Nature
+            Loup-Garou grandeur nature
           </motion.p>
         </motion.div>
 
@@ -250,14 +203,14 @@ export default function HomePage() {
             <MotionCard 
               variant="sticker" 
               rotation={-1}
-              className="mb-6 border-indigo-500/50"
+              className="mb-6 border-moon-500/60"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <span>🎮</span> Mes parties
+                  <Gamepad2 className="w-5 h-5 text-moon-500" /> Mes parties
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -269,18 +222,18 @@ export default function HomePage() {
                     transition={{ delay: i * 0.1 }}
                     className={cn(
                       'flex items-center justify-between p-3 rounded-xl',
-                      'bg-zinc-700/50 border border-white/10'
+                      'bg-night-700/50 border border-white/10'
                     )}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-bold truncate text-white">{session.pseudo}</p>
-                      <p className="text-xs text-slate-500 font-mono">{session.gameCode}</p>
+                      <p className="text-xs text-moon-100/40 font-mono">{session.gameCode}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <MotionButton
                         size="sm"
                         variant="sticker"
-                        className="bg-indigo-600 border-indigo-400"
+                        className="bg-moon-500 border-moon-100 text-night-950"
                         onClick={() => handleResumeGame(session)}
                       >
                         Reprendre →
@@ -289,7 +242,7 @@ export default function HomePage() {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => handleForgetGame(session)}
-                        className="text-slate-500 hover:text-red-400 p-2"
+                        className="text-moon-100/40 hover:text-blood-400 p-2"
                         title="Oublier cette partie"
                       >
                         ✕
@@ -308,16 +261,16 @@ export default function HomePage() {
             <MotionCard 
               variant="sticker" 
               rotation={1}
-              className="mb-6 border-amber-500/50"
+              className="mb-6 border-moon-500/60"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
             >
               <CardContent className="p-4">
-                <p className="text-amber-200 mb-3 font-medium">
+                <p className="text-moon-300 mb-3 font-medium">
                   Le pseudo <strong>{showRejoinPrompt.pseudo}</strong> existe déjà dans cette partie.
                 </p>
-                <p className="text-slate-400 text-sm mb-4">
+                <p className="text-moon-100/50 text-sm mb-4">
                   Est-ce toi ? Tu peux te reconnecter à ta partie.
                 </p>
                 <div className="flex gap-2">
@@ -330,7 +283,7 @@ export default function HomePage() {
                   </MotionButton>
                   <MotionButton
                     variant="sticker"
-                    className="flex-1 bg-amber-600 border-amber-400"
+                    className="flex-1 bg-moon-500 border-moon-100 text-night-950"
                     onClick={handleRejoin}
                     isLoading={isLoading}
                   >
@@ -352,66 +305,55 @@ export default function HomePage() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-4"
             >
-              <MotionButton 
+              <MotionButton
                 variant="sticker"
-                className={cn(
-                  "w-full text-lg py-6",
-                  "bg-indigo-600 border-indigo-400 hover:bg-indigo-500"
-                )}
+                className="w-full text-lg py-6 gap-3 bg-moon-500 border-moon-100 text-night-950 hover:bg-moon-300"
                 onClick={() => setMode('create')}
               >
-                🎮 Créer une partie
+                <PlusCircle className="w-5 h-5" /> Créer une partie
               </MotionButton>
-              <MotionButton 
+              <MotionButton
                 variant="sticker"
-                className={cn(
-                  "w-full text-lg py-6",
-                  "bg-purple-600 border-purple-400 hover:bg-purple-500"
-                )}
+                className="w-full text-lg py-6 gap-3"
                 onClick={() => setMode('join')}
               >
-                🚀 Rejoindre une partie
+                <LogIn className="w-5 h-5" /> Rejoindre une partie
               </MotionButton>
 
               {/* Demo Mode Button */}
-              <MotionButton 
-                variant="sticker"
-                className={cn(
-                  "w-full text-lg py-6",
-                  "bg-amber-600 border-amber-400 hover:bg-amber-500"
-                )}
+              <MotionButton
+                variant="secondary"
+                className="w-full text-base py-4 gap-3"
                 onClick={handleDemoMode}
                 isLoading={isLoading}
               >
-                🧪 Démo rapide
+                <FlaskConical className="w-4 h-4" /> Essayer la démo
               </MotionButton>
 
-
-              {/* Roles Gallery Button */}
-              <MotionButton 
-                variant="ghost"
-                className={cn(
-                  "w-full text-base py-4",
-                  "bg-zinc-800/50 border border-indigo-500/50 hover:bg-indigo-900/30",
-                  "text-indigo-400 hover:text-indigo-300"
-                )}
-                onClick={() => router.push('/roles')}
-              >
-                🃏 Galerie de Rôles
-              </MotionButton>
-
-              {/* Tutorial Button */}
-              <MotionButton 
-                variant="ghost"
-                className={cn(
-                  "w-full text-base py-4",
-                  "bg-zinc-800/50 border border-pink-500/50 hover:bg-pink-900/30",
-                  "text-pink-400 hover:text-pink-300"
-                )}
-                onClick={() => router.push('/tutorial')}
-              >
-                📖 Comment jouer ?
-              </MotionButton>
+              {/* Liens secondaires */}
+              <div className="grid grid-cols-3 gap-2 pt-2">
+                <MotionButton
+                  variant="ghost"
+                  className="flex-col gap-1.5 py-4 text-xs text-moon-100/60"
+                  onClick={() => router.push('/regles')}
+                >
+                  <BookOpen className="w-5 h-5" /> Règles
+                </MotionButton>
+                <MotionButton
+                  variant="ghost"
+                  className="flex-col gap-1.5 py-4 text-xs text-moon-100/60"
+                  onClick={() => router.push('/roles')}
+                >
+                  <Layers className="w-5 h-5" /> Rôles
+                </MotionButton>
+                <MotionButton
+                  variant="ghost"
+                  className="flex-col gap-1.5 py-4 text-xs text-moon-100/60"
+                  onClick={() => router.push('/tutorial')}
+                >
+                  <GraduationCap className="w-5 h-5" /> Tutoriel
+                </MotionButton>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -426,7 +368,7 @@ export default function HomePage() {
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <span>🎮</span> Créer une partie
+                <PlusCircle className="w-5 h-5 text-moon-500" /> Créer une partie
               </CardTitle>
               <CardDescription>
                 Tu seras le Maître du Jeu (MJ) de cette partie
@@ -458,8 +400,8 @@ export default function HomePage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       className={cn(
-                        'text-red-400 text-sm p-3 rounded-xl',
-                        'bg-red-900/50 border border-red-500/50'
+                        'text-blood-400 text-sm p-3 rounded-xl',
+                        'bg-blood-700/30 border border-blood-500/50'
                       )}
                     >
                       {error}
@@ -479,7 +421,7 @@ export default function HomePage() {
                   <MotionButton 
                     type="submit" 
                     variant="sticker"
-                    className="flex-1 bg-emerald-600 border-emerald-400"
+                    className="flex-1 bg-moon-500 border-moon-100 text-night-950"
                     isLoading={isLoading}
                   >
                     Créer ✓
@@ -500,7 +442,7 @@ export default function HomePage() {
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <span>🚀</span> Rejoindre une partie
+                <LogIn className="w-5 h-5 text-moon-500" /> Rejoindre une partie
               </CardTitle>
               <CardDescription>
                 Entre le code fourni par le MJ
@@ -534,8 +476,8 @@ export default function HomePage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       className={cn(
-                        'text-red-400 text-sm p-3 rounded-xl',
-                        'bg-red-900/50 border border-red-500/50'
+                        'text-blood-400 text-sm p-3 rounded-xl',
+                        'bg-blood-700/30 border border-blood-500/50'
                       )}
                     >
                       {error}
@@ -555,7 +497,7 @@ export default function HomePage() {
                   <MotionButton 
                     type="submit" 
                     variant="sticker"
-                    className="flex-1 bg-purple-600 border-purple-400"
+                    className="flex-1 bg-moon-500 border-moon-100 text-night-950"
                     isLoading={isLoading}
                   >
                     Rejoindre →
@@ -574,10 +516,10 @@ export default function HomePage() {
           className="mt-8 text-center"
         >
           <p className={cn(
-            'inline-block px-4 py-2 rounded-full text-sm',
-            'bg-zinc-800/60 border border-white/10 text-slate-500'
+            'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm',
+            'bg-night-800/60 border border-white/10 text-moon-100/40'
           )}>
-            📱 Ajoute Moonfall à ton écran d&apos;accueil !
+            <Smartphone className="w-4 h-4" /> Ajoute Moonfall à ton écran d&apos;accueil
           </p>
         </motion.div>
       </div>

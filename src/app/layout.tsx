@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Fraunces } from "next/font/google";
 import { AuthProvider } from "@/lib/auth";
 import { ErrorBoundary } from "@/components/ui";
 import "./globals.css";
@@ -7,6 +7,12 @@ import "./globals.css";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+});
+
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  axes: ["SOFT", "WONK", "opsz"],
 });
 
 export const metadata: Metadata = {
@@ -33,7 +39,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#0f172a",
+  themeColor: "#060a12",
 };
 
 export default function RootLayout({
@@ -44,7 +50,7 @@ export default function RootLayout({
   return (
     <html lang="fr" className="dark">
       <body
-        className={`${inter.variable} font-sans antialiased bg-slate-950 text-white min-h-screen`}
+        className={`${inter.variable} ${fraunces.variable} font-sans antialiased bg-night-950 text-moon-100 min-h-screen`}
       >
         <ErrorBoundary>
           <AuthProvider>
