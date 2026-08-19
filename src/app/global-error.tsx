@@ -24,7 +24,7 @@ export default function GlobalError({
 
   return (
     <html lang="fr" className="dark">
-      <body className="font-sans antialiased bg-slate-950 text-white min-h-screen">
+      <body className="font-sans antialiased bg-night-950 text-white min-h-screen">
         <div className="min-h-screen flex items-center justify-center p-4">
           <div className="max-w-md w-full text-center space-y-6">
             {/* Error illustration */}
@@ -34,13 +34,13 @@ export default function GlobalError({
               Oups, une erreur est survenue !
             </h1>
             
-            <p className="text-slate-400">
+            <p className="text-moon-100/50">
               Quelque chose s&apos;est mal passé. Notre équipe a été notifiée.
             </p>
 
             {/* Error ID for support */}
             {error.digest && (
-              <p className="text-xs text-slate-500 font-mono">
+              <p className="text-xs text-moon-100/40 font-mono">
                 ID: {error.digest}
               </p>
             )}
@@ -48,16 +48,16 @@ export default function GlobalError({
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
               <button
                 onClick={reset}
-                className="inline-flex items-center justify-center px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl border-2 border-violet-400 shadow-[4px_4px_0_0_rgba(139,92,246,0.3)] hover:shadow-[2px_2px_0_0_rgba(139,92,246,0.3)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                className="inline-flex items-center justify-center px-6 py-3 bg-moon-500 hover:bg-moon-300 text-night-950 font-semibold rounded-xl border-2 border-moon-100 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)] hover:shadow-[2px_2px_0_0_rgba(0,0,0,0.5)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
               >
-                🔄 Réessayer
+                Réessayer
               </button>
               
               <Link
                 href="/"
-                className="inline-flex items-center justify-center px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl border-2 border-slate-600 shadow-[4px_4px_0_0_rgba(100,116,139,0.3)] hover:shadow-[2px_2px_0_0_rgba(100,116,139,0.3)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                className="inline-flex items-center justify-center px-6 py-3 bg-night-800 hover:bg-night-700 text-white font-semibold rounded-xl border-2 border-night-600 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)] hover:shadow-[2px_2px_0_0_rgba(0,0,0,0.5)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
               >
-                🏠 Accueil
+                Accueil
               </Link>
             </div>
           </div>

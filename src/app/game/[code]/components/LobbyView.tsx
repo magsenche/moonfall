@@ -6,7 +6,7 @@
 
 'use client';
 
-import { ClipboardCopy, Check, Settings2, Moon as MoonIcon, Bot, Play, ArrowLeft } from 'lucide-react';
+import { ClipboardCopy, Check, Settings2, Moon as MoonIcon, Bot, Play, ArrowLeft, Hourglass, Users, FlaskConical, Vote, Save } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { MotionCard, CardContent, CardHeader, CardTitle, MotionButton, Button } from '@/components/ui';
@@ -63,7 +63,7 @@ export function LobbyView() {
               'text-sm font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]'
             )}
           >
-            ⏳ En attente des joueurs...
+            <Hourglass className="w-4 h-4 inline -mt-0.5" /> En attente des joueurs...
           </motion.div>
         </motion.div>
 
@@ -105,7 +105,7 @@ export function LobbyView() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <span className="text-2xl">👥</span>
+                <Users className="w-6 h-6 text-village-300" />
                 Joueurs
               </span>
               <span className={cn(
@@ -199,7 +199,7 @@ export function LobbyView() {
             {/* Bots buttons (MJ only, for testing) */}
             {isMJ && (
               <div className="mt-4 pt-4 border-t border-night-700">
-                <p className="text-xs text-moon-100/40 mb-2">🧪 Mode dev</p>
+                <p className="text-xs text-moon-100/40 mb-2"><FlaskConical className="w-3.5 h-3.5 inline -mt-0.5" /> Mode dev</p>
                 <div className="flex gap-2">
                   <MotionButton
                     variant="secondary"
@@ -283,7 +283,7 @@ export function LobbyView() {
                 {/* Vote Duration */}
                 <div>
                   <label className="text-sm text-moon-100/60 mb-1 block font-medium">
-                    🗳️ Durée du vote (conseil)
+                    <Vote className="w-4 h-4 inline -mt-0.5" /> Durée du vote (conseil)
                   </label>
                   <div className="flex items-center gap-3">
                     <input
@@ -461,7 +461,7 @@ export function LobbyView() {
                   onClick={saveSettings} 
                   disabled={isSavingSettings}
                 >
-                  {isSavingSettings ? '⏳ Sauvegarde...' : '💾 Sauvegarder'}
+                  {isSavingSettings ? 'Sauvegarde...' : <><Save className="w-4 h-4 inline -mt-0.5" /> Sauvegarder</>}
                 </MotionButton>
               </CardContent>
             )}

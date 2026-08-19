@@ -73,7 +73,7 @@ function LoginContent() {
   if (authLoading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-slate-400">Chargement...</div>
+        <div className="animate-pulse text-moon-100/50">Chargement...</div>
       </main>
     );
   }
@@ -82,18 +82,18 @@ function LoginContent() {
     <main className="min-h-screen flex flex-col items-center justify-center p-4">
       {/* Background decoration */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-village-600/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-moon-500/10 rounded-full blur-3xl" />
       </div>
 
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold mb-2">
-            <span className="text-indigo-400">Moon</span>
-            <span className="text-amber-400">fall</span>
+            <span className="text-village-300">Moon</span>
+            <span className="text-moon-500">fall</span>
           </h1>
-          <p className="text-slate-400">Connexion</p>
+          <p className="text-moon-100/50">Connexion</p>
         </div>
 
         <Card>
@@ -122,7 +122,7 @@ function LoginContent() {
                 />
                 
                 {error && (
-                  <p className="text-sm text-red-400">{error}</p>
+                  <p className="text-sm text-blood-400">{error}</p>
                 )}
                 
                 <Button 
@@ -133,7 +133,7 @@ function LoginContent() {
                   {isLoading ? 'Envoi...' : 'Recevoir un code'}
                 </Button>
                 
-                <p className="text-xs text-slate-500 text-center">
+                <p className="text-xs text-moon-100/40 text-center">
                   Un code à 6 chiffres sera envoyé à ton email
                 </p>
               </form>
@@ -158,7 +158,7 @@ function LoginContent() {
                 )}
                 
                 {error && (
-                  <p className="text-sm text-red-400">{error}</p>
+                  <p className="text-sm text-blood-400">{error}</p>
                 )}
                 
                 <Button 
@@ -177,7 +177,7 @@ function LoginContent() {
                     setError(null);
                     setMessage(null);
                   }}
-                  className="w-full text-sm text-slate-400 hover:text-white transition-colors"
+                  className="w-full text-sm text-moon-100/50 hover:text-white transition-colors"
                 >
                   ← Changer d&apos;email
                 </button>
@@ -187,7 +187,7 @@ function LoginContent() {
         </Card>
 
         {/* Hint */}
-        <p className="text-center text-sm text-slate-500 mt-6">
+        <p className="text-center text-sm text-moon-100/40 mt-6">
           La connexion permet de retrouver ta partie même après avoir fermé l&apos;app
         </p>
       </div>
@@ -200,7 +200,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <main className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-slate-400">Chargement...</div>
+        <div className="animate-pulse text-moon-100/50">Chargement...</div>
       </main>
     }>
       <LoginContent />

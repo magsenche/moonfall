@@ -9,7 +9,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { AlarmClock } from 'lucide-react';
+import { AlarmClock, Timer } from 'lucide-react';
 import { GamePhaseBadge } from '@/components/game';
 import { useGame, useTimerContext } from '../context';
 import { QuitGameButton } from './QuitGameButton';
@@ -31,7 +31,7 @@ export function GameHeader({ className }: GameHeaderProps) {
       <motion.h1 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-2xl font-black text-white text-center mb-4 tracking-tight"
+        className="text-2xl font-black text-white text-center mb-4 tracking-tight px-12 truncate"
         style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}
       >
         {game.name}
@@ -52,7 +52,7 @@ export function GameHeader({ className }: GameHeaderProps) {
             isUrgent
               ? 'bg-blood-700/80 border-blood-500/50'
               : isWarning
-                ? 'bg-amber-950/80 border-amber-500/30'
+                ? 'bg-night-800/80 border-moon-500/30'
                 : 'bg-night-900/80'
           )}
           animate={isUrgent ? {
@@ -89,16 +89,16 @@ export function GameHeader({ className }: GameHeaderProps) {
                   isUrgent
                     ? 'text-blood-400'
                     : isWarning
-                      ? 'text-amber-400'
+                      ? 'text-moon-500'
                       : 'text-white'
                 )}
               >
-                <motion.span 
+                <motion.span
                   className="text-sm"
                   animate={isUrgent ? { scale: [1, 1.2, 1] } : {}}
                   transition={{ duration: 0.5, repeat: Infinity }}
                 >
-                  ⏱
+                  <Timer className="w-4 h-4" />
                 </motion.span>
                 <span>{formattedTime}</span>
               </motion.div>

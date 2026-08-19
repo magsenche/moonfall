@@ -10,6 +10,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Users } from 'lucide-react';
 import { MotionCard, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { getRoleConfig } from '@/config/roles';
 import { getDefaultAvatar, getDefaultColor } from '@/config/players';
@@ -48,7 +49,7 @@ export function PlayersList({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <span className="text-2xl">👥</span>
+            <Users className="w-6 h-6 text-village-300" />
             Joueurs
           </span>
           <span className={cn(

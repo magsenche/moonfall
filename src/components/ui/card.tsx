@@ -87,7 +87,7 @@ CardTitle.displayName = 'CardTitle';
 
 const CardDescription = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLParagraphElement>>(
   ({ className, ...props }, ref) => (
-    <p ref={ref} className={cn('text-sm text-slate-400 mt-1', className)} {...props} />
+    <p ref={ref} className={cn('text-sm text-moon-100/50 mt-1', className)} {...props} />
   )
 );
 CardDescription.displayName = 'CardDescription';

@@ -5,6 +5,7 @@
  * Accessible from lobby and during game
  */
 
+import { BookOpen } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAllRoleDetails, type RoleDetail } from '@/lib/help/role-details';
 
@@ -60,7 +61,7 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-night-800">
           <h2 className="text-xl font-bold text-moon-100 flex items-center gap-2">
-            <span>📖</span> Règles du jeu
+            <BookOpen className="w-5 h-5 text-moon-500" /> Règles du jeu
           </h2>
           <button
             onClick={onClose}
@@ -322,7 +323,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
 
 /**
  * Self-contained button that opens the rules modal
- * - 'default': Text button "📖 Règles"  
+ * - 'default': Text button "Règles"  
  * - 'icon': Icon-only button
  * - 'floating': Fixed floating action button for mobile
  */
@@ -349,7 +350,7 @@ export function RulesButton({
           aria-label="Règles du jeu"
           title="Règles du jeu"
         >
-          📖
+          <BookOpen className="w-5 h-5" />
         </button>
         <RulesModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
       </>
@@ -365,7 +366,7 @@ export function RulesButton({
           aria-label="Règles du jeu"
           title="Règles du jeu"
         >
-          📖
+          <BookOpen className="w-5 h-5" />
         </button>
         <RulesModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
       </>
@@ -378,7 +379,7 @@ export function RulesButton({
         onClick={() => setIsOpen(true)}
         className={`${sizeClasses} text-moon-100/60 hover:text-moon-100/80 hover:bg-night-800 active:bg-night-700 rounded-lg transition-colors flex items-center gap-2 touch-manipulation`}
       >
-        <span>📖</span> Règles
+        <BookOpen className="w-4 h-4" /> Règles
       </button>
       <RulesModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </>
