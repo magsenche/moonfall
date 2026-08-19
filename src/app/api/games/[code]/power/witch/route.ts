@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
+import { isAutoMode } from "@/lib/game/resolution";
 
 /**
  * GET - Get witch status (wolf target, potions available)
@@ -21,7 +22,7 @@ export async function GET(
   // Get game
   const { data: game } = await supabase
     .from("games")
-    .select("id, status, current_phase")
+    .select("id, status, current_phase, settings")
     .eq("code", code)
     .single();
 
@@ -49,7 +50,7 @@ export async function GET(
   // Force bot wolves to vote before witch checks (so witch can see the target)
   const { data: aliveWolves } = await supabase
     .from("players")
-    .select("id, pseudo, role:roles(team)")
+    .select("id, pseudo, is_mj, role:roles(team)")
     .eq("game_id", game.id)
     .eq("is_alive", true);
 
@@ -75,8 +76,10 @@ export async function GET(
 
     if (botWolves.length > 0) {
       // Get all alive non-wolf players as potential targets
+      // (le MJ arbitre n'est une cible qu'en Auto-Garou, où il joue)
       const nonWolfTargets = aliveWolves?.filter(
-        p => (p.role as { team: string } | null)?.team !== 'loups'
+        p => (p.role as { team: string } | null)?.team !== 'loups' &&
+          (isAutoMode(game.settings) || !p.is_mj)
       ) ?? [];
 
       if (nonWolfTargets.length > 0) {
@@ -220,7 +223,7 @@ export async function POST(
   // Get game
   const { data: game } = await supabase
     .from("games")
-    .select("id, status, current_phase")
+    .select("id, status, current_phase, settings")
     .eq("code", code)
     .single();
 
@@ -350,7 +353,8 @@ export async function POST(
       );
     }
 
-    if (target.is_mj) {
+    // En Auto-Garou le MJ joue et peut être empoisonné comme les autres
+    if (target.is_mj && !isAutoMode(game.settings)) {
       return NextResponse.json(
         { error: "Impossible de cibler le MJ" },
         { status: 400 }

@@ -92,7 +92,8 @@ export async function POST(
       return NextResponse.json({ error: 'Cible non trouvée' }, { status: 404 });
     }
 
-    if (target.is_mj) {
+    // En Auto-Garou, le MJ joue et peut être visé par les votes
+    if (target.is_mj && !isAutoMode) {
       return NextResponse.json({ error: 'Impossible de voter contre le MJ' }, { status: 400 });
     }
 

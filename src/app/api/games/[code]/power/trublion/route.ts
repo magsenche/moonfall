@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
+import { isAutoMode } from "@/lib/game/resolution";
 
 // POST - Trublion uses his power to swap two players' roles
 export async function POST(
@@ -29,7 +30,7 @@ export async function POST(
   // Get game
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select("id, status, current_phase")
+    .select("id, status, current_phase, settings")
     .eq("code", code)
     .single();
 
@@ -132,7 +133,8 @@ export async function POST(
     );
   }
 
-  if (target1.is_mj || target2.is_mj) {
+  // En Auto-Garou le MJ joue et son rôle peut être échangé comme les autres
+  if ((target1.is_mj || target2.is_mj) && !isAutoMode(game.settings)) {
     return NextResponse.json(
       { error: "Vous ne pouvez pas échanger le rôle du MJ" },
       { status: 400 }

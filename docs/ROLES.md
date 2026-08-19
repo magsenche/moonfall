@@ -72,6 +72,25 @@ power_uses (
 )
 ```
 
+### Résolution partagée (`src/lib/game/`)
+
+La logique de résolution commune aux routes API vit dans `src/lib/game/` :
+
+- `resolution.ts` — fonctions **pures** (testées par `npm run test:unit`) :
+  `tallyVotes` (décompte + égalités + double vote), `computeWinner`
+  (conditions de victoire), `isAutoMode`.
+- `deaths.ts` — cascade de morts appelée après **chaque** mort, quelle qu'en
+  soit la cause (dévoration, vote, tir du chasseur, assassinat, poison) :
+  `applyDeathCascade` (chagrin des amoureux + transformation de l'Enfant
+  Sauvage) et `endGameIfVictory` (clôture + colonne `winner` + événement).
+
+Règle **Auto-Garou** : le MJ joue comme les autres — il est ciblable (votes,
+pouvoirs, loups) et compte dans les conditions de victoire. En mode normal
+(MJ arbitre), il reste intouchable et hors décompte.
+
+La couverture de ces règles est validée par le runner de scénarios
+(`docs/SCENARIOS.md`).
+
 ### Handlers de rôles
 
 Chaque rôle a un handler qui définit son comportement :

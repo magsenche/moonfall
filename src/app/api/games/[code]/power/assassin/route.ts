@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
+import { applyDeathCascade, endGameIfVictory } from "@/lib/game/deaths";
+import { isAutoMode } from "@/lib/game/resolution";
 
 // POST - Assassin uses his power to assassinate a player
 export async function POST(
@@ -22,7 +24,7 @@ export async function POST(
   // Get game
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select("id, status, current_phase")
+    .select("id, status, current_phase, settings")
     .eq("code", code)
     .single();
 
@@ -36,6 +38,8 @@ export async function POST(
       { status: 400 }
     );
   }
+
+  const autoMode = isAutoMode(game.settings);
 
   // Verify player is the assassin and alive
   const { data: player, error: playerError } = await supabase
@@ -103,7 +107,8 @@ export async function POST(
     return NextResponse.json({ error: "Cible non trouvée" }, { status: 404 });
   }
 
-  if (!target.is_alive || target.is_mj) {
+  // En Auto-Garou le MJ joue et peut être ciblé comme les autres
+  if (!target.is_alive || (target.is_mj && !autoMode)) {
     return NextResponse.json(
       { error: "Cible invalide" },
       { status: 400 }
@@ -165,12 +170,20 @@ export async function POST(
     },
   });
 
+  // Une mort en entraîne d'autres : amoureux (chagrin), Enfant Sauvage (modèle)
+  await applyDeathCascade(supabase, game.id, targetId);
+
+  // L'assassinat peut faire basculer la partie (parité loups/villageois)
+  const winner = await endGameIfVictory(supabase, game.id, autoMode, { by_assassin: true });
+
   return NextResponse.json({
     success: true,
     result: {
       targetName: target.pseudo,
       message: `🗡️ Vous avez assassiné ${target.pseudo}. Personne ne saura que c'est vous...`,
     },
+    gameOver: winner !== null,
+    winner,
   });
 }
 

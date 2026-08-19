@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
+import { applyDeathCascade, endGameIfVictory } from "@/lib/game/deaths";
+import { isAutoMode } from "@/lib/game/resolution";
 
 /**
  * POST - Chasseur uses his final shot when he dies
@@ -25,13 +27,15 @@ export async function POST(
   // Get game
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select("id, status, current_phase")
+    .select("id, status, current_phase, settings")
     .eq("code", code)
     .single();
 
   if (gameError || !game) {
     return NextResponse.json({ error: "Partie non trouvée" }, { status: 404 });
   }
+
+  const autoMode = isAutoMode(game.settings);
 
   // Verify player is the chasseur and DEAD (just died)
   const { data: hunter, error: hunterError } = await supabase
@@ -107,7 +111,8 @@ export async function POST(
     );
   }
 
-  if (target.is_mj) {
+  // En Auto-Garou le MJ joue et peut être ciblé comme les autres
+  if (target.is_mj && !autoMode) {
     return NextResponse.json(
       { error: "Impossible de cibler le MJ" },
       { status: 400 }
@@ -165,55 +170,17 @@ export async function POST(
     },
   });
 
-  // Check victory conditions after the shot
-  const { data: alivePlayers } = await supabase
-    .from("players")
-    .select("id, is_mj, role:roles(team)")
-    .eq("game_id", game.id)
-    .eq("is_alive", true);
+  // Une mort en entraîne d'autres : amoureux (chagrin), Enfant Sauvage (modèle)
+  await applyDeathCascade(supabase, game.id, targetId);
 
-  const aliveNonMJ = alivePlayers?.filter((p) => !p.is_mj) || [];
-  const remainingWolves = aliveNonMJ.filter(
-    (p) => (p.role as { team: string } | null)?.team === "loups"
-  );
-  const remainingVillagers = aliveNonMJ.filter(
-    (p) => (p.role as { team: string } | null)?.team !== "loups"
-  );
-
-  let winner: "village" | "loups" | null = null;
-
-  if (remainingWolves.length === 0) {
-    winner = "village";
-  } else if (remainingWolves.length >= remainingVillagers.length) {
-    winner = "loups";
-  }
-
-  if (winner) {
-    // Game over
-    await supabase
-      .from("games")
-      .update({ status: "terminee", winner })
-      .eq("id", game.id);
-
-    await supabase.from("game_events").insert({
-      game_id: game.id,
-      event_type: "game_ended",
-      data: { winner, by_hunter_shot: true },
-    });
-
-    return NextResponse.json({
-      success: true,
-      target: target.pseudo,
-      targetRole: targetRole?.name,
-      gameOver: true,
-      winner,
-    });
-  }
+  // Check victory conditions after the shot (and its cascade)
+  const winner = await endGameIfVictory(supabase, game.id, autoMode, { by_hunter_shot: true });
 
   return NextResponse.json({
     success: true,
     target: target.pseudo,
     targetRole: targetRole?.name,
-    gameOver: false,
+    gameOver: winner !== null,
+    winner,
   });
 }
