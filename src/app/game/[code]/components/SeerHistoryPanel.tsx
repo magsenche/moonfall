@@ -32,13 +32,13 @@ export function SeerHistoryPanel({ seerHistory, compact = false }: SeerHistoryPa
     <MotionCard
       variant="sticker"
       rotation={-0.5}
-      className="border-purple-500/30"
+      className="border-village-400/30"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
       <CardHeader className={compact ? 'pb-2' : undefined}>
-        <CardTitle className="text-purple-300 text-sm flex items-center gap-2">
+        <CardTitle className="text-village-300 text-sm flex items-center gap-2">
           📜 Vos visions passées
         </CardTitle>
       </CardHeader>
@@ -52,10 +52,10 @@ export function SeerHistoryPanel({ seerHistory, compact = false }: SeerHistoryPa
               transition={{ delay: index * 0.1 }}
               className={cn(
                 'p-3 rounded-lg border',
-                'bg-zinc-800/50',
+                'bg-night-800/50',
                 vision.team === 'loups' 
-                  ? 'border-red-500/30' 
-                  : 'border-blue-500/30'
+                  ? 'border-blood-500/30' 
+                  : 'border-village-400/30'
               )}
             >
               <div className="flex items-center justify-between">
@@ -63,7 +63,7 @@ export function SeerHistoryPanel({ seerHistory, compact = false }: SeerHistoryPa
                   <p className="font-bold text-white text-sm">{vision.targetName}</p>
                   <p className={cn(
                     "text-xs",
-                    vision.team === 'loups' ? "text-red-400" : "text-blue-400"
+                    vision.team === 'loups' ? "text-blood-400" : "text-village-400"
                   )}>
                     {formatRoleName(vision.roleName)}
                   </p>
@@ -71,8 +71,8 @@ export function SeerHistoryPanel({ seerHistory, compact = false }: SeerHistoryPa
                 <span className={cn(
                   "px-2 py-1 rounded-full text-xs font-medium",
                   vision.team === 'loups'
-                    ? 'bg-red-600/20 text-red-400 border border-red-500/30'
-                    : 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                    ? 'bg-blood-500/20 text-blood-400 border border-blood-500/30'
+                    : 'bg-village-600/20 text-village-400 border border-village-400/30'
                 )}>
                   {vision.team === 'loups' ? '🐺' : '🏘️'}
                 </span>

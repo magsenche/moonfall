@@ -55,7 +55,7 @@ export function NightPhaseLayout() {
       <MotionCard
         variant="sticker"
         rotation={-0.5}
-        className="border-indigo-500/50"
+        className="border-village-400/50"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -71,7 +71,7 @@ export function NightPhaseLayout() {
             <h3 className="font-black text-white text-lg mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.3)' }}>
               La nuit tombe sur le village
             </h3>
-            <p className="text-slate-300 text-sm">
+            <p className="text-moon-100/70 text-sm">
               {isWolf
                 ? '🐺 Concertez-vous avec votre meute pour choisir une victime.'
                 : isSeer
@@ -200,7 +200,7 @@ export function NightPhaseLayout() {
         <MotionCard 
           variant="sticker" 
           rotation={0.5}
-          className="border-zinc-600"
+          className="border-night-600"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
@@ -213,7 +213,7 @@ export function NightPhaseLayout() {
             >
               😴
             </motion.p>
-            <p className="text-slate-400 text-sm">
+            <p className="text-moon-100/60 text-sm">
               Vous dormez paisiblement... en espérant vous réveiller demain.
             </p>
           </CardContent>

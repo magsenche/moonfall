@@ -188,7 +188,7 @@ export function MissionForm({
   // Template selection view
   if (mode === 'template' && !selectedTemplate) {
     return (
-      <Card className="bg-slate-800 border-slate-700 p-4">
+      <Card className="bg-night-800 border-night-700 p-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold text-white">🎯 Nouvelle Mission</h3>
           <div className="flex gap-2">
@@ -212,22 +212,22 @@ export function MissionForm({
 
         {/* Category selector */}
         {templatesLoading ? (
-          <div className="text-center py-8 text-slate-400">
+          <div className="text-center py-8 text-moon-100/60">
             Chargement des modèles...
           </div>
         ) : !selectedCategory ? (
           <div className="space-y-2">
-            <p className="text-sm text-slate-400 mb-3">Choisir une catégorie :</p>
+            <p className="text-sm text-moon-100/60 mb-3">Choisir une catégorie :</p>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(templatesByCategory).map(([cat, templates]) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className="p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-left transition-colors"
+                  className="p-3 bg-night-700/50 hover:bg-night-700 rounded-lg text-left transition-colors"
                 >
                   <div className="text-lg mb-1">{CATEGORY_ICONS[cat as MissionCategory] || '📋'}</div>
                   <div className="text-sm font-medium text-white capitalize">{cat}</div>
-                  <div className="text-xs text-slate-400">{templates.length} modèle{templates.length > 1 ? 's' : ''}</div>
+                  <div className="text-xs text-moon-100/60">{templates.length} modèle{templates.length > 1 ? 's' : ''}</div>
                 </button>
               ))}
             </div>
@@ -237,11 +237,11 @@ export function MissionForm({
             <div className="flex items-center gap-2 mb-3">
               <button 
                 onClick={() => setSelectedCategory(null)}
-                className="text-slate-400 hover:text-white"
+                className="text-moon-100/60 hover:text-white"
               >
                 ← 
               </button>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-moon-100/60">
                 {CATEGORY_ICONS[selectedCategory as MissionCategory]} {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
               </p>
             </div>
@@ -250,10 +250,10 @@ export function MissionForm({
                 <button
                   key={template.id}
                   onClick={() => handleSelectTemplate(template)}
-                  className="w-full p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-left transition-colors"
+                  className="w-full p-3 bg-night-700/50 hover:bg-night-700 rounded-lg text-left transition-colors"
                 >
                   <div className="font-medium text-white text-sm">{template.title}</div>
-                  <div className="text-xs text-slate-400 mt-1 line-clamp-2">{template.description}</div>
+                  <div className="text-xs text-moon-100/60 mt-1 line-clamp-2">{template.description}</div>
                 </button>
               ))}
             </div>
@@ -265,7 +265,7 @@ export function MissionForm({
 
   // Custom form view
   return (
-    <Card className="bg-slate-800 border-slate-700 p-4">
+    <Card className="bg-night-800 border-night-700 p-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-bold text-white">
           {selectedTemplate ? '📝 Modifier le modèle' : '✏️ Mission libre'}
@@ -288,7 +288,7 @@ export function MissionForm({
       </div>
 
       {error && (
-        <div className="bg-red-500/20 border border-red-500/50 text-red-300 text-sm p-2 rounded mb-3">
+        <div className="bg-blood-500/20 border border-blood-500/50 text-blood-400 text-sm p-2 rounded mb-3">
           {error}
         </div>
       )}
@@ -300,19 +300,19 @@ export function MissionForm({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Titre de la mission"
-            className="bg-slate-700 border-slate-600"
+            className="bg-night-700 border-night-600"
           />
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description détaillée..."
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white text-sm min-h-20"
+            className="w-full px-3 py-2 bg-night-700 border border-night-600 rounded-md text-white text-sm min-h-20"
           />
         </div>
 
         {/* Auto-Garou Mode Notice */}
         {isAutoMode && (
-          <div className="p-2 bg-indigo-900/30 border border-indigo-500/30 rounded text-xs text-indigo-300">
+          <div className="p-2 bg-night-700/30 border border-village-400/30 rounded text-xs text-village-300">
             🤖 <strong>Mode Auto-Garou</strong> : Seules les missions collectives, compétitives et enchères sont disponibles.
             Elles seront automatiquement assignées à tous les joueurs.
           </div>
@@ -321,11 +321,11 @@ export function MissionForm({
         {/* Type & Category */}
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Type</label>
+            <label className="text-xs text-moon-100/60 mb-1 block">Type</label>
             <select
               value={missionType}
               onChange={(e) => setMissionType(e.target.value as MissionType)}
-              className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+              className="w-full px-2 py-1.5 bg-night-700 border border-night-600 rounded text-white text-sm"
             >
               {Object.entries(MISSION_TYPE_LABELS).map(([value, label]) => {
                 const isDisabled = isAutoMode && !AUTO_MODE_ALLOWED_TYPES.includes(value as MissionType);
@@ -334,7 +334,7 @@ export function MissionForm({
                     key={value} 
                     value={value} 
                     disabled={isDisabled}
-                    className={isDisabled ? 'text-slate-500' : ''}
+                    className={isDisabled ? 'text-moon-100/40' : ''}
                   >
                     {label}{isDisabled ? ' (indisponible)' : ''}
                   </option>
@@ -343,11 +343,11 @@ export function MissionForm({
             </select>
           </div>
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Catégorie</label>
+            <label className="text-xs text-moon-100/60 mb-1 block">Catégorie</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as MissionCategory)}
-              className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+              className="w-full px-2 py-1.5 bg-night-700 border border-night-600 rounded text-white text-sm"
             >
               {Object.entries(MISSION_CATEGORY_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
@@ -358,11 +358,11 @@ export function MissionForm({
 
         {/* Validation */}
         <div>
-          <label className="text-xs text-slate-400 mb-1 block">Validation</label>
+          <label className="text-xs text-moon-100/60 mb-1 block">Validation</label>
           <select
             value={validationType}
             onChange={(e) => setValidationType(e.target.value as MissionValidationType)}
-            className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+            className="w-full px-2 py-1.5 bg-night-700 border border-night-600 rounded text-white text-sm"
           >
             {Object.entries(VALIDATION_TYPE_LABELS).map(([value, label]) => {
               const isDisabled = isAutoMode && !AUTO_MODE_ALLOWED_VALIDATIONS.includes(value as MissionValidationType);
@@ -371,7 +371,7 @@ export function MissionForm({
                   key={value} 
                   value={value}
                   disabled={isDisabled}
-                  className={isDisabled ? 'text-slate-500' : ''}
+                  className={isDisabled ? 'text-moon-100/40' : ''}
                 >
                   {label}{isDisabled ? ' (indisponible)' : ''}
                 </option>
@@ -382,7 +382,7 @@ export function MissionForm({
 
         {/* Time limit */}
         <div>
-          <label className="text-xs text-slate-400 mb-1 block">
+          <label className="text-xs text-moon-100/60 mb-1 block">
             ⏱️ Temps limite (optionnel)
           </label>
           <div className="flex items-center gap-2">
@@ -391,15 +391,15 @@ export function MissionForm({
               value={timeLimitSeconds ? Math.floor(timeLimitSeconds / 60) : ''}
               onChange={(e) => setTimeLimitSeconds(e.target.value ? parseInt(e.target.value) * 60 : undefined)}
               placeholder="Minutes"
-              className="bg-slate-700 border-slate-600 w-24"
+              className="bg-night-700 border-night-600 w-24"
             />
-            <span className="text-slate-400 text-sm">minutes</span>
+            <span className="text-moon-100/60 text-sm">minutes</span>
           </div>
         </div>
 
         {/* Difficulty (points reward) */}
         <div>
-          <label className="text-xs text-slate-400 mb-1 block">
+          <label className="text-xs text-moon-100/60 mb-1 block">
             ⭐ Difficulté (= récompense en points)
           </label>
           <div className="flex items-center gap-2">
@@ -411,13 +411,13 @@ export function MissionForm({
                 className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-all ${
                   difficulty >= level
                     ? 'bg-amber-500 text-white'
-                    : 'bg-slate-700 text-slate-500 hover:bg-slate-600'
+                    : 'bg-night-700 text-moon-100/40 hover:bg-night-600'
                 }`}
               >
                 ⭐
               </button>
             ))}
-            <span className="text-sm text-slate-400 ml-2">
+            <span className="text-sm text-moon-100/60 ml-2">
               = <span className="text-amber-400 font-bold">{difficulty * 2}</span> points
             </span>
           </div>
@@ -429,27 +429,27 @@ export function MissionForm({
             <div className="text-sm font-medium text-amber-400 mb-2">💰 Paramètres enchère</div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-slate-400">Enchère min</label>
+                <label className="text-xs text-moon-100/60">Enchère min</label>
                 <Input
                   type="number"
                   min={1}
                   value={auctionMinBid}
                   onChange={(e) => setAuctionMinBid(parseInt(e.target.value) || 1)}
-                  className="bg-slate-700 border-slate-600"
+                  className="bg-night-700 border-night-600"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-400">Enchère max (optionnel)</label>
+                <label className="text-xs text-moon-100/60">Enchère max (optionnel)</label>
                 <Input
                   type="number"
                   value={auctionMaxBid ?? ''}
                   onChange={(e) => setAuctionMaxBid(e.target.value ? parseInt(e.target.value) : undefined)}
                   placeholder="Illimité"
-                  className="bg-slate-700 border-slate-600"
+                  className="bg-night-700 border-night-600"
                 />
               </div>
             </div>
-            <p className="text-xs text-slate-400 mt-2">
+            <p className="text-xs text-moon-100/60 mt-2">
               Tous les joueurs vivants peuvent enchérir. Le plus offrant devra réaliser son défi.
             </p>
           </div>
@@ -458,13 +458,13 @@ export function MissionForm({
         {/* External URL */}
         {(category === 'external' || validationType === 'external') && (
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">🔗 URL du jeu externe</label>
+            <label className="text-xs text-moon-100/60 mb-1 block">🔗 URL du jeu externe</label>
             <Input
               type="url"
               value={externalUrl}
               onChange={(e) => setExternalUrl(e.target.value)}
               placeholder="https://..."
-              className="bg-slate-700 border-slate-600"
+              className="bg-night-700 border-night-600"
             />
           </div>
         )}
@@ -472,7 +472,7 @@ export function MissionForm({
         {/* Player assignment (not for auction, not in auto mode) */}
         {missionType !== 'auction' && !isAutoMode && (
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">
+            <label className="text-xs text-moon-100/60 mb-1 block">
               👥 Assigner à des joueurs (optionnel)
             </label>
             <div className="flex flex-wrap gap-1">
@@ -482,8 +482,8 @@ export function MissionForm({
                   onClick={() => togglePlayerSelection(player.id)}
                   className={`px-2 py-1 text-xs rounded transition-colors ${
                     assignedToMultiple.includes(player.id)
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      ? 'bg-village-600 text-white'
+                      : 'bg-night-700 text-moon-100/70 hover:bg-night-600'
                   }`}
                 >
                   {player.pseudo}
@@ -500,7 +500,7 @@ export function MissionForm({
 
         {/* Auto-mode assignment info */}
         {isAutoMode && missionType !== 'auction' && (
-          <div className="text-xs text-slate-400 bg-slate-800/50 p-2 rounded">
+          <div className="text-xs text-moon-100/60 bg-night-800/50 p-2 rounded">
             ℹ️ En mode Auto-Garou, la mission sera assignée à tous les joueurs vivants.
           </div>
         )}

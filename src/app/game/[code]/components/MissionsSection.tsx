@@ -122,7 +122,7 @@ export function MissionsSection({
                 className={`px-3 py-1 text-xs rounded-full transition-colors ${
                   filter === key
                     ? 'bg-amber-500/30 text-amber-300'
-                    : 'bg-slate-700/50 text-slate-400 hover:bg-slate-700'
+                    : 'bg-night-700/50 text-moon-100/60 hover:bg-night-700'
                 }`}
               >
                 {label} ({count})
@@ -156,7 +156,7 @@ export function MissionsSection({
 
         {/* Missions List */}
         {filteredMissions.length === 0 ? (
-          <p className="text-center text-slate-500 py-4">
+          <p className="text-center text-moon-100/40 py-4">
             {filter === 'active' && missions.length > 0
               ? 'Aucune mission en cours'
               : filter === 'completed' && missions.length > 0

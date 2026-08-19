@@ -38,7 +38,7 @@ export function WolfChatPanel({
       rotation={readOnly ? 0.5 : -0.5}
       className={cn(
         "mb-6",
-        readOnly ? "border-rose-500/50" : "border-red-500/50"
+        readOnly ? "border-rose-500/50" : "border-blood-500/50"
       )}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -46,7 +46,7 @@ export function WolfChatPanel({
       <CardHeader>
         <CardTitle className={cn(
           "text-lg flex items-center gap-2",
-          readOnly ? "text-rose-400" : "text-red-400"
+          readOnly ? "text-rose-400" : "text-blood-400"
         )}>
           <motion.span
             animate={{ scale: [1, 1.1, 1] }}
@@ -73,10 +73,10 @@ export function WolfChatPanel({
         {/* Messages */}
         <div className={cn(
           "h-48 overflow-y-auto mb-4 space-y-2 p-3 rounded-xl",
-          "bg-zinc-900/80 border border-zinc-700/50"
+          "bg-night-900/80 border border-night-700/50"
         )}>
           {messages.length === 0 ? (
-            <p className="text-slate-500 text-center text-sm py-8">
+            <p className="text-moon-100/40 text-center text-sm py-8">
               Aucun message. Commencez à discuter...
             </p>
           ) : (
@@ -93,15 +93,15 @@ export function WolfChatPanel({
                       "p-3 rounded-xl max-w-[85%] border",
                       "shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]",
                       readOnly
-                        ? "bg-zinc-800 border-zinc-600/50" // All messages look the same for Petite Fille
+                        ? "bg-night-800 border-night-600/50" // All messages look the same for Petite Fille
                         : isOwn
-                          ? "bg-red-900/40 border-red-500/50 ml-auto"
-                          : "bg-zinc-800 border-zinc-600/50"
+                          ? "bg-blood-700/40 border-blood-500/50 ml-auto"
+                          : "bg-night-800 border-night-600/50"
                     )}
                   >
                     {/* Hide wolf pseudo from Petite Fille */}
                     {!readOnly && !isOwn && (
-                      <p className="text-xs text-red-400 font-bold mb-1">
+                      <p className="text-xs text-blood-400 font-bold mb-1">
                         🐺 {msg.player?.pseudo}
                       </p>
                     )}
@@ -131,16 +131,16 @@ export function WolfChatPanel({
               placeholder="Message à la meute..."
               className={cn(
                 "flex-1 px-4 py-3 rounded-xl text-white text-sm",
-                "bg-zinc-800 border-2 border-zinc-600",
-                "focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500",
-                "placeholder:text-slate-500"
+                "bg-night-800 border-2 border-night-600",
+                "focus:outline-none focus:ring-2 focus:ring-blood-500 focus:border-blood-500",
+                "placeholder:text-moon-100/40"
               )}
               disabled={isSendingMessage}
             />
             <MotionButton
               type="submit"
               variant="sticker"
-              className="bg-red-600 border-red-400 px-4"
+              className="bg-blood-500 border-blood-400 px-4"
               disabled={!newMessage.trim() || isSendingMessage}
             >
               {isSendingMessage ? '...' : '➤'}

@@ -56,18 +56,18 @@ export function HunterDeathModal() {
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md border-amber-500/50 bg-slate-900">
+      <Card className="w-full max-w-md border-amber-500/50 bg-night-900">
         <CardHeader className="text-center">
           <div className="text-6xl mb-2">🏹</div>
           <CardTitle className="text-amber-400 text-2xl">Tir du Chasseur</CardTitle>
-          <p className="text-slate-300 mt-2">
+          <p className="text-moon-100/70 mt-2">
             Tu es mort, mais tu peux emporter quelqu&apos;un avec toi !
           </p>
           <p className="text-amber-300/70 text-sm mt-1">Choisis ta cible rapidement...</p>
         </CardHeader>
         <CardContent>
           {error && (
-            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+            <div className="mb-4 p-3 bg-blood-500/20 border border-blood-500/50 rounded-lg text-blood-400 text-sm">
               {error}
             </div>
           )}
@@ -82,11 +82,11 @@ export function HunterDeathModal() {
                   'w-full p-3 rounded-lg border text-left transition-all',
                   selectedTarget === player.id
                     ? 'border-amber-500 bg-amber-500/20 text-white'
-                    : 'border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-600'
+                    : 'border-night-700 bg-night-800/50 text-moon-100/70 hover:border-night-600'
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-lg">
+                  <div className="w-10 h-10 rounded-full bg-night-700 flex items-center justify-center text-lg">
                     👤
                   </div>
                   <span className="font-medium">{player.pseudo}</span>
@@ -113,7 +113,7 @@ export function HunterDeathModal() {
             )}
           </Button>
 
-          <p className="text-center text-slate-500 text-xs mt-4">
+          <p className="text-center text-moon-100/40 text-xs mt-4">
             Ce tir est définitif et ne peut pas être annulé.
           </p>
         </CardContent>

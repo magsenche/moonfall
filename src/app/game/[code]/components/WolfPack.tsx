@@ -22,12 +22,12 @@ export function WolfPack({ wolves }: WolfPackProps) {
     <MotionCard 
       variant="sticker" 
       rotation={0.5}
-      className="mb-6 border-red-500/50"
+      className="mb-6 border-blood-500/50"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
       <CardHeader>
-        <CardTitle className="text-red-400 text-lg flex items-center gap-2">
+        <CardTitle className="text-blood-400 text-lg flex items-center gap-2">
           <motion.span
             animate={{ rotate: [0, 5, -5, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
@@ -47,7 +47,7 @@ export function WolfPack({ wolves }: WolfPackProps) {
               transition={{ delay: i * 0.1 }}
               className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-xl",
-                "bg-red-900/30 border border-red-500/50",
+                "bg-blood-700/30 border border-blood-500/50",
                 "shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
               )}
             >
@@ -62,7 +62,7 @@ export function WolfPack({ wolves }: WolfPackProps) {
           transition={{ delay: 0.3 }}
           className={cn(
             "inline-block mt-4 px-3 py-1.5 rounded-full text-xs font-medium",
-            "bg-red-900/40 border border-red-500/30 text-red-300"
+            "bg-blood-700/40 border border-blood-500/30 text-blood-400"
           )}
         >
           🩸 Chaque nuit, choisissez ensemble une victime

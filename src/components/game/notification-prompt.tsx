@@ -72,12 +72,12 @@ export function NotificationPrompt({ playerId, onPermissionChange }: Notificatio
   };
 
   return (
-    <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+    <div className="bg-village-400/10 border border-village-400/30 rounded-lg p-4">
       <div className="flex items-start gap-3">
         <span className="text-2xl">🔔</span>
         <div className="flex-1">
-          <h4 className="font-medium text-purple-200">Activer les notifications</h4>
-          <p className="text-sm text-purple-300/70 mt-1">
+          <h4 className="font-medium text-village-300">Activer les notifications</h4>
+          <p className="text-sm text-village-300/70 mt-1">
             Recevez des alertes quand c&apos;est votre tour ou quand la phase change !
           </p>
           <Button 
@@ -103,7 +103,7 @@ export function NotificationBadge() {
 
   const statusConfig = {
     granted: { icon: '🔔', color: 'text-green-400', label: 'Notifications activées' },
-    denied: { icon: '🔕', color: 'text-red-400', label: 'Notifications désactivées' },
+    denied: { icon: '🔕', color: 'text-blood-400', label: 'Notifications désactivées' },
     default: { icon: '🔔', color: 'text-amber-400', label: 'Notifications en attente' },
   };
 

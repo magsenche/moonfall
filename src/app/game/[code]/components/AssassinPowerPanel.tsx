@@ -136,7 +136,7 @@ export function AssassinPowerPanel({
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="p-3 mb-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+          <div className="p-3 mb-4 bg-blood-500/20 border border-blood-500/50 rounded-lg text-blood-400 text-sm">
             {error}
           </div>
         )}
@@ -153,7 +153,7 @@ export function AssassinPowerPanel({
               <p className="text-rose-400 font-bold text-lg mb-2">
                 {successMessage || `Vous avez assassiné ${status.victimName}`}
               </p>
-              <p className="text-slate-400 text-sm">
+              <p className="text-moon-100/60 text-sm">
                 Votre lame a trouvé sa cible. Il ne vous reste plus qu'à survivre...
               </p>
               <p className="text-amber-400 text-xs mt-4">
@@ -184,7 +184,7 @@ export function AssassinPowerPanel({
                 <MotionButton
                   variant="sticker"
                   onClick={() => setShowConfirm(false)}
-                  className="bg-slate-700 hover:bg-slate-600 border-slate-500"
+                  className="bg-night-700 hover:bg-night-600 border-night-600"
                   whileTap={{ scale: 0.95 }}
                 >
                   Annuler
@@ -224,7 +224,7 @@ export function AssassinPowerPanel({
                 </p>
               </div>
 
-              <p className="text-slate-400 text-sm mb-4 text-center">
+              <p className="text-moon-100/60 text-sm mb-4 text-center">
                 Choisissez votre victime (mort immédiate)
               </p>
 
@@ -241,7 +241,7 @@ export function AssassinPowerPanel({
                       'flex flex-col items-center gap-2 p-3 rounded-xl transition-all',
                       selectedTarget === player.id
                         ? 'bg-rose-500/30 border-2 border-rose-500 shadow-[3px_3px_0px_0px_rgba(244,63,94,0.5)]'
-                        : 'bg-zinc-800/50 hover:bg-rose-900/20 border-2 border-transparent'
+                        : 'bg-night-800/50 hover:bg-rose-900/20 border-2 border-transparent'
                     )}
                   >
                     <PlayerAvatar

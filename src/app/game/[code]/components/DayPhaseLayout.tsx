@@ -52,7 +52,7 @@ export function DayPhaseLayout() {
             <h3 className="font-black text-white text-lg mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.3)' }}>
               Le jour se lève
             </h3>
-            <p className="text-slate-300 text-sm">
+            <p className="text-moon-100/70 text-sm">
               {isAssassin
                 ? '🗡️ Choisissez le bon moment pour frapper...'
                 : isWolf
@@ -100,7 +100,7 @@ export function DayPhaseLayout() {
       <MotionCard 
         variant="sticker" 
         rotation={0.5}
-        className="border-zinc-600"
+        className="border-night-600"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -110,7 +110,7 @@ export function DayPhaseLayout() {
             <p className="text-3xl">💬</p>
             <div>
               <h4 className="font-bold text-white mb-1">Phase de discussion</h4>
-              <p className="text-slate-400 text-sm">
+              <p className="text-moon-100/60 text-sm">
                 Échangez avec les autres joueurs, partagez vos suspicions, et préparez-vous pour
                 le conseil du village.
               </p>
@@ -124,7 +124,7 @@ export function DayPhaseLayout() {
                   transition={{ delay: 0.4 + i * 0.1 }}
                   className={cn(
                     "px-3 py-1.5 rounded-full text-xs font-medium",
-                    "bg-zinc-700 border border-white/20 text-slate-200",
+                    "bg-night-700 border border-white/20 text-moon-100/80",
                     "shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
                   )}
                 >

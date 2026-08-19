@@ -1,5 +1,7 @@
 'use client';
 
+import { ClipboardList } from 'lucide-react';
+
 /**
  * MissionsDrawer - Floating button + drawer for missions
  * Similar to RulesButton but for missions with badge count
@@ -122,7 +124,7 @@ export function MissionsDrawer({
         aria-label="Missions"
         title="Missions"
       >
-        📋
+        <ClipboardList className="w-6 h-6" />
         {/* Badge with count */}
         {counts.active > 0 && (
           <span className={cn(
@@ -130,7 +132,7 @@ export function MissionsDrawer({
             'min-w-5 h-5 px-1 flex items-center justify-center',
             'text-xs font-bold rounded-full',
             counts.myActive > 0 
-              ? 'bg-red-500 text-white' 
+              ? 'bg-blood-500 text-white' 
               : 'bg-amber-400 text-amber-900'
           )}>
             {counts.myActive > 0 ? counts.myActive : counts.active}
@@ -153,20 +155,20 @@ export function MissionsDrawer({
               className={cn(
                 'w-full sm:max-w-lg h-[85vh] sm:h-auto sm:max-h-[85vh]',
                 'flex flex-col',
-                'bg-zinc-900 border-t sm:border border-amber-500/30',
+                'bg-night-900 border-t sm:border border-amber-500/30',
                 'rounded-t-2xl sm:rounded-2xl shadow-2xl'
               )}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Drag indicator (mobile) */}
               <div className="sm:hidden flex justify-center pt-3 pb-1">
-                <div className="w-10 h-1 bg-zinc-700 rounded-full" />
+                <div className="w-10 h-1 bg-night-700 rounded-full" />
               </div>
               
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-zinc-800">
+              <div className="flex items-center justify-between p-4 border-b border-night-800">
                 <h2 className="text-xl font-bold text-amber-400 flex items-center gap-2">
-                  <span>📋</span> Missions
+                  <ClipboardList className="w-5 h-5 text-moon-500" /> Missions
                   {counts.myActive > 0 && (
                     <span className="px-2 py-0.5 text-xs bg-amber-500/20 text-amber-300 rounded-full">
                       {counts.myActive} pour toi
@@ -186,7 +188,7 @@ export function MissionsDrawer({
                   )}
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition-colors"
+                    className="p-2 text-moon-100/60 hover:text-moon-100 hover:bg-night-800 rounded-lg transition-colors"
                     aria-label="Fermer"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -198,7 +200,7 @@ export function MissionsDrawer({
 
               {/* Filter tabs */}
               {missions.length > 0 && (
-                <div className="flex gap-1 p-3 border-b border-zinc-800">
+                <div className="flex gap-1 p-3 border-b border-night-800">
                   {filterButtons.map(({ key, label, count }) => (
                     <button
                       key={key}
@@ -207,7 +209,7 @@ export function MissionsDrawer({
                         'flex-1 px-3 py-2 text-xs rounded-lg transition-colors',
                         filter === key
                           ? 'bg-amber-500/30 text-amber-300'
-                          : 'bg-zinc-800 text-slate-400 hover:bg-zinc-700'
+                          : 'bg-night-800 text-moon-100/60 hover:bg-night-700'
                       )}
                     >
                       {label} ({count})
@@ -244,7 +246,7 @@ export function MissionsDrawer({
                 {filteredMissions.length === 0 ? (
                   <div className="text-center py-12">
                     <span className="text-4xl mb-4 block">📭</span>
-                    <p className="text-slate-500">
+                    <p className="text-moon-100/40">
                       {filter === 'active' && missions.length > 0
                         ? 'Aucune mission en cours'
                         : filter === 'completed' && missions.length > 0

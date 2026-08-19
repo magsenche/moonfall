@@ -41,12 +41,12 @@ export function WolfNightVote({
     <MotionCard 
       variant="sticker" 
       rotation={-1}
-      className="mb-6 border-red-500/50"
+      className="mb-6 border-blood-500/50"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
       <CardHeader>
-        <CardTitle className="text-red-400 flex items-center gap-2">
+        <CardTitle className="text-blood-400 flex items-center gap-2">
           <motion.span 
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
@@ -72,23 +72,23 @@ export function WolfNightVote({
               >
                 ✅
               </motion.p>
-              <p className="text-red-300 font-bold">Vote enregistré</p>
+              <p className="text-blood-400 font-bold">Vote enregistré</p>
               {confirmedNightTarget && (
                 <motion.div 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className={cn(
                     'inline-block mt-3 px-4 py-2 rounded-xl',
-                    'bg-red-900/50 border border-red-500/50'
+                    'bg-blood-700/50 border border-blood-500/50'
                   )}
                 >
-                  <span className="text-red-400">🩸 Cible :</span>{' '}
+                  <span className="text-blood-400">🩸 Cible :</span>{' '}
                   <span className="font-bold text-white">
                     {alivePlayers.find(p => p.id === confirmedNightTarget)?.pseudo || 'Inconnu'}
                   </span>
                 </motion.div>
               )}
-              <p className="text-xs text-slate-500 mt-3">
+              <p className="text-xs text-moon-100/40 mt-3">
                 En attente de la meute...
               </p>
             </motion.div>
@@ -106,8 +106,8 @@ export function WolfNightVote({
                     className={cn(
                       "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
                       nightTarget === player.id
-                        ? "bg-red-500/30 border-2 border-red-500 shadow-[3px_3px_0px_0px_rgba(220,38,38,0.5)]"
-                        : "bg-zinc-800/50 hover:bg-red-900/30 border-2 border-transparent"
+                        ? "bg-blood-500/30 border-2 border-blood-500 shadow-[3px_3px_0px_0px_rgba(220,38,38,0.5)]"
+                        : "bg-night-800/50 hover:bg-blood-700/30 border-2 border-transparent"
                     )}
                   >
                     <div className="relative">
@@ -122,7 +122,7 @@ export function WolfNightVote({
                           animate={{ scale: 1 }}
                           className={cn(
                             'absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full',
-                            'bg-red-600 border border-white text-white font-bold',
+                            'bg-blood-500 border border-white text-white font-bold',
                             'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)]'
                           )}
                         >
@@ -138,7 +138,7 @@ export function WolfNightVote({
               </div>
               <MotionButton
                 variant="sticker"
-                className="w-full bg-red-600 border-red-400 hover:bg-red-500"
+                className="w-full bg-blood-500 border-blood-400 hover:bg-blood-500"
                 onClick={onSubmitVote}
                 disabled={!nightTarget || isNightVoting}
               >
@@ -150,7 +150,7 @@ export function WolfNightVote({
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="text-sm text-red-400 text-center mt-2"
+                    className="text-sm text-blood-400 text-center mt-2"
                   >
                     {nightVoteError}
                   </motion.p>

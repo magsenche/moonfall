@@ -101,11 +101,11 @@ export function MissionCard({
 
   // Status badge colors
   const statusColors: Record<string, string> = {
-    pending: 'bg-slate-500/20 text-slate-300',
+    pending: 'bg-night-600/20 text-moon-100/70',
     in_progress: 'bg-amber-500/20 text-amber-300',
     success: 'bg-green-500/20 text-green-300',
-    failed: 'bg-red-500/20 text-red-300',
-    cancelled: 'bg-slate-500/20 text-slate-400',
+    failed: 'bg-blood-500/20 text-blood-400',
+    cancelled: 'bg-night-600/20 text-moon-100/60',
   };
 
   const handleBid = async () => {
@@ -179,10 +179,10 @@ export function MissionCard({
     <Card 
       className={`p-3 transition-all ${
         mission.status === 'success' ? 'bg-green-500/10 border-green-500/30' :
-        mission.status === 'failed' ? 'bg-red-500/10 border-red-500/30' :
-        mission.status === 'cancelled' ? 'bg-slate-500/10 border-slate-500/30 opacity-50' :
+        mission.status === 'failed' ? 'bg-blood-500/10 border-blood-500/30' :
+        mission.status === 'cancelled' ? 'bg-night-600/10 border-night-600/30 opacity-50' :
         isActive ? 'bg-amber-500/10 border-amber-500/30' :
-        'bg-slate-800/50 border-slate-700'
+        'bg-night-800/50 border-night-700'
       }`}
     >
       {/* Header */}
@@ -197,7 +197,7 @@ export function MissionCard({
             </span>
             <h4 className="font-medium text-white">{mission.title}</h4>
             {mission.mission_type && (
-              <span className="text-xs bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">
+              <span className="text-xs bg-night-700 px-1.5 py-0.5 rounded text-moon-100/70">
                 {MISSION_TYPE_LABELS[mission.mission_type]}
               </span>
             )}
@@ -220,22 +220,22 @@ export function MissionCard({
             </span>
             
             {timeRemaining !== null && isActive && (
-              <span className={`font-mono ${timeRemaining < 60 ? 'text-red-400' : 'text-slate-400'}`}>
+              <span className={`font-mono ${timeRemaining < 60 ? 'text-blood-400' : 'text-moon-100/60'}`}>
                 ⏱️ {formatTime(timeRemaining)}
               </span>
             )}
           </div>
         </div>
         
-        <span className="text-slate-400 text-sm">
+        <span className="text-moon-100/60 text-sm">
           {isExpanded ? '▲' : '▼'}
         </span>
       </div>
 
       {/* Expanded content */}
       {isExpanded && (
-        <div className="mt-3 pt-3 border-t border-slate-700 space-y-3">
-          <p className="text-sm text-slate-300">{mission.description}</p>
+        <div className="mt-3 pt-3 border-t border-night-700 space-y-3">
+          <p className="text-sm text-moon-100/70">{mission.description}</p>
 
           {/* External URL */}
           {mission.external_url && isActive && (
@@ -243,7 +243,7 @@ export function MissionCard({
               href={mission.external_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block text-sm text-blue-400 hover:underline"
+              className="block text-sm text-village-400 hover:underline"
             >
               🔗 Ouvrir le mini-jeu
             </a>
@@ -264,12 +264,12 @@ export function MissionCard({
               </div>
               
               {/* Current highest bid */}
-              <div className="text-sm text-slate-300">
+              <div className="text-sm text-moon-100/70">
                 Meilleure offre : <span className="font-bold text-white">
                   {auctionData?.current_highest_bid ?? 0}
                 </span>
                 {auctionData?.current_highest_bidder && (
-                  <span className="text-slate-400 ml-1">
+                  <span className="text-moon-100/60 ml-1">
                     par {mission.assigned_players.find(p => p.id === auctionData.current_highest_bidder)?.pseudo || 'joueur'}
                   </span>
                 )}
@@ -283,7 +283,7 @@ export function MissionCard({
                     min={(auctionData?.current_highest_bid ?? 0) + 1}
                     value={bidAmount}
                     onChange={(e) => setBidAmount(parseInt(e.target.value) || 0)}
-                    className="w-20 bg-slate-700 border-slate-600"
+                    className="w-20 bg-night-700 border-night-600"
                   />
                   <Button
                     size="sm"
@@ -374,7 +374,7 @@ export function MissionCard({
                 value={scoreInput}
                 onChange={(e) => setScoreInput(e.target.value)}
                 placeholder="Votre score"
-                className="w-24 bg-slate-700 border-slate-600"
+                className="w-24 bg-night-700 border-night-600"
               />
               <Button
                 size="sm"
@@ -389,15 +389,15 @@ export function MissionCard({
           {/* Assigned players */}
           {mission.assigned_players.length > 0 && !isAuction && (
             <div className="text-sm">
-              <span className="text-slate-400">Joueurs :</span>
+              <span className="text-moon-100/60">Joueurs :</span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {mission.assigned_players.map(player => (
                   <span 
                     key={player.id}
                     className={`px-2 py-0.5 rounded text-xs ${
                       player.status === 'completed' ? 'bg-green-600/30 text-green-300' :
-                      player.status === 'failed' ? 'bg-red-600/30 text-red-300' :
-                      'bg-slate-600/30 text-slate-300'
+                      player.status === 'failed' ? 'bg-blood-500/30 text-blood-400' :
+                      'bg-night-600/30 text-moon-100/70'
                     }`}
                   >
                     {player.pseudo}
@@ -410,15 +410,15 @@ export function MissionCard({
 
           {/* MJ standard controls */}
           {isMJ && isActive && !isAuction && (
-            <div className="space-y-2 pt-2 border-t border-slate-700">
+            <div className="space-y-2 pt-2 border-t border-night-700">
               {/* Winner selection for multi-player non-collective missions */}
               {mission.assigned_players.length > 1 && mission.mission_type !== 'collective' && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400">Gagnant :</span>
+                  <span className="text-xs text-moon-100/60">Gagnant :</span>
                   <select
                     value={selectedWinnerId || ''}
                     onChange={(e) => setSelectedWinnerId(e.target.value || null)}
-                    className="flex-1 bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-white"
+                    className="flex-1 bg-night-700 border border-night-600 rounded px-2 py-1 text-sm text-white"
                   >
                     <option value="">-- Sélectionner --</option>
                     {mission.assigned_players.map(player => (
@@ -433,7 +433,7 @@ export function MissionCard({
               
               {/* Collective mission note */}
               {mission.mission_type === 'collective' && (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-moon-100/60">
                   👥 Mission collective - le village entier réussit ou échoue ensemble
                 </p>
               )}
@@ -469,7 +469,7 @@ export function MissionCard({
 
           {/* Error display */}
           {error && (
-            <div className="text-sm text-red-400 bg-red-500/10 p-2 rounded">
+            <div className="text-sm text-blood-400 bg-blood-500/10 p-2 rounded">
               {error}
             </div>
           )}

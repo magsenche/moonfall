@@ -182,7 +182,7 @@ export function CupidonLoversPanel({
               <span className="font-bold text-pink-300">{status.lover2Name}</span>
             </motion.div>
           </div>
-          <p className="text-slate-400 text-sm">
+          <p className="text-moon-100/60 text-sm">
             Ils sont maintenant liés par l&apos;amour... et par le destin.
             <br />
             Si l&apos;un meurt, l&apos;autre mourra de chagrin.
@@ -212,7 +212,7 @@ export function CupidonLoversPanel({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-slate-300 text-sm text-center">
+        <p className="text-moon-100/70 text-sm text-center">
           Choisis deux joueurs qui deviendront <span className="text-pink-400 font-bold">Amoureux</span>.
           <br />
           Tu peux te choisir toi-même !
@@ -236,7 +236,7 @@ export function CupidonLoversPanel({
                     'disabled:opacity-30 disabled:cursor-not-allowed',
                     selectedLover1 === player.id
                       ? 'border-pink-500 bg-pink-500/20 shadow-[0_0_15px_rgba(236,72,153,0.4)]'
-                      : 'border-white/20 hover:border-pink-500/50 bg-zinc-800/50'
+                      : 'border-white/20 hover:border-pink-500/50 bg-night-800/50'
                   )}
                 >
                   <PlayerAvatar playerId={player.id} pseudo={player.pseudo} size="sm" />
@@ -276,7 +276,7 @@ export function CupidonLoversPanel({
                     'disabled:opacity-30 disabled:cursor-not-allowed',
                     selectedLover2 === player.id
                       ? 'border-pink-500 bg-pink-500/20 shadow-[0_0_15px_rgba(236,72,153,0.4)]'
-                      : 'border-white/20 hover:border-pink-500/50 bg-zinc-800/50'
+                      : 'border-white/20 hover:border-pink-500/50 bg-night-800/50'
                   )}
                 >
                   <PlayerAvatar playerId={player.id} pseudo={player.pseudo} size="sm" />
@@ -317,7 +317,7 @@ export function CupidonLoversPanel({
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-red-400 text-sm text-center"
+            className="text-blood-400 text-sm text-center"
           >
             ⚠️ {error}
           </motion.p>

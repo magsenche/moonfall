@@ -120,12 +120,12 @@ export function WildChildModelPanel({
       <MotionCard
         variant="sticker"
         rotation={2}
-        className="mb-6 border-red-500/50"
+        className="mb-6 border-blood-500/50"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
       >
         <CardHeader>
-          <CardTitle className="text-red-400 flex items-center gap-2">
+          <CardTitle className="text-blood-400 flex items-center gap-2">
             <motion.span
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ duration: 1, repeat: Infinity }}
@@ -144,13 +144,13 @@ export function WildChildModelPanel({
           >
             🐺
           </motion.div>
-          <p className="text-red-400 font-bold text-lg mb-2">
+          <p className="text-blood-400 font-bold text-lg mb-2">
             Votre modèle est mort !
           </p>
           <p className="text-white font-medium mb-4">
             Vous êtes maintenant un Loup-Garou !
           </p>
-          <p className="text-slate-400 text-sm">
+          <p className="text-moon-100/60 text-sm">
             La rage vous envahit... Rejoignez la meute et dévorez le village !
           </p>
         </CardContent>
@@ -179,7 +179,7 @@ export function WildChildModelPanel({
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="p-3 mb-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+          <div className="p-3 mb-4 bg-blood-500/20 border border-blood-500/50 rounded-lg text-blood-400 text-sm">
             {error}
           </div>
         )}
@@ -204,7 +204,7 @@ export function WildChildModelPanel({
               </p>
               {isModelAlive ? (
                 <>
-                  <p className="text-slate-400 text-sm mb-4">
+                  <p className="text-moon-100/60 text-sm mb-4">
                     Tant qu'il/elle vit, vous restez du côté du village.
                   </p>
                   <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
@@ -217,9 +217,9 @@ export function WildChildModelPanel({
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg"
+                  className="p-3 bg-blood-500/20 border border-blood-500/50 rounded-lg"
                 >
-                  <p className="text-red-400 text-sm font-medium">
+                  <p className="text-blood-400 text-sm font-medium">
                     🐺 Votre modèle est mort... La transformation approche !
                   </p>
                 </motion.div>
@@ -250,7 +250,7 @@ export function WildChildModelPanel({
                       'flex flex-col items-center gap-2 p-3 rounded-xl transition-all',
                       selectedModel === player.id
                         ? 'bg-emerald-500/30 border-2 border-emerald-500 shadow-[3px_3px_0px_0px_rgba(16,185,129,0.5)]'
-                        : 'bg-zinc-800/50 hover:bg-emerald-900/20 border-2 border-transparent'
+                        : 'bg-night-800/50 hover:bg-emerald-900/20 border-2 border-transparent'
                     )}
                   >
                     <PlayerAvatar

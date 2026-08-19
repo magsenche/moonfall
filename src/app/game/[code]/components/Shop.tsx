@@ -5,6 +5,8 @@
 
 'use client';
 
+import { ShoppingBag, Coins } from 'lucide-react';
+
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Button } from '@/components/ui';
 import { purchaseItem, type ShopItem, type ShopPlayerData, ApiError } from '@/lib/api';
@@ -56,9 +58,9 @@ export function Shop({ gameCode, playerId, gameStatus, onPurchase, items, player
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between text-emerald-400 text-sm">
           <span className="flex items-center gap-2">
-            🛒 Shop
+            <ShoppingBag className="w-5 h-5 inline -mt-1 mr-1" /> Boutique
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-moon-100/60">
             {items.filter(i => i.can_buy).length} disponibles
           </span>
         </CardTitle>
@@ -67,14 +69,14 @@ export function Shop({ gameCode, playerId, gameStatus, onPurchase, items, player
       <CardContent className="pt-2">
         {message && (
           <p className={`mb-3 text-sm ${
-            message.type === 'success' ? 'text-green-400' : 'text-red-400'
+            message.type === 'success' ? 'text-green-400' : 'text-blood-400'
           }`}>
             {message.text}
           </p>
         )}
         
-        <p className="text-sm text-slate-300 mb-3">
-          💰 Tu as <span className="font-bold text-emerald-400">{points} points</span>
+        <p className="text-sm text-moon-100/70 mb-3">
+          <Coins className="w-4 h-4 inline -mt-0.5 mr-1 text-moon-500" /> Tu as <span className="font-bold text-emerald-400">{points} points</span>
         </p>
         
         <div className="space-y-2">
@@ -89,8 +91,8 @@ export function Shop({ gameCode, playerId, gameStatus, onPurchase, items, player
                 key={item.id}
                 className={`p-3 rounded-lg border transition-colors ${
                   canBuy 
-                    ? 'bg-slate-800/50 border-emerald-500/30 hover:border-emerald-500/50' 
-                    : 'bg-slate-800/30 border-slate-700/50 opacity-60'
+                    ? 'bg-night-800/50 border-emerald-500/30 hover:border-emerald-500/50' 
+                    : 'bg-night-800/30 border-night-700/50 opacity-60'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -99,12 +101,12 @@ export function Shop({ gameCode, playerId, gameStatus, onPurchase, items, player
                       <span className="text-lg">{item.icon || '⚡'}</span>
                       <span className="font-medium text-white">{item.name}</span>
                       <span className={`text-sm font-bold ${
-                        canAfford ? 'text-emerald-400' : 'text-slate-500'
+                        canAfford ? 'text-emerald-400' : 'text-moon-100/40'
                       }`}>
                         {item.cost} pts
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">{item.description}</p>
+                    <p className="text-xs text-moon-100/60 mt-1">{item.description}</p>
                     {maxReached && (
                       <p className="text-xs text-amber-400 mt-1">
                         ⚠️ Max atteint ({item.max_per_player}x)
@@ -119,7 +121,7 @@ export function Shop({ gameCode, playerId, gameStatus, onPurchase, items, player
                     className={`min-w-[80px] ${
                       canBuy 
                         ? 'bg-emerald-600 hover:bg-emerald-500 text-white' 
-                        : 'bg-slate-700 text-slate-400'
+                        : 'bg-night-700 text-moon-100/60'
                     }`}
                   >
                     {purchasingItem === item.id ? '...' : 'Acheter'}
@@ -131,7 +133,7 @@ export function Shop({ gameCode, playerId, gameStatus, onPurchase, items, player
         </div>
         
         {items.length === 0 && (
-          <p className="text-center text-slate-500 py-4">
+          <p className="text-center text-moon-100/40 py-4">
             Aucun item disponible
           </p>
         )}

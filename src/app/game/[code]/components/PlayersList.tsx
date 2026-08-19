@@ -85,10 +85,10 @@ export function PlayersList({
                   'border-2 transition-all cursor-default',
                   'shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]',
                   isCurrentPlayer
-                    ? 'bg-indigo-900/50 border-indigo-400'
+                    ? 'bg-night-700/50 border-village-400'
                     : isMJ && playerRole?.team === 'loups'
-                      ? 'bg-red-900/30 border-red-500/50'
-                      : 'bg-zinc-800/80 border-white/30'
+                      ? 'bg-blood-700/30 border-blood-500/50'
+                      : 'bg-night-800/80 border-white/30'
                 )}
                 style={{ 
                   transform: `rotate(${(Math.random() - 0.5) * 4}deg)` 
@@ -113,7 +113,7 @@ export function PlayersList({
                     animate={{ scale: 1, rotate: -12 }}
                     className={cn(
                       'absolute top-1 right-0 px-2 py-0.5 rounded-md',
-                      'bg-red-600 border-2 border-white text-white',
+                      'bg-blood-500 border-2 border-white text-white',
                       'text-[10px] font-black uppercase tracking-wider',
                       'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)]',
                       'transform'
@@ -130,7 +130,7 @@ export function PlayersList({
                     animate={{ scale: 1 }}
                     className={cn(
                       'absolute -top-1 -left-1 px-1.5 py-0.5 rounded-md',
-                      'bg-indigo-500 border-2 border-white text-white',
+                      'bg-village-400 border-2 border-white text-white',
                       'text-[9px] font-bold uppercase',
                       'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)]'
                     )}
@@ -142,7 +142,7 @@ export function PlayersList({
                 {/* Name */}
                 <p className={cn(
                   'mt-2 text-xs font-bold truncate max-w-full text-center',
-                  isDead ? 'text-slate-500' : 'text-white'
+                  isDead ? 'text-moon-100/40' : 'text-white'
                 )}>
                   {player.pseudo}
                 </p>
@@ -159,7 +159,7 @@ export function PlayersList({
 
                 {/* Dead role reveal */}
                 {isDead && pRoleConfig && (
-                  <p className="mt-1 text-[10px] text-slate-500 italic">
+                  <p className="mt-1 text-[10px] text-moon-100/40 italic">
                     {pRoleConfig.displayName}
                   </p>
                 )}

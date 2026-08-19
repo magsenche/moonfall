@@ -157,8 +157,8 @@ export function OnboardingTooltips({ location, className }: OnboardingTooltipsPr
       >
         <div
           className={cn(
-            'bg-zinc-800/95 backdrop-blur-sm',
-            'border-2 border-indigo-500/50',
+            'bg-night-800/95 backdrop-blur-sm',
+            'border-2 border-village-400/50',
             'rounded-2xl p-4',
             'shadow-[0_10px_40px_rgba(0,0,0,0.5)]'
           )}
@@ -168,7 +168,7 @@ export function OnboardingTooltips({ location, className }: OnboardingTooltipsPr
             <span className="text-3xl">{currentTip.icon}</span>
             <div className="flex-1 min-w-0">
               <h4 className="font-bold text-white text-sm">{currentTip.title}</h4>
-              <p className="text-slate-300 text-sm mt-1 leading-relaxed">
+              <p className="text-moon-100/70 text-sm mt-1 leading-relaxed">
                 {currentTip.description}
               </p>
             </div>
@@ -177,8 +177,8 @@ export function OnboardingTooltips({ location, className }: OnboardingTooltipsPr
               onClick={dismissTip}
               className={cn(
                 'w-8 h-8 flex items-center justify-center rounded-full',
-                'bg-slate-700/50 hover:bg-slate-600/50',
-                'text-slate-400 hover:text-white transition-colors'
+                'bg-night-700/50 hover:bg-night-600/50',
+                'text-moon-100/60 hover:text-white transition-colors'
               )}
               aria-label="Fermer"
             >
@@ -187,7 +187,7 @@ export function OnboardingTooltips({ location, className }: OnboardingTooltipsPr
           </div>
           
           {/* Footer */}
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-700/50">
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-night-700/50">
             {/* Progress dots */}
             <div className="flex gap-1.5">
               {availableTips.map((_, i) => (
@@ -195,7 +195,7 @@ export function OnboardingTooltips({ location, className }: OnboardingTooltipsPr
                   key={i}
                   className={cn(
                     'w-2 h-2 rounded-full transition-colors',
-                    i === currentTipIndex ? 'bg-indigo-400' : 'bg-slate-600'
+                    i === currentTipIndex ? 'bg-village-400' : 'bg-night-600'
                   )}
                 />
               ))}
@@ -206,7 +206,7 @@ export function OnboardingTooltips({ location, className }: OnboardingTooltipsPr
               {availableTips.length > 1 && (
                 <button
                   onClick={dismissAll}
-                  className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                  className="text-xs text-moon-100/40 hover:text-moon-100/70 transition-colors"
                 >
                   Tout masquer
                 </button>
@@ -215,7 +215,7 @@ export function OnboardingTooltips({ location, className }: OnboardingTooltipsPr
                 onClick={dismissTip}
                 className={cn(
                   'px-3 py-1 rounded-lg text-xs font-medium',
-                  'bg-indigo-600 hover:bg-indigo-500 text-white',
+                  'bg-village-600 hover:bg-village-400 text-white',
                   'transition-colors'
                 )}
               >

@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MotionButton } from '@/components/ui';
 import { getShop, type ShopItem, type ShopPlayerData } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { Coins, Zap, ShoppingBag } from 'lucide-react';
 import { useGame } from '../context';
 
 import { MJControls } from './MJControls';
@@ -112,7 +113,7 @@ export function GameFooter() {
             onClick={() => setShowWallet(!showWallet)}
             className={cn(
               'w-full mb-2',
-              showWallet ? 'bg-zinc-700' : 'bg-zinc-800'
+              showWallet ? 'bg-night-700' : 'bg-night-800'
             )}
           >
             {showWallet ? (
@@ -120,15 +121,15 @@ export function GameFooter() {
             ) : (
               <span className="flex items-center justify-center gap-3">
                 <span className="flex items-center gap-1">
-                  <span>💰</span>
+                  <Coins className="w-4 h-4 text-moon-500" />
                   <span className="font-bold">{isShopLoading ? '...' : `${points} pts`}</span>
                 </span>
                 {!isShopLoading && unusedPowersCount > 0 && (
                   <span className={cn(
                     'px-2 py-0.5 rounded-full text-xs font-bold',
-                    'bg-purple-500/30 text-purple-300 border border-purple-500/50'
+                    'bg-village-400/30 text-village-300 border border-village-400/50'
                   )}>
-                    ⚡ {unusedPowersCount}
+                    <Zap className="w-3 h-3 inline -mt-0.5" /> {unusedPowersCount}
                   </span>
                 )}
                 {!isShopLoading && availableItemsCount > 0 && (
@@ -136,7 +137,7 @@ export function GameFooter() {
                     'px-2 py-0.5 rounded-full text-xs font-bold',
                     'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50'
                   )}>
-                    🛒 {availableItemsCount}
+                    <ShoppingBag className="w-3 h-3 inline -mt-0.5" /> {availableItemsCount}
                   </span>
                 )}
               </span>

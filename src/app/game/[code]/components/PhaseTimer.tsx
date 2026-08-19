@@ -28,18 +28,18 @@ export function PhaseTimer({ timeRemaining, showTimer }: PhaseTimerProps) {
       <div className={cn(
         "text-center p-4 rounded-xl",
         isUrgent
-          ? "bg-red-500/20 animate-pulse"
+          ? "bg-blood-500/20 animate-pulse"
           : isWarning
           ? "bg-amber-500/20"
-          : "bg-slate-800/50"
+          : "bg-night-800/50"
       )}>
-        <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">
+        <p className="text-xs text-moon-100/60 uppercase tracking-wide mb-1">
           Temps restant
         </p>
         <p className={cn(
           "text-4xl font-mono font-bold",
           isUrgent
-            ? "text-red-400"
+            ? "text-blood-400"
             : isWarning
             ? "text-amber-400"
             : "text-white"
@@ -47,7 +47,7 @@ export function PhaseTimer({ timeRemaining, showTimer }: PhaseTimerProps) {
           {formatTime(timeRemaining)}
         </p>
         {timeRemaining === 0 && (
-          <p className="text-sm text-red-400 mt-2">
+          <p className="text-sm text-blood-400 mt-2">
             ⏰ Temps écoulé !
           </p>
         )}
