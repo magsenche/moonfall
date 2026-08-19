@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MotionCard, CardContent, MotionButton } from '@/components/ui';
+import { getRecap, type RecapResponse } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 interface Confetti {
@@ -18,6 +19,8 @@ interface Confetti {
 interface GameOverProps {
   winner: 'village' | 'loups';
   gameName: string;
+  /** Code de la partie — active la chronique narrative (récap) */
+  gameCode?: string;
   players: {
     pseudo: string;
     roleName?: string;
@@ -42,9 +45,10 @@ const CONFETTI_PIECES: Confetti[] = Array.from({ length: 100 }, (_, i) => ({
   rotation: ((i * 23 + 53) % 100) / 100 * 360,
 }));
 
-export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverProps) {
+export function GameOver({ winner, gameName, gameCode, players, onPlayAgain }: GameOverProps) {
   const [showResults, setShowResults] = useState(false);
-  
+  const [recap, setRecap] = useState<RecapResponse | null>(null);
+
   const colors = winner === 'village' ? VILLAGE_COLORS : WOLF_COLORS;
 
   // Show results after animation
@@ -52,6 +56,14 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
     const timer = setTimeout(() => setShowResults(true), 1500);
     return () => clearTimeout(timer);
   }, []);
+
+  // Load the game chronicle (best effort — l'écran reste complet sans elle)
+  useEffect(() => {
+    if (!gameCode) return;
+    getRecap(gameCode)
+      .then(setRecap)
+      .catch((err) => console.error('Recap load error:', err));
+  }, [gameCode]);
 
   const winnerTeam = winner === 'village' ? 'Le Village' : 'Les Loups-Garous';
   const winnerEmoji = winner === 'village' ? '🏆' : '🐺';
@@ -257,6 +269,62 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
                     </motion.div>
                   ))}
                 </div>
+
+                {/* Titres décernés */}
+                {recap && recap.titles.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-bold mb-3 text-moon-100/60 flex items-center gap-2">
+                      <span>🏅</span>
+                      <span>Titres de la soirée</span>
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {recap.titles.map((title) => (
+                        <motion.span
+                          key={title.label}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className={cn(
+                            'px-3 py-1.5 rounded-xl text-xs',
+                            'bg-night-800/70 border border-night-600',
+                            'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]'
+                          )}
+                        >
+                          <span className="mr-1">{title.emoji}</span>
+                          <span className="text-moon-100/50 font-medium">{title.label} :</span>{' '}
+                          <span className="text-white font-bold">{title.value}</span>
+                        </motion.span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* L'histoire de la partie */}
+                {recap && recap.timeline.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-bold mb-3 text-moon-100/60 flex items-center gap-2">
+                      <span>📖</span>
+                      <span>L&apos;histoire de la partie</span>
+                    </h3>
+                    <div
+                      className={cn(
+                        'max-h-56 overflow-y-auto space-y-2 p-3 rounded-xl',
+                        'bg-night-800/50 border border-night-700/50'
+                      )}
+                    >
+                      {recap.timeline.map((line, i) => (
+                        <motion.p
+                          key={i}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: Math.min(1.2 + i * 0.05, 2.5) }}
+                          className="text-sm text-moon-100/80 leading-snug"
+                        >
+                          {line}
+                        </motion.p>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Play again button */}
                 {onPlayAgain && (
