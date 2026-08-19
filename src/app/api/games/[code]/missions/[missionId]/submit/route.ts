@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database, Json } from '@/types/database';
 import type { SubmissionData } from '@/lib/missions';
+import { awardMissionPoints } from '@/lib/game/missionPoints';
+import { basePointsForDifficulty } from '@/lib/game/resolution';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -103,24 +105,16 @@ export async function POST(
       })
       .eq('id', missionId);
 
-    // Award points to player using the SQL function (applies role multiplier)
+    // Award points to player (the SQL function applies the role multiplier)
     let pointsAwarded = 0;
     if (mission.reward_points && mission.reward_points > 0) {
-      const { data: result } = await supabase.rpc('award_mission_points', {
-        p_player_id: playerId,
-        p_points: mission.reward_points,
-        p_reason: 'mission_self_validation',
+      pointsAwarded = await awardMissionPoints(supabase, {
+        gameId: game.id,
+        playerId,
+        basePoints: mission.reward_points,
+        reason: 'mission_self_validation',
+        eventData: { mission_id: missionId, mission_title: mission.title },
       });
-      
-      // Get the actual points awarded (with multiplier applied)
-      const { data: player } = await supabase
-        .from('players')
-        .select('mission_points, roles!inner(points_multiplier)')
-        .eq('id', playerId)
-        .single();
-      
-      const multiplier = (player?.roles as unknown as { points_multiplier: number })?.points_multiplier ?? 1;
-      pointsAwarded = Math.round(mission.reward_points * multiplier);
     }
 
     await supabase.from('game_events').insert({
@@ -157,6 +151,15 @@ export async function POST(
       })
       .eq('id', missionId);
 
+    // Le vainqueur touche les points de la mission (difficulté 1-5 = 2-10 pts)
+    const pointsAwarded = await awardMissionPoints(supabase, {
+      gameId: game.id,
+      playerId,
+      basePoints: basePointsForDifficulty(mission.difficulty),
+      reason: 'mission_complete',
+      eventData: { mission_id: missionId, mission_title: mission.title, difficulty: mission.difficulty },
+    });
+
     await supabase.from('game_events').insert({
       game_id: game.id,
       actor_id: playerId,
@@ -165,13 +168,15 @@ export async function POST(
         mission_id: missionId,
         title: mission.title,
         validation_type: 'first_wins',
+        points_awarded: pointsAwarded,
       },
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       assignment: updatedAssignment,
       isWinner: true,
-      message: 'Félicitations ! Vous avez gagné la mission !',
+      pointsAwarded,
+      message: `Félicitations ! Vous avez gagné la mission ! +${pointsAwarded} points`,
     });
   }
 
@@ -199,6 +204,15 @@ export async function POST(
         })
         .eq('id', missionId);
 
+      // Le vainqueur touche les points de la mission (difficulté 1-5 = 2-10 pts)
+      const pointsAwarded = await awardMissionPoints(supabase, {
+        gameId: game.id,
+        playerId: winner.player_id,
+        basePoints: basePointsForDifficulty(mission.difficulty),
+        reason: 'mission_complete',
+        eventData: { mission_id: missionId, mission_title: mission.title, difficulty: mission.difficulty },
+      });
+
       await supabase.from('game_events').insert({
         game_id: game.id,
         actor_id: winner.player_id,
@@ -208,6 +222,7 @@ export async function POST(
           title: mission.title,
           validation_type: 'best_score',
           winning_score: winner.score,
+          points_awarded: pointsAwarded,
         },
       });
     }

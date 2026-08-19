@@ -1,6 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeWinner, tallyVotes, isAutoMode, type VictoryPlayer } from './resolution.ts';
+import {
+  basePointsForDifficulty,
+  computeWinner,
+  isAutoMode,
+  tallyVotes,
+  type VictoryPlayer,
+} from './resolution.ts';
 
 const player = (team: VictoryPlayer['team'], isAlive = true, isMj = false): VictoryPlayer => ({
   team,
@@ -92,6 +98,21 @@ describe('tallyVotes', () => {
     );
     assert.deepEqual(tally.counts, { a: 2, b: 1 });
     assert.deepEqual(tally.leaders, ['a']);
+  });
+});
+
+describe('basePointsForDifficulty', () => {
+  it('1-5 étoiles = 2-10 points', () => {
+    assert.equal(basePointsForDifficulty(1), 2);
+    assert.equal(basePointsForDifficulty(3), 6);
+    assert.equal(basePointsForDifficulty(5), 10);
+  });
+
+  it('borne les difficultés hors plage et les valeurs absentes', () => {
+    assert.equal(basePointsForDifficulty(0), 2);
+    assert.equal(basePointsForDifficulty(9), 10);
+    assert.equal(basePointsForDifficulty(null), 2);
+    assert.equal(basePointsForDifficulty(undefined), 2);
   });
 });
 

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 import type { AuctionData } from '@/lib/missions';
+import { awardMissionPoints } from '@/lib/game/missionPoints';
+import { basePointsForDifficulty } from '@/lib/game/resolution';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -72,6 +74,12 @@ export async function POST(
 
   // Get current auction data
   const auctionData = mission.auction_data as AuctionData | null;
+
+  // Bidding must still be open (close_bidding stamps bid_phase_ends_at)
+  if (auctionData?.bid_phase_ends_at) {
+    return NextResponse.json({ error: 'Les enchères sont fermées' }, { status: 400 });
+  }
+
   const minBid = auctionData?.min_bid ?? 1;
   const maxBid = auctionData?.max_bid;
   const currentHighest = auctionData?.current_highest_bid ?? 0;
@@ -263,14 +271,14 @@ export async function PATCH(
       .eq('mission_id', missionId)
       .eq('player_id', winnerId);
 
-    // Award points based on difficulty (1-5 stars = 2-10 points)
+    // Award points based on difficulty (1-5 stars = 2-10 points, × role multiplier)
     const difficulty = mission.difficulty ?? 1;
-    const pointsAwarded = difficulty * 2;
-    
-    await supabase.rpc('award_mission_points', {
-      p_player_id: winnerId,
-      p_points: pointsAwarded,
-      p_reason: 'auction_win',
+    const pointsAwarded = await awardMissionPoints(supabase, {
+      gameId: game.id,
+      playerId: winnerId,
+      basePoints: basePointsForDifficulty(difficulty),
+      reason: 'auction_win',
+      eventData: { mission_id: missionId, mission_title: mission.title, difficulty },
     });
 
     await supabase.from('game_events').insert({

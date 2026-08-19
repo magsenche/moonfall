@@ -184,6 +184,15 @@ Les missions récompensent les joueurs avec des **points** basés sur leur diffi
 
 Le MJ choisit la difficulté lors de la création de la mission.
 
+L'attribution passe par `src/lib/game/missionPoints.ts` (`awardMissionPoints`),
+qui appelle la fonction SQL `award_mission_points` — c'est elle qui applique le
+**multiplicateur de rôle** (villageois ×1.5) — et journalise `points_earned`
+avec les points réellement crédités. Tous les chemins de victoire créditent le
+vainqueur : validation MJ, `first_wins`, `best_score`, `self`, et
+`declare_winner` d'enchère. Une enchère fermée (`close_bidding`) n'accepte
+plus aucune surenchère. Couverture : scénarios `missions-*` et `boutique`
+(`docs/SCENARIOS.md`).
+
 ### Shop de pouvoirs
 
 Les joueurs peuvent dépenser leurs points dans le **Shop** pour acheter des pouvoirs :

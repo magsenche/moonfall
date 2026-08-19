@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
+import { awardMissionPoints } from '@/lib/game/missionPoints';
+import { basePointsForDifficulty } from '@/lib/game/resolution';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -145,8 +147,8 @@ export async function PATCH(
       
       // Calculate points based on difficulty (1-5 stars = 2-10 points)
       const difficulty = mission.difficulty ?? 1;
-      const pointsAwarded = difficulty * 2;
-      
+      const pointsAwarded = basePointsForDifficulty(difficulty);
+
       // Handle collective missions: award points to ALL assigned players
       if (mission.mission_type === 'collective') {
         // Get all assigned players for collective mission
@@ -166,24 +168,17 @@ export async function PATCH(
             })
             .eq('mission_id', missionId);
           
-          // Award points to each player
+          // Award points to each player (× multiplicateur de rôle)
           for (const assignment of assignments) {
-            await supabase.rpc('award_mission_points', {
-              p_player_id: assignment.player_id,
-              p_points: pointsAwarded,
-              p_reason: 'mission_complete',
-            });
-            
-            // Log points awarded for each player
-            await supabase.from('game_events').insert({
-              game_id: game.id,
-              actor_id: assignment.player_id,
-              event_type: 'points_earned',
-              data: {
+            await awardMissionPoints(supabase, {
+              gameId: game.id,
+              playerId: assignment.player_id,
+              basePoints: pointsAwarded,
+              reason: 'mission_complete',
+              eventData: {
                 mission_id: missionId,
                 mission_title: mission.title,
                 difficulty,
-                points: pointsAwarded,
                 collective: true,
               },
             });
@@ -228,22 +223,15 @@ export async function PATCH(
             .eq('mission_id', missionId)
             .neq('player_id', resolvedWinnerId);
           
-          await supabase.rpc('award_mission_points', {
-            p_player_id: resolvedWinnerId,
-            p_points: pointsAwarded,
-            p_reason: 'mission_complete',
-          });
-          
-          // Log points awarded
-          await supabase.from('game_events').insert({
-            game_id: game.id,
-            actor_id: resolvedWinnerId,
-            event_type: 'points_earned',
-            data: {
+          await awardMissionPoints(supabase, {
+            gameId: game.id,
+            playerId: resolvedWinnerId,
+            basePoints: pointsAwarded,
+            reason: 'mission_complete',
+            eventData: {
               mission_id: missionId,
               mission_title: mission.title,
               difficulty,
-              points: pointsAwarded,
             },
           });
         }

@@ -64,6 +64,11 @@ export function tallyVotes(
   return { counts, max, leaders };
 }
 
+/** Points de base d'une mission selon sa difficulté (1-5 étoiles = 2-10 pts). */
+export function basePointsForDifficulty(difficulty: number | null | undefined): number {
+  return Math.max(1, Math.min(5, difficulty ?? 1)) * 2;
+}
+
 /** Lit le drapeau Auto-Garou depuis le JSON settings d'une partie. */
 export function isAutoMode(settings: unknown): boolean {
   return (
