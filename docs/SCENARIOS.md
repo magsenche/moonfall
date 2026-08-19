@@ -40,7 +40,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 (`src/lib/game/resolution.test.ts`) se lancent avec `npm run test:unit`
 (runner natif `node --test`, aucune dépendance).
 
-## Couverture actuelle (15 scénarios)
+## Couverture actuelle (19 scénarios)
 
 | Scénario | Ce qui est validé |
 |----------|-------------------|
@@ -59,9 +59,14 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 | `assassin-amoureux` | La cascade chagrin s'applique aussi à un assassinat |
 | `chasseur-amoureux` | La cascade chagrin s'applique aussi au tir du chasseur |
 | `enfant-sauvage` | Transformation en loup à la mort du modèle, chasse avec la meute |
+| `missions-points` | Compétitives `first_wins`/`best_score` : vainqueur, points crédités (difficulté ×2 × multiplicateur de rôle), soumission unique, non-assigné refusé |
+| `missions-collective` | Tout le village crédité à la validation MJ (loup ×1, villageois ×1.5), échec sans points, création réservée au MJ |
+| `missions-encheres` | Min/max/surenchère, fermeture MJ, enchère refusée après fermeture, vainqueur crédité, échec sans points |
+| `boutique` | Solde et déduction, `max_per_player`, achat interdit aux morts, vision loup (usage unique), vote double et vote anonyme au conseil, immunité qui annule l'élimination |
 
-Pas encore couvert : missions/points/boutique (endpoints `missions`, `shop`),
-mode Infini. À ajouter au fil des évolutions.
+Le financement des joueurs dans les scénarios boutique passe par le helper
+`fundPlayer` (missions compétitives difficulté 5 validées par le MJ, +10 pts de
+base pièce). Pas encore couvert : mode Infini, effet `silence`/`role_change`.
 
 ## Ajouter un scénario
 

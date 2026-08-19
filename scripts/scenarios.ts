@@ -129,6 +129,7 @@ interface RoleRow {
   id: string;
   name: string;
   team: 'village' | 'loups' | 'solo';
+  points_multiplier: number | null;
 }
 
 interface PlayerRow {
@@ -167,6 +168,14 @@ interface CouncilResolveResponse {
   gameOver?: boolean;
   winner?: string;
   tie?: boolean;
+  immunityUsed?: boolean;
+  voteCounts?: Record<string, number>;
+  voteDetails?: {
+    voterId: string;
+    targetId: string;
+    isAnonymous: boolean;
+    isDouble: boolean;
+  }[];
   error?: string;
 }
 
@@ -182,7 +191,7 @@ interface Player extends PlayerRow {
 async function fetchRoles(): Promise<Map<string, RoleRow>> {
   const url = envVar('NEXT_PUBLIC_SUPABASE_URL');
   const key = envVar('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
-  const res = await fetch(`${url}/rest/v1/roles?select=id,name,team&is_active=eq.true`, {
+  const res = await fetch(`${url}/rest/v1/roles?select=id,name,team,points_multiplier&is_active=eq.true`, {
     headers: { apikey: key, authorization: `Bearer ${key}` },
   });
   if (!res.ok) {
@@ -330,6 +339,11 @@ class GameClient {
     return this.alive().filter((p) => p.role?.team === 'loups');
   }
 
+  /** Multiplicateur de points de mission du rôle courant du joueur (villageois ×1.5). */
+  multiplier(playerId: string): number {
+    return this.player(playerId).role?.points_multiplier ?? 1;
+  }
+
   /** Villageois "sans pouvoir de nuit", pratiques comme victimes des loups. */
   plainVillagers(): Player[] {
     return this.byRole('villageois');
@@ -441,6 +455,123 @@ class GameClient {
     if (!res.ok) {
       console.warn(`⚠️  Nettoyage de ${this.code} impossible : HTTP ${res.status}`);
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers missions, points & boutique
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface MissionRow {
+  id: string;
+  status: string;
+  winner_player_id: string | null;
+}
+
+async function createMission(g: GameClient, body: Record<string, unknown>): Promise<{ id: string }> {
+  const data = checkStatus(
+    await api<{ mission: { id: string } }>('POST', `/api/games/${g.code}/missions`, {
+      creatorId: g.mjId,
+      ...body,
+    }),
+    201,
+    `Création de mission (${String(body.title)})`
+  );
+  return data.mission;
+}
+
+async function getMission(g: GameClient, missionId: string): Promise<MissionRow> {
+  const data = checkStatus(
+    await api<{ mission: MissionRow }>('GET', `/api/games/${g.code}/missions/${missionId}`),
+    200,
+    'Lecture de mission'
+  );
+  return data.mission;
+}
+
+async function validateMission(g: GameClient, missionId: string, winnerId?: string): Promise<void> {
+  checkStatus(
+    await api('PATCH', `/api/games/${g.code}/missions/${missionId}`, {
+      playerId: g.mjId,
+      action: 'validate',
+      winnerId,
+    }),
+    200,
+    'Validation de mission'
+  );
+}
+
+async function walletPoints(g: GameClient, playerId: string): Promise<number> {
+  const data = checkStatus(
+    await api<{ player: { points: number } | null }>(
+      'GET',
+      `/api/games/${g.code}/shop?playerId=${playerId}`
+    ),
+    200,
+    'Lecture du wallet'
+  );
+  check(data.player, 'Wallet introuvable');
+  return data.player.points;
+}
+
+interface ShopItemRow {
+  id: string;
+  effect_type: string;
+  cost: number;
+}
+
+async function shopItem(g: GameClient, effectType: string): Promise<ShopItemRow> {
+  const data = checkStatus(
+    await api<{ items: ShopItemRow[] }>('GET', `/api/games/${g.code}/shop`),
+    200,
+    'Lecture de la boutique'
+  );
+  const item = data.items.find((i) => i.effect_type === effectType);
+  check(item, `Item de boutique absent : ${effectType}`);
+  return item;
+}
+
+async function buyItem(
+  g: GameClient,
+  playerId: string,
+  effectType: string
+): Promise<{ purchaseId: string; newBalance: number }> {
+  const item = await shopItem(g, effectType);
+  const data = checkStatus(
+    await api<{ purchase: { id: string }; new_balance: number }>(
+      'POST',
+      `/api/games/${g.code}/shop`,
+      { playerId, itemId: item.id }
+    ),
+    200,
+    `Achat ${effectType}`
+  );
+  return { purchaseId: data.purchase.id, newBalance: data.new_balance };
+}
+
+/**
+ * Points de base d'une mission selon sa difficulté (1-5 étoiles = 2-10 pts),
+ * avant multiplicateur de rôle.
+ */
+function basePoints(difficulty: number): number {
+  return difficulty * 2;
+}
+
+/**
+ * Finance un joueur : missions compétitives difficulté 5 validées par le MJ
+ * (+10 points de base par mission, × multiplicateur de rôle).
+ */
+async function fundPlayer(g: GameClient, playerId: string, times: number): Promise<void> {
+  for (let i = 0; i < times; i++) {
+    const mission = await createMission(g, {
+      title: `Financement ${i + 1}`,
+      description: 'Mission de financement pour le scénario',
+      missionType: 'competitive',
+      validationType: 'mj',
+      difficulty: 5,
+      assignedPlayerIds: [playerId],
+    });
+    await validateMission(g, mission.id, playerId);
   }
 }
 
@@ -1016,6 +1147,386 @@ const scenarios: Record<string, Scenario> = {
     const night = await g.nightKill(nextPrey.id);
     check(night.victim !== undefined, 'La meute élargie doit dévorer');
     log('l\'enfant transformé chasse avec la meute ✓');
+  },
+
+  /** Missions compétitives : first_wins et best_score créditent le vainqueur. */
+  'missions-points': async ({ newGame, log }) => {
+    const g = await newGame('missions points', 8, { loup_garou: 2, villageois: 6 });
+    const wolf = g.wolves()[0];
+    const [v1, v2, v3] = g.plainVillagers();
+
+    // first_wins : le premier à soumettre gagne.
+    const m1 = await createMission(g, {
+      title: 'Course',
+      description: 'Premier à soumettre gagne',
+      missionType: 'competitive',
+      validationType: 'first_wins',
+      difficulty: 3,
+      assignedPlayerIds: [wolf.id, v1.id],
+    });
+    const beforeV1 = await walletPoints(g, v1.id);
+    const submission = checkStatus(
+      await api<{ isWinner?: boolean }>('POST', `/api/games/${g.code}/missions/${m1.id}/submit`, {
+        playerId: v1.id,
+      }),
+      200,
+      'Soumission first_wins'
+    );
+    check(submission.isWinner === true, 'first_wins : le premier soumissionnaire doit gagner');
+    const mission1 = await getMission(g, m1.id);
+    check(mission1.status === 'success', 'first_wins : mission en success');
+    check(mission1.winner_player_id === v1.id, 'first_wins : winner_player_id renseigné');
+
+    const late = await api('POST', `/api/games/${g.code}/missions/${m1.id}/submit`, {
+      playerId: wolf.id,
+    });
+    check(late.status === 400, `Soumission après victoire : 400 attendu, reçu ${late.status}`);
+
+    const expected1 = Math.round(basePoints(3) * g.multiplier(v1.id));
+    const gained1 = (await walletPoints(g, v1.id)) - beforeV1;
+    check(
+      gained1 === expected1,
+      `first_wins : +${expected1} pts attendus (difficulté 3 × x${g.multiplier(v1.id)}), reçu +${gained1}`
+    );
+    log(`first_wins : ${v1.pseudo} gagne et touche +${gained1} pts ✓`);
+
+    // best_score : le meilleur score gagne quand tous ont soumis.
+    const m2 = await createMission(g, {
+      title: 'Concours',
+      description: 'Meilleur score gagne',
+      missionType: 'competitive',
+      validationType: 'best_score',
+      difficulty: 2,
+      assignedPlayerIds: [v1.id, v2.id, v3.id],
+    });
+    const beforeV2 = await walletPoints(g, v2.id);
+
+    // Un joueur non assigné ne peut pas soumettre.
+    const intruder = await api('POST', `/api/games/${g.code}/missions/${m2.id}/submit`, {
+      playerId: wolf.id,
+      score: 99,
+    });
+    check(intruder.status === 403, `Soumission non assignée : 403 attendu, reçu ${intruder.status}`);
+
+    checkStatus(
+      await api('POST', `/api/games/${g.code}/missions/${m2.id}/submit`, { playerId: v1.id, score: 5 }),
+      200,
+      'Soumission score v1'
+    );
+    checkStatus(
+      await api('POST', `/api/games/${g.code}/missions/${m2.id}/submit`, { playerId: v2.id, score: 9 }),
+      200,
+      'Soumission score v2'
+    );
+    check(
+      (await getMission(g, m2.id)).status === 'in_progress',
+      'best_score : la mission attend que tous aient soumis'
+    );
+    checkStatus(
+      await api('POST', `/api/games/${g.code}/missions/${m2.id}/submit`, { playerId: v3.id, score: 7 }),
+      200,
+      'Soumission score v3'
+    );
+    const mission2 = await getMission(g, m2.id);
+    check(mission2.status === 'success', 'best_score : mission en success après la dernière soumission');
+    check(mission2.winner_player_id === v2.id, 'best_score : le meilleur score doit gagner');
+
+    const expected2 = Math.round(basePoints(2) * g.multiplier(v2.id));
+    const gained2 = (await walletPoints(g, v2.id)) - beforeV2;
+    check(
+      gained2 === expected2,
+      `best_score : +${expected2} pts attendus (difficulté 2 × x${g.multiplier(v2.id)}), reçu +${gained2}`
+    );
+
+    const resubmit = await api('POST', `/api/games/${g.code}/missions/${m2.id}/submit`, {
+      playerId: v1.id,
+      score: 50,
+    });
+    check(resubmit.status === 400, `Double soumission : 400 attendu, reçu ${resubmit.status}`);
+    log(`best_score : ${v2.pseudo} gagne (9 pts de score) et touche +${gained2} pts ✓`);
+  },
+
+  /** Mission collective : tout le village est crédité à la validation MJ. */
+  'missions-collective': async ({ newGame, log }) => {
+    const g = await newGame('missions collective', 8, { loup_garou: 2, villageois: 6 });
+    const wolf = g.wolves()[0];
+    const villager = g.plainVillagers()[0];
+    const nonMj = g.players().find((p) => !p.is_mj);
+    check(nonMj, 'Un joueur non-MJ est requis');
+
+    // Seul le MJ crée des missions.
+    const forbidden = await api('POST', `/api/games/${g.code}/missions`, {
+      creatorId: nonMj.id,
+      title: 'Interdit',
+      description: 'Création par un non-MJ',
+      missionType: 'collective',
+    });
+    check(forbidden.status === 403, `Création par un non-MJ : 403 attendu, reçu ${forbidden.status}`);
+
+    const m = await createMission(g, {
+      title: 'Chaîne humaine',
+      description: 'Tout le village participe',
+      missionType: 'collective',
+      validationType: 'mj',
+      difficulty: 1,
+      sabotageAllowed: true,
+    });
+    const beforeWolf = await walletPoints(g, wolf.id);
+    const beforeVillager = await walletPoints(g, villager.id);
+
+    await validateMission(g, m.id);
+    const mission = await getMission(g, m.id);
+    check(mission.status === 'success', 'Collective : mission en success');
+    check(mission.winner_player_id === null, 'Collective : pas de vainqueur individuel');
+
+    const expectedWolf = Math.round(basePoints(1) * g.multiplier(wolf.id));
+    const expectedVillager = Math.round(basePoints(1) * g.multiplier(villager.id));
+    const gainedWolf = (await walletPoints(g, wolf.id)) - beforeWolf;
+    const gainedVillager = (await walletPoints(g, villager.id)) - beforeVillager;
+    check(
+      gainedWolf === expectedWolf,
+      `Collective : le loup doit toucher +${expectedWolf} pts, reçu +${gainedWolf}`
+    );
+    check(
+      gainedVillager === expectedVillager,
+      `Collective : le villageois doit toucher +${expectedVillager} pts (x${g.multiplier(villager.id)}), reçu +${gainedVillager}`
+    );
+    log(`collective validée : loup +${gainedWolf}, villageois +${gainedVillager} ✓`);
+
+    // Échec collectif : aucun point.
+    const m2 = await createMission(g, {
+      title: 'Échec collectif',
+      description: 'Le village échoue',
+      missionType: 'collective',
+      validationType: 'mj',
+      difficulty: 3,
+    });
+    const beforeFail = await walletPoints(g, villager.id);
+    checkStatus(
+      await api('PATCH', `/api/games/${g.code}/missions/${m2.id}`, {
+        playerId: g.mjId,
+        action: 'fail',
+      }),
+      200,
+      'Échec de mission'
+    );
+    check((await getMission(g, m2.id)).status === 'failed', 'Collective échouée : statut failed');
+    check(
+      (await walletPoints(g, villager.id)) === beforeFail,
+      'Collective échouée : aucun point distribué'
+    );
+    log('collective échouée sans points ✓');
+  },
+
+  /** Enchères : règles de surenchère, fermeture, vainqueur crédité. */
+  'missions-encheres': async ({ newGame, log }) => {
+    const g = await newGame('missions encheres', 8, { loup_garou: 2, villageois: 6 });
+    const [v1, v2] = g.plainVillagers();
+    const nonMj = g.players().find((p) => !p.is_mj);
+    check(nonMj, 'Un joueur non-MJ est requis');
+
+    const m = await createMission(g, {
+      title: 'Capitales',
+      description: 'Qui peut citer le plus de capitales ?',
+      missionType: 'auction',
+      category: 'auction',
+      validationType: 'mj',
+      difficulty: 5,
+      auctionData: { min_bid: 2, max_bid: 10 },
+    });
+
+    const bid = (playerId: string, amount: number) =>
+      api('POST', `/api/games/${g.code}/missions/${m.id}/bid`, { playerId, bid: amount });
+
+    check((await bid(v1.id, 1)).status === 400, 'Enchère sous le minimum refusée');
+    checkStatus(await bid(v1.id, 3), 200, 'Enchère v1=3');
+    check((await bid(v2.id, 3)).status === 400, 'Enchère égale au max courant refusée');
+    check((await bid(v2.id, 11)).status === 400, 'Enchère au-dessus du maximum refusée');
+    checkStatus(await bid(v2.id, 5), 200, 'Enchère v2=5');
+
+    const status = checkStatus(
+      await api<{ currentHighest: number; currentHighestBidder: string }>(
+        'GET',
+        `/api/games/${g.code}/missions/${m.id}/bid`
+      ),
+      200,
+      'Statut des enchères'
+    );
+    check(status.currentHighest === 5, `Enchère en tête : 5 attendu, reçu ${status.currentHighest}`);
+    check(status.currentHighestBidder === v2.id, 'Le leader doit être v2');
+    log(`enchères : ${v2.pseudo} mène à 5`);
+
+    // Seul le MJ ferme les enchères.
+    const closeByPlayer = await api('PATCH', `/api/games/${g.code}/missions/${m.id}/bid`, {
+      playerId: nonMj.id,
+      action: 'close_bidding',
+    });
+    check(closeByPlayer.status === 403, `Fermeture par un non-MJ : 403 attendu, reçu ${closeByPlayer.status}`);
+
+    checkStatus(
+      await api('PATCH', `/api/games/${g.code}/missions/${m.id}/bid`, {
+        playerId: g.mjId,
+        action: 'close_bidding',
+      }),
+      200,
+      'Fermeture des enchères'
+    );
+
+    // Enchérir après la fermeture doit être refusé.
+    const lateBid = await bid(v1.id, 6);
+    check(lateBid.status === 400, `Enchère après fermeture : 400 attendu, reçu ${lateBid.status}`);
+
+    const beforeWinner = await walletPoints(g, v2.id);
+    const declared = checkStatus(
+      await api<{ pointsAwarded: number }>('PATCH', `/api/games/${g.code}/missions/${m.id}/bid`, {
+        playerId: g.mjId,
+        action: 'declare_winner',
+      }),
+      200,
+      'Déclaration du vainqueur'
+    );
+    const expected = Math.round(basePoints(5) * g.multiplier(v2.id));
+    check(
+      declared.pointsAwarded === expected,
+      `declare_winner : +${expected} pts annoncés, reçu +${declared.pointsAwarded}`
+    );
+    const gained = (await walletPoints(g, v2.id)) - beforeWinner;
+    check(gained === expected, `Vainqueur d'enchère : +${expected} pts attendus, reçu +${gained}`);
+    const mission = await getMission(g, m.id);
+    check(mission.status === 'success' && mission.winner_player_id === v2.id, 'Enchère : success avec winner');
+    log(`${v2.pseudo} remporte l'enchère et touche +${gained} pts ✓`);
+
+    // Fermer sans enchère est refusé ; un échec ne rapporte rien.
+    const m2 = await createMission(g, {
+      title: 'Pompes',
+      description: 'Enchère sans preneur',
+      missionType: 'auction',
+      category: 'auction',
+      validationType: 'mj',
+      difficulty: 2,
+      auctionData: { min_bid: 1 },
+    });
+    const emptyClose = await api('PATCH', `/api/games/${g.code}/missions/${m2.id}/bid`, {
+      playerId: g.mjId,
+      action: 'close_bidding',
+    });
+    check(emptyClose.status === 400, `Fermeture sans enchère : 400 attendu, reçu ${emptyClose.status}`);
+
+    checkStatus(
+      await api('POST', `/api/games/${g.code}/missions/${m2.id}/bid`, { playerId: v1.id, bid: 2 }),
+      200,
+      'Enchère v1=2'
+    );
+    checkStatus(
+      await api('PATCH', `/api/games/${g.code}/missions/${m2.id}/bid`, {
+        playerId: g.mjId,
+        action: 'close_bidding',
+      }),
+      200,
+      'Fermeture m2'
+    );
+    const beforeLoser = await walletPoints(g, v1.id);
+    checkStatus(
+      await api('PATCH', `/api/games/${g.code}/missions/${m2.id}/bid`, {
+        playerId: g.mjId,
+        action: 'declare_failure',
+      }),
+      200,
+      'Déclaration d\'échec'
+    );
+    check((await getMission(g, m2.id)).status === 'failed', 'Enchère échouée : statut failed');
+    check((await walletPoints(g, v1.id)) === beforeLoser, 'Enchère échouée : aucun point');
+    log('échec d\'enchère sans points ✓');
+  },
+
+  /** Boutique : solde, limites, vision loup, vote double, immunité, vote anonyme. */
+  boutique: async ({ newGame, log }) => {
+    const g = await newGame('boutique', 8, { loup_garou: 2, villageois: 6 });
+    const [wolfA, wolfB] = g.wolves();
+    const vills = g.plainVillagers();
+
+    // Solde insuffisant.
+    const item = await shopItem(g, 'immunity');
+    const broke = await api('POST', `/api/games/${g.code}/shop`, {
+      playerId: wolfA.id,
+      itemId: item.id,
+    });
+    check(broke.status === 400, `Achat sans points : 400 attendu, reçu ${broke.status}`);
+
+    // Financement (loup : multiplicateur 1 → montants exacts).
+    await fundPlayer(g, wolfA.id, 1);
+    check((await walletPoints(g, wolfA.id)) === 10, 'Financement : 10 pts attendus');
+    const doubleVote = await buyItem(g, wolfA.id, 'double_vote');
+    check(doubleVote.newBalance === 0, `Achat vote double : solde 0 attendu, reçu ${doubleVote.newBalance}`);
+
+    await fundPlayer(g, wolfA.id, 2);
+    await buyItem(g, wolfA.id, 'immunity');
+    await fundPlayer(g, wolfA.id, 2);
+    const immunityAgain = await api('POST', `/api/games/${g.code}/shop`, {
+      playerId: wolfA.id,
+      itemId: item.id,
+    });
+    check(immunityAgain.status === 400, `2e immunité (max 1/joueur) : 400 attendu, reçu ${immunityAgain.status}`);
+    log(`${wolfA.pseudo} équipé : vote double + immunité, limites respectées`);
+
+    // Vision loup : révèle l'équipe de la cible.
+    const inspector = vills[0];
+    await fundPlayer(g, inspector.id, 1); // villageois : 10 × multiplicateur
+    const vision = await buyItem(g, inspector.id, 'wolf_vision');
+    const visionUse = checkStatus(
+      await api<{ result: { is_wolf: boolean } }>(
+        'POST',
+        `/api/games/${g.code}/shop/${vision.purchaseId}/use`,
+        { playerId: inspector.id, targetPlayerId: wolfB.id }
+      ),
+      200,
+      'Utilisation vision loup'
+    );
+    check(visionUse.result.is_wolf === true, 'Vision loup : le loup doit être démasqué');
+    const reuse = await api('POST', `/api/games/${g.code}/shop/${vision.purchaseId}/use`, {
+      playerId: inspector.id,
+      targetPlayerId: vills[1].id,
+    });
+    check(reuse.status === 400, `Réutilisation d'un pouvoir consommé : 400 attendu, reçu ${reuse.status}`);
+    log(`vision loup : ${wolfB.pseudo} démasqué, pouvoir à usage unique ✓`);
+
+    // Vote anonyme pour un villageois.
+    const anon = vills[1];
+    await fundPlayer(g, anon.id, 1);
+    await buyItem(g, anon.id, 'anonymous_vote');
+
+    // Un mort ne peut pas acheter.
+    const victim = vills[2];
+    await g.nightKill(victim.id);
+    const deadBuy = await api('POST', `/api/games/${g.code}/shop`, {
+      playerId: victim.id,
+      itemId: item.id,
+    });
+    check(deadBuy.status === 403, `Achat par un mort : 403 attendu, reçu ${deadBuy.status}`);
+
+    // Conseil 1 : le vote double pèse 2, le vote anonyme est marqué.
+    await g.toCouncil();
+    const target = vills[3];
+    await g.councilVote(target.id, [g.player(wolfA.id)]);
+    await g.councilVote(wolfB.id, [g.player(anon.id)]);
+    const council1 = await g.resolveCouncil();
+    check(council1.eliminated?.id === target.id, 'Vote double : 2 voix contre 1, la cible du doubleur tombe');
+    check(council1.voteCounts?.[target.id] === 2, `Vote double : 2 voix comptées, reçu ${council1.voteCounts?.[target.id]}`);
+    const anonDetail = council1.voteDetails?.find((v) => v.voterId === anon.id);
+    check(anonDetail?.isAnonymous === true, 'Vote anonyme : le vote doit être marqué anonyme');
+    const doubleDetail = council1.voteDetails?.find((v) => v.voterId === wolfA.id);
+    check(doubleDetail?.isDouble === true, 'Vote double : le vote doit être marqué double');
+    log('conseil 1 : vote double décisif, vote anonyme marqué ✓');
+
+    // Conseil 2 : l'immunité annule l'élimination.
+    await g.nightKill(vills[4].id);
+    await g.toCouncil();
+    await g.councilVote(wolfA.id);
+    const council2 = await g.resolveCouncil();
+    check(council2.immunityUsed === true, 'Immunité : le pouvoir doit se déclencher');
+    check(!council2.eliminated, 'Immunité : personne ne doit être éliminé');
+    check(g.player(wolfA.id).is_alive, 'Immunité : le protégé doit être vivant');
+    log(`conseil 2 : ${wolfA.pseudo} sauvé par son immunité ✓`);
   },
 };
 
