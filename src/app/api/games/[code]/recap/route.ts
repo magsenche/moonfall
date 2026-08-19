@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
-import { buildRecap, type RecapEventRow, type RecapPlayer } from '@/lib/game/recap';
+import { buildRecap, type RecapEventRow, type RecapIntuition, type RecapPlayer } from '@/lib/game/recap';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -75,7 +75,14 @@ export async function GET(
     data: (e.data ?? null) as Record<string, unknown> | null,
   }));
 
-  const recap = buildRecap(events, players);
+  // Intuitions de nuit (vote_type 'pouvoir') pour le titre « Flair du village »
+  const { data: intuitionRows } = await supabase
+    .from('votes')
+    .select('voter_id, target_id')
+    .eq('game_id', game.id)
+    .eq('vote_type', 'pouvoir');
+
+  const recap = buildRecap(events, players, (intuitionRows ?? []) as RecapIntuition[]);
 
   return NextResponse.json({
     winner: game.winner,

@@ -23,6 +23,7 @@ import {
   TrublionNightPanel,
   WildChildModelPanel,
   CupidonLoversPanel,
+  IntuitionNightPanel,
 } from './index';
 
 export function NightPhaseLayout() {
@@ -45,9 +46,6 @@ export function NightPhaseLayout() {
     nightActions,
     wolfChat,
   } = useGame();
-
-  // Check if player has a special night role
-  const hasNightRole = isWolf || isSeer || isWitch || isLittleGirl || isSalvateur || isTrublion || isWildChild || isCupidon;
 
   return (
     <div className="space-y-4">
@@ -88,7 +86,7 @@ export function NightPhaseLayout() {
                             ? '💘 Choisissez deux joueurs qui tomberont amoureux !'
                             : isLittleGirl
                               ? '👀 Vous espionnez discrètement les loups...'
-                              : '😴 Le village dort. Attendez le lever du jour...'}
+                              : '🔮 La nuit porte conseil : confie ton intuition.'}
             </p>
           </div>
         </CardContent>
@@ -195,29 +193,15 @@ export function NightPhaseLayout() {
         />
       )}
 
-      {/* Villagers just wait */}
-      {!hasNightRole && (
-        <MotionCard 
-          variant="sticker" 
-          rotation={0.5}
-          className="border-night-600"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          <CardContent className="py-8 text-center">
-            <motion.p 
-              className="text-5xl mb-3"
-              animate={{ y: [0, -3, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              😴
-            </motion.p>
-            <p className="text-moon-100/60 text-sm">
-              Vous dormez paisiblement... en espérant vous réveiller demain.
-            </p>
-          </CardContent>
-        </MotionCard>
+      {/* Intuition de nuit : l'action des non-loups, pour que chaque téléphone
+          soit actif la nuit (celui qui ne tapote pas se trahirait) */}
+      {!isWolf && isAlive && (
+        <IntuitionNightPanel
+          alivePlayers={alivePlayers}
+          currentPlayerId={currentPlayerId}
+          gameCode={game.code}
+          gamePhase={game.current_phase ?? 1}
+        />
       )}
     </div>
   );

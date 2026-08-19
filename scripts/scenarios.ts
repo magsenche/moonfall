@@ -1157,6 +1157,67 @@ const scenarios: Record<string, Scenario> = {
     log('l\'enfant transformé chasse avec la meute ✓');
   },
 
+  /** Intuition de nuit : l'action des non-loups, restituée au récap (Flair du village). */
+  intuition: async ({ newGame, log }) => {
+    const g = await newGame('intuition', 8, { loup_garou: 2, villageois: 6 });
+    const [sniffer, decoy] = g.plainVillagers();
+    const wolf = g.wolves()[0];
+
+    const post = (playerId: string, targetId: string) =>
+      api('POST', `/api/games/${g.code}/night-action`, { playerId, targetId });
+
+    // Un villageois confie son intuition, peut la changer, elle est restaurable.
+    checkStatus(await post(sniffer.id, decoy.id), 200, 'Première intuition');
+    checkStatus(await post(sniffer.id, wolf.id), 200, 'Changement d\'intuition');
+    const restored = checkStatus(
+      await api<{ targetId: string | null }>(
+        'GET',
+        `/api/games/${g.code}/night-action?playerId=${sniffer.id}`
+      ),
+      200,
+      'Restauration de l\'intuition'
+    );
+    check(restored.targetId === wolf.id, 'L\'intuition restaurée doit être la dernière confiée');
+
+    // Interdits : loup, auto-soupçon.
+    const wolfIntuition = await post(wolf.id, sniffer.id);
+    check(wolfIntuition.status === 400, `Intuition d'un loup : 400 attendu, reçu ${wolfIntuition.status}`);
+    const selfIntuition = await post(sniffer.id, sniffer.id);
+    check(selfIntuition.status === 400, `Auto-soupçon : 400 attendu, reçu ${selfIntuition.status}`);
+    log(`intuition de ${sniffer.pseudo} posée sur ${wolf.pseudo}, garde-fous ✓`);
+
+    // La nuit se termine : l'intuition n'a aucun effet sur la résolution.
+    const prey = g.plainVillagers().find((p) => p.id !== sniffer.id && p.id !== decoy.id);
+    check(prey, 'Une proie est requise');
+    await g.nightKill(prey.id);
+    check(g.player(sniffer.id).is_alive && g.player(decoy.id).is_alive, 'L\'intuition ne tue personne');
+
+    // De jour, plus d'intuition.
+    const daytime = await post(sniffer.id, decoy.id);
+    check(daytime.status === 400, `Intuition de jour : 400 attendu, reçu ${daytime.status}`);
+
+    // Fin de partie express → le récap décerne le Flair du village.
+    await g.councilKill(g.wolves()[0].id);
+    await g.nightKill(g.plainVillagers().find((p) => p.id !== sniffer.id)!.id);
+    await g.councilKill(g.wolves()[0].id);
+    g.expectStatus('terminee', 'Fin de partie');
+
+    const recap = checkStatus(
+      await api<{ titles: { label: string; value: string }[] }>(
+        'GET',
+        `/api/games/${g.code}/recap`
+      ),
+      200,
+      'Lecture du récap'
+    );
+    const flair = recap.titles.find((t) => t.label === 'Flair du village');
+    check(
+      flair !== undefined && flair.value.includes(sniffer.pseudo),
+      `Flair du village : ${sniffer.pseudo} attendu, reçu ${flair?.value}`
+    );
+    log(`récap : « Flair du village » décerné à ${sniffer.pseudo} ✓`);
+  },
+
   /** Récap narratif : chronique et titres disponibles seulement en fin de partie. */
   recap: async ({ newGame, log }) => {
     const g = await newGame('recap', 8, { loup_garou: 2, villageois: 6 });
