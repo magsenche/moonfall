@@ -27,7 +27,16 @@ interface UseAutoGarouOptions {
   isAutoMode: boolean;
   isExpired: boolean;
   currentPlayerId: string | null;
+  /**
+   * Position de ce client dans l'ordre de secours (0 = premier à déclencher).
+   * Chaque client attend fallbackIndex × 3s de plus avant de résoudre : le
+   * premier éveillé fait avancer la partie, les autres restent des secours si
+   * son téléphone est verrouillé — sans que 8 clients résolvent en même temps.
+   */
+  fallbackIndex: number;
 }
+
+const FALLBACK_STAGGER_MS = 3000;
 
 export function useAutoGarou({
   gameCode,
@@ -35,6 +44,7 @@ export function useAutoGarou({
   isAutoMode,
   isExpired,
   currentPlayerId,
+  fallbackIndex,
 }: UseAutoGarouOptions) {
   // Track if we've already triggered transition for this expiry
   const hasTriggeredRef = useRef(false);
@@ -83,13 +93,14 @@ export function useAutoGarou({
     if (!isAutoMode || !isExpired) return;
     if (hasTriggeredRef.current) return;
 
-    // Small delay to ensure all clients see 0:00
+    // Small delay so all clients see 0:00, then staggered fallback order:
+    // if the phase advances in the meantime (realtime), the cleanup cancels us.
     const timeout = setTimeout(() => {
       triggerAutoTransition();
-    }, 1000);
+    }, 1000 + fallbackIndex * FALLBACK_STAGGER_MS);
 
     return () => clearTimeout(timeout);
-  }, [isAutoMode, isExpired, triggerAutoTransition]);
+  }, [isAutoMode, isExpired, fallbackIndex, triggerAutoTransition]);
 
   return {
     isAutoMode,

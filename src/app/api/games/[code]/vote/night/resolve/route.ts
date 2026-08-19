@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { GameSettings } from "@/types/game";
 import { applyDeathCascade, endGameIfVictory } from "@/lib/game/deaths";
 import { isAutoMode } from "@/lib/game/resolution";
+import { acquirePhaseLock } from "@/lib/game/phaseLock";
 
 /**
  * Lazy Voting: Force bot wolves to vote randomly before resolution
@@ -332,7 +333,7 @@ export async function POST(
   // Get game with settings
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select("id, status, current_phase, settings")
+    .select("id, status, current_phase, settings, phase_ends_at")
     .eq("code", code)
     .single();
 
@@ -346,6 +347,7 @@ export async function POST(
       { status: 400 }
     );
   }
+
 
   // Get custom duration from settings
   const settings = (game.settings || {}) as Partial<GameSettings>;
@@ -385,13 +387,27 @@ export async function POST(
   // If not all wolves voted and not forcing, return error with count
   if (wolfVotes.length < aliveWolves.length && !force) {
     return NextResponse.json(
-      { 
+      {
         error: "Tous les loups n'ont pas voté",
         voted: wolfVotes.length,
         total: aliveWolves.length,
         canForce: true
       },
       { status: 400 }
+    );
+  }
+
+  // Un seul résolveur à la fois : plusieurs clients auto-résolvent au timer,
+  // sans verrou deux appels simultanés feraient deux victimes
+  const lockAcquired = await acquirePhaseLock(supabase, {
+    id: game.id,
+    status: "nuit",
+    phase_ends_at: game.phase_ends_at,
+  });
+  if (!lockAcquired) {
+    return NextResponse.json(
+      { error: "Résolution déjà en cours" },
+      { status: 409 }
     );
   }
 

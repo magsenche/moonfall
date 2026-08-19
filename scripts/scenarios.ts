@@ -1157,6 +1157,49 @@ const scenarios: Record<string, Scenario> = {
     log('l\'enfant transformé chasse avec la meute ✓');
   },
 
+  /** Deux résolutions simultanées : une seule passe, une seule victime. */
+  'resolution-concurrente': async ({ newGame, log }) => {
+    const g = await newGame('resolution concurrente', 8, { loup_garou: 2, villageois: 6 });
+
+    const prey = g.plainVillagers()[0];
+    await g.wolfVote(prey.id);
+    const [n1, n2] = await Promise.all([
+      api('POST', `/api/games/${g.code}/vote/night/resolve`, {}),
+      api('POST', `/api/games/${g.code}/vote/night/resolve`, {}),
+    ]);
+    const nightStatuses = [n1.status, n2.status];
+    check(
+      nightStatuses.filter((s) => s === 200).length === 1,
+      `Nuit : exactement une résolution doit passer, reçu ${nightStatuses.join('/')}`
+    );
+    const nightLoser = nightStatuses.find((s) => s !== 200);
+    check(
+      nightLoser === 409 || nightLoser === 400,
+      `Nuit : la résolution concurrente doit être rejetée (409/400), reçu ${nightLoser}`
+    );
+    await g.refresh();
+    g.expectStatus('jour', 'Après la double résolution de nuit');
+    check(!g.player(prey.id).is_alive, 'La proie doit être morte une seule fois');
+    check(g.alive().length === 7, `7 vivants attendus, reçu ${g.alive().length}`);
+    log(`nuit : résolutions concurrentes → ${nightStatuses.join('/')}, une seule victime ✓`);
+
+    // Même protection au conseil.
+    await g.toCouncil();
+    await g.councilVote(g.plainVillagers()[0].id);
+    const [c1, c2] = await Promise.all([
+      api('POST', `/api/games/${g.code}/vote/resolve`, {}),
+      api('POST', `/api/games/${g.code}/vote/resolve`, {}),
+    ]);
+    const councilStatuses = [c1.status, c2.status];
+    check(
+      councilStatuses.filter((s) => s === 200).length === 1,
+      `Conseil : exactement une résolution doit passer, reçu ${councilStatuses.join('/')}`
+    );
+    await g.refresh();
+    check(g.alive().length === 6, `6 vivants attendus après le conseil, reçu ${g.alive().length}`);
+    log(`conseil : résolutions concurrentes → ${councilStatuses.join('/')}, un seul éliminé ✓`);
+  },
+
   /** Partie classique : composition starter, missions et boutique verrouillées. */
   'partie-classique': async ({ newGame, log }) => {
     const g = await newGame('partie classique', 8, {}, {
