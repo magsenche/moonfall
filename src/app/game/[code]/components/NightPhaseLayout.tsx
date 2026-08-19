@@ -113,8 +113,8 @@ export function NightPhaseLayout() {
         />
       )}
 
-      {/* Wolf Chat - Also visible to Petite Fille (read-only) */}
-      {(isWolf || isLittleGirl) && (
+      {/* Wolf Chat - Petite Fille et fantômes en lecture seule */}
+      {(isWolf || isLittleGirl || !isAlive) && (
         <WolfChatPanel
           messages={wolfChat.wolfMessages}
           newMessage={wolfChat.newMessage}
@@ -123,7 +123,7 @@ export function NightPhaseLayout() {
           isAlive={isAlive}
           onMessageChange={wolfChat.setNewMessage}
           onSendMessage={wolfChat.sendWolfMessage}
-          readOnly={isLittleGirl}
+          readOnly={isLittleGirl || !isAlive}
         />
       )}
 
