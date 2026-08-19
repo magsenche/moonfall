@@ -32,6 +32,11 @@ export interface Recap {
   titles: RecapTitle[];
 }
 
+export interface RecapIntuition {
+  voter_id: string;
+  target_id: string | null;
+}
+
 const str = (data: Record<string, unknown> | null, key: string): string | null => {
   const value = data?.[key];
   return typeof value === 'string' && value.length > 0 ? value : null;
@@ -46,7 +51,11 @@ const num = (data: Record<string, unknown> | null, key: string): number | null =
  * Construit la chronique chronologique de la partie.
  * `events` doit être trié par created_at croissant.
  */
-export function buildRecap(events: RecapEventRow[], players: RecapPlayer[]): Recap {
+export function buildRecap(
+  events: RecapEventRow[],
+  players: RecapPlayer[],
+  intuitions: RecapIntuition[] = []
+): Recap {
   const byId = new Map(players.map((p) => [p.id, p]));
   const pseudoOf = (id: string | null): string | null => (id ? (byId.get(id)?.pseudo ?? null) : null);
 
@@ -209,6 +218,36 @@ export function buildRecap(events: RecapEventRow[], players: RecapPlayer[]): Rec
     const assassin = players.find((p) => p.roleName === 'assassin');
     if (assassin) {
       titles.push({ emoji: '🗡️', label: 'La main invisible', value: assassin.pseudo });
+    }
+  }
+
+  // Flair du village : le joueur dont les intuitions de nuit ont le plus
+  // souvent visé un loup (rôles finaux — approximation assumée si trublion)
+  const wolfIds = new Set(players.filter((p) => p.team === 'loups').map((p) => p.id));
+  const hits = new Map<string, number>();
+  for (const intuition of intuitions) {
+    if (intuition.target_id && wolfIds.has(intuition.target_id)) {
+      hits.set(intuition.voter_id, (hits.get(intuition.voter_id) ?? 0) + 1);
+    }
+  }
+  let bestCount = 0;
+  let bestIds: string[] = [];
+  for (const [voterId, count] of hits) {
+    if (count > bestCount) {
+      bestCount = count;
+      bestIds = [voterId];
+    } else if (count === bestCount) {
+      bestIds.push(voterId);
+    }
+  }
+  if (bestCount > 0) {
+    const names = bestIds.map((id) => byId.get(id)?.pseudo).filter(Boolean);
+    if (names.length > 0) {
+      titles.push({
+        emoji: '🔮',
+        label: 'Flair du village',
+        value: `${names.join(', ')} (${bestCount} intuition${bestCount > 1 ? 's' : ''} juste${bestCount > 1 ? 's' : ''})`,
+      });
     }
   }
 

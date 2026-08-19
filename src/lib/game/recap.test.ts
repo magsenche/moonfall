@@ -91,6 +91,23 @@ describe('buildRecap', () => {
     assert.ok(!labels.includes('Maître du bluff'));
   });
 
+  it('titre Flair du village pour les intuitions qui visent un loup', () => {
+    const { titles } = buildRecap([], players, [
+      { voter_id: 'p2', target_id: 'p1' }, // Aline est loup : juste
+      { voter_id: 'p2', target_id: 'p1' }, // encore juste (nuit suivante)
+      { voter_id: 'p3', target_id: 'p4' }, // Damien est solo : raté
+      { voter_id: 'p3', target_id: null }, // vote blanc ignoré
+    ]);
+    const flair = titles.find((t) => t.label === 'Flair du village');
+    assert.ok(flair, 'le titre Flair du village doit exister');
+    assert.match(flair.value, /Basile.*2 intuitions justes/);
+  });
+
+  it('pas de titre Flair sans intuition juste', () => {
+    const { titles } = buildRecap([], players, [{ voter_id: 'p2', target_id: 'p3' }]);
+    assert.ok(!titles.some((t) => t.label === 'Flair du village'));
+  });
+
   it('ignore les événements inconnus sans casser', () => {
     const { timeline } = buildRecap(
       [event('shop_purchase', { item_name: 'x' }), event('points_earned', { points: 3 })],
