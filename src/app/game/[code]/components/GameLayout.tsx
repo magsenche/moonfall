@@ -35,6 +35,7 @@ export function GameLayout() {
     isSeer,
     nightActions,
     missionsEnabled,
+    isAutoMode,
   } = useGame();
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -58,8 +59,9 @@ export function GameLayout() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   if (gameStatus === 'terminee' && ui.gameWinner) {
+    // En Auto-Garou le MJ joue : il apparaît dans le bilan comme les autres
     const playersForGameOver = game.players
-      .filter((p) => !p.is_mj)
+      .filter((p) => isAutoMode || !p.is_mj)
       .map((p) => {
         const role = roles.find((r) => r.id === p.role_id);
         const roleConf = role ? getRoleConfig(role.name) : null;
@@ -75,6 +77,7 @@ export function GameLayout() {
       <GameOver
         winner={ui.gameWinner}
         gameName={game.name}
+        gameCode={game.code}
         players={playersForGameOver}
         onPlayAgain={() => router.push('/')}
       />

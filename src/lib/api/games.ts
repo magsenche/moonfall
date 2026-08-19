@@ -456,3 +456,17 @@ interface DemoGameResponse {
 export function createDemoGame(pseudo: string) {
   return apiPost<DemoGameResponse>('/api/games/demo', { pseudo });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Récap de fin de partie
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface RecapResponse {
+  winner: 'village' | 'loups' | null;
+  timeline: string[];
+  titles: { emoji: string; label: string; value: string }[];
+}
+
+export function getRecap(gameCode: string) {
+  return apiGet<RecapResponse>(`/api/games/${gameCode}/recap`);
+}

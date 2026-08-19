@@ -1157,6 +1157,52 @@ const scenarios: Record<string, Scenario> = {
     log('l\'enfant transformé chasse avec la meute ✓');
   },
 
+  /** Récap narratif : chronique et titres disponibles seulement en fin de partie. */
+  recap: async ({ newGame, log }) => {
+    const g = await newGame('recap', 8, { loup_garou: 2, villageois: 6 });
+
+    // Pas de récap pendant la partie (les rôles seraient révélés).
+    const early = await api('GET', `/api/games/${g.code}/recap`);
+    check(early.status === 400, `Récap en cours de partie : 400 attendu, reçu ${early.status}`);
+
+    // Partie express jusqu'à la victoire du village.
+    const victim = g.plainVillagers()[0];
+    await g.nightKill(victim.id);
+    await g.councilKill(g.wolves()[0].id);
+    await g.nightKill(g.plainVillagers()[0].id);
+    const finale = await g.councilKill(g.wolves()[0].id);
+    check(finale.winner === 'village', 'La partie doit finir sur une victoire du village');
+
+    const recap = checkStatus(
+      await api<{ winner: string; timeline: string[]; titles: { label: string; value: string }[] }>(
+        'GET',
+        `/api/games/${g.code}/recap`
+      ),
+      200,
+      'Lecture du récap'
+    );
+    check(recap.winner === 'village', `Récap : vainqueur village attendu, reçu ${recap.winner}`);
+    check(recap.timeline.length >= 5, `Récap : au moins 5 lignes attendues, reçu ${recap.timeline.length}`);
+    check(
+      recap.timeline.some((l) => l.includes(victim.pseudo) && l.includes('dévoré')),
+      'Récap : la dévoration de la première victime doit être racontée'
+    );
+    check(
+      recap.timeline.some((l) => l.includes('Conseil 1')),
+      'Récap : le premier conseil doit être raconté'
+    );
+    check(
+      recap.timeline.some((l) => l.includes('victoire du Village')),
+      'Récap : la victoire doit conclure la chronique'
+    );
+    const firstVictimTitle = recap.titles.find((t) => t.label === 'Première victime');
+    check(
+      firstVictimTitle?.value === victim.pseudo,
+      `Titre première victime : ${victim.pseudo} attendu, reçu ${firstVictimTitle?.value}`
+    );
+    log(`chronique de ${recap.timeline.length} lignes + ${recap.titles.length} titres ✓`);
+  },
+
   /** Deux résolutions simultanées : une seule passe, une seule victime. */
   'resolution-concurrente': async ({ newGame, log }) => {
     const g = await newGame('resolution concurrente', 8, { loup_garou: 2, villageois: 6 });
