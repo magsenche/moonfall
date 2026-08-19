@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(npm install)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm run supabase:types)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-cloud-env.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

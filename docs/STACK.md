@@ -64,7 +64,7 @@ cd moonfall
 npm install
 
 # Copier les variables d'environnement
-cp .env.example .env.local
+cp .env.local.example .env.local
 # Remplir les valeurs (voir SUPABASE.md et VERCEL.md)
 
 # Lancer en dev
