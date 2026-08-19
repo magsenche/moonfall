@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
+import { isAutoMode } from "@/lib/game/resolution";
 
 // GET - Get Cupidon's lovers status
 export async function GET(
@@ -118,7 +119,7 @@ export async function POST(
   // Get game
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select("id, status, current_phase")
+    .select("id, status, current_phase, settings")
     .eq("code", code)
     .single();
 
@@ -198,7 +199,8 @@ export async function POST(
     );
   }
 
-  if (lover1.is_mj || lover2.is_mj) {
+  // En Auto-Garou le MJ joue et peut être amoureux comme les autres
+  if ((lover1.is_mj || lover2.is_mj) && !isAutoMode(game.settings)) {
     return NextResponse.json(
       { error: "Le MJ ne peut pas être amoureux" },
       { status: 400 }

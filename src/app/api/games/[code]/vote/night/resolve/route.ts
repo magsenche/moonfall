@@ -1,13 +1,14 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
-import { PHASE_DURATIONS } from "@/types/game";
 import type { GameSettings } from "@/types/game";
+import { applyDeathCascade, endGameIfVictory } from "@/lib/game/deaths";
+import { isAutoMode } from "@/lib/game/resolution";
 
 /**
  * Lazy Voting: Force bot wolves to vote randomly before resolution
  * Wolves should vote on the same target to be effective
  */
-async function forceBotWolfVotes(gameId: string, phase: number, aliveWolves: { id: string; pseudo?: string }[]) {
+async function forceBotWolfVotes(gameId: string, phase: number, aliveWolves: { id: string; pseudo?: string }[], autoMode: boolean) {
   // Get existing votes
   const supabase = createClient();
   const { data: existingVotes } = await supabase
@@ -35,14 +36,15 @@ async function forceBotWolfVotes(gameId: string, phase: number, aliveWolves: { i
   if (botWolves.length === 0) return;
 
   // Get all alive non-wolf players as potential targets
+  // (le MJ arbitre n'est une cible qu'en Auto-Garou, où il joue)
   const { data: allPlayers } = await supabase
     .from('players')
-    .select('id, role:roles(team)')
+    .select('id, is_mj, role:roles(team)')
     .eq('game_id', gameId)
     .eq('is_alive', true);
 
   const nonWolfTargets = allPlayers?.filter(
-    p => (p.role as { team: string } | null)?.team !== 'loups'
+    p => (p.role as { team: string } | null)?.team !== 'loups' && (autoMode || !p.is_mj)
   ) ?? [];
 
   if (nonWolfTargets.length === 0) return;
@@ -64,131 +66,10 @@ async function forceBotWolfVotes(gameId: string, phase: number, aliveWolves: { i
 }
 
 /**
- * Check if dead player has a lover and kill them too (heartbreak death)
- * Returns the lover's info if they died, null otherwise
- */
-async function checkLoverDeath(supabase: Awaited<ReturnType<typeof createClient>>, gameId: string, deadPlayerId: string) {
-  // Check if dead player was in a lovers pair
-  const { data: loversMatch } = await supabase
-    .from("lovers")
-    .select("id, player1_id, player2_id")
-    .eq("game_id", gameId)
-    .or(`player1_id.eq.${deadPlayerId},player2_id.eq.${deadPlayerId}`)
-    .maybeSingle();
-
-  if (!loversMatch) return null;
-
-  // Find the partner
-  const partnerId = loversMatch.player1_id === deadPlayerId 
-    ? loversMatch.player2_id 
-    : loversMatch.player1_id;
-
-  // Check if partner is still alive
-  const { data: partner } = await supabase
-    .from("players")
-    .select("id, pseudo, is_alive, role:roles(name)")
-    .eq("id", partnerId)
-    .single();
-
-  if (!partner || !partner.is_alive) return null;
-
-  // Kill the partner from heartbreak
-  await supabase
-    .from("players")
-    .update({
-      is_alive: false,
-      death_reason: "chagrin",
-      death_at: new Date().toISOString(),
-    })
-    .eq("id", partnerId);
-
-  // Log the heartbreak death event
-  await supabase.from("game_events").insert({
-    game_id: gameId,
-    event_type: "lover_heartbreak_death",
-    data: {
-      lover_id: partnerId,
-      lover_name: partner.pseudo,
-      lover_role: (partner.role as { name: string } | null)?.name,
-      dead_partner_id: deadPlayerId,
-    },
-  });
-
-  return {
-    loverId: partnerId,
-    loverPseudo: partner.pseudo,
-    loverRole: (partner.role as { name: string } | null)?.name,
-  };
-}
-
-/**
- * Check if dead player was a Wild Child's model and transform the child into a wolf
- */
-async function checkWildChildTransformation(supabase: Awaited<ReturnType<typeof createClient>>, gameId: string, deadPlayerId: string) {
-  // Check if dead player was someone's model
-  const { data: wildChildModel } = await supabase
-    .from("wild_child_models")
-    .select("id, child_player_id, transformed")
-    .eq("game_id", gameId)
-    .eq("model_player_id", deadPlayerId)
-    .eq("transformed", false)
-    .maybeSingle();
-
-  if (!wildChildModel) return null;
-
-  // Check if the wild child is still alive
-  const { data: wildChild } = await supabase
-    .from("players")
-    .select("id, pseudo, is_alive, role:roles(name)")
-    .eq("id", wildChildModel.child_player_id)
-    .single();
-
-  if (!wildChild || !wildChild.is_alive) return null;
-
-  // Get the loup_garou role id
-  const { data: wolfRole } = await supabase
-    .from("roles")
-    .select("id")
-    .eq("name", "loup_garou")
-    .single();
-
-  if (!wolfRole) return null;
-
-  // Transform the wild child into a wolf!
-  await supabase
-    .from("players")
-    .update({ role_id: wolfRole.id })
-    .eq("id", wildChildModel.child_player_id);
-
-  // Mark as transformed
-  await supabase
-    .from("wild_child_models")
-    .update({ transformed: true })
-    .eq("id", wildChildModel.id);
-
-  // Log the transformation event
-  await supabase.from("game_events").insert({
-    game_id: gameId,
-    event_type: "wild_child_transformed",
-    data: {
-      child_id: wildChildModel.child_player_id,
-      child_name: wildChild.pseudo,
-      model_id: deadPlayerId,
-      new_role: "loup_garou",
-    },
-  });
-
-  return {
-    childId: wildChildModel.child_player_id,
-    childPseudo: wildChild.pseudo,
-  };
-}
-
-/**
  * Auto-activate bot witch potions during night
  * Bot witches have a chance to save the wolf target and/or poison someone
  */
-async function autoBotWitchPotions(supabase: Awaited<ReturnType<typeof createClient>>, gameId: string, phase: number) {
+async function autoBotWitchPotions(supabase: Awaited<ReturnType<typeof createClient>>, gameId: string, phase: number, autoMode: boolean) {
   // Find alive bot witches
   const { data: witches } = await supabase
     .from("players")
@@ -264,14 +145,15 @@ async function autoBotWitchPotions(supabase: Awaited<ReturnType<typeof createCli
 
     // Bot decision: 30% chance to poison a random player if they have death potion
     if (hasDeathPotion && Math.random() < 0.3) {
-      // Get all alive players except the witch
-      const { data: alivePlayers } = await supabase
+      // Get all alive players except the witch (MJ ciblable qu'en Auto-Garou)
+      const { data: alive } = await supabase
         .from("players")
-        .select("id")
+        .select("id, is_mj")
         .eq("game_id", gameId)
         .eq("is_alive", true)
         .neq("id", witch.id);
 
+      const alivePlayers = alive?.filter((p) => autoMode || !p.is_mj);
       if (alivePlayers && alivePlayers.length > 0) {
         const randomTarget = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
         
@@ -468,6 +350,7 @@ export async function POST(
   // Get custom duration from settings
   const settings = (game.settings || {}) as Partial<GameSettings>;
   const jourDurationSeconds = (settings.councilIntervalMinutes || 5) * 60;
+  const autoMode = isAutoMode(game.settings);
 
   // Get all wolves alive
   const { data: wolves } = await supabase
@@ -481,10 +364,10 @@ export async function POST(
   ) || [];
 
   // LAZY VOTING: Force bot wolves to vote before resolution
-  await forceBotWolfVotes(game.id, game.current_phase ?? 1, aliveWolves);
+  await forceBotWolfVotes(game.id, game.current_phase ?? 1, aliveWolves, autoMode);
 
   // BOT WITCH AUTO-ACTIVATION: Make bot witches use their potions randomly
-  await autoBotWitchPotions(supabase, game.id, game.current_phase ?? 1);
+  await autoBotWitchPotions(supabase, game.id, game.current_phase ?? 1, autoMode);
 
   // Get night votes (refresh after lazy voting)
   const { data: votes } = await supabase
@@ -740,6 +623,21 @@ export async function POST(
             victim_role: (poisonVictim.role as { name: string } | null)?.name,
           },
         });
+
+        // La mort par poison déclenche la même cascade que toute autre mort
+        await applyDeathCascade(supabase, game.id, witchDeathPotion.target_id);
+
+        // Le poison peut faire basculer la partie même si la victime des loups est sauvée
+        const winner = await endGameIfVictory(supabase, game.id, autoMode);
+        if (winner) {
+          return NextResponse.json({
+            success: true,
+            witchSaved: true,
+            poisonVictim: true,
+            gameOver: true,
+            winner,
+          });
+        }
       }
     }
 
@@ -799,27 +697,18 @@ export async function POST(
     },
   });
 
-  // Check if victim was a Wild Child's model → transform the child into a wolf
-  const wildChildTransformed = await checkWildChildTransformation(supabase, game.id, victimId);
-
-  // Check if victim has a lover (heartbreak death)
-  const loverDeath = await checkLoverDeath(supabase, game.id, victimId);
-
-  // If lover died, also check for Wild Child transformation
-  if (loverDeath?.loverId) {
-    await checkWildChildTransformation(supabase, game.id, loverDeath.loverId);
-  }
+  // Cascade : Enfant Sauvage (modèle), amoureux (chagrin)
+  await applyDeathCascade(supabase, game.id, victimId);
 
   // Check if victim was a bot hunter and auto-shoot
   const hunterShot = await autoBotHunterShoot(supabase, game.id, victimId, game.current_phase ?? 1);
 
-  // If hunter shot someone, check for lover death and Wild Child transformation
+  // If hunter shot someone, apply the same death cascade to their victim
   if (hunterShot?.victimId) {
-    await checkLoverDeath(supabase, game.id, hunterShot.victimId);
+    await applyDeathCascade(supabase, game.id, hunterShot.victimId);
   }
 
   // Also process witch death potion if used (and not the same target as wolves)
-  let poisonVictimName: string | null = null;
   if (witchDeathPotion?.target_id && witchDeathPotion.target_id !== victimId) {
     const { data: poisonVictim } = await supabase
       .from("players")
@@ -833,7 +722,6 @@ export async function POST(
       .single();
 
     if (poisonVictim) {
-      poisonVictimName = poisonVictim.pseudo;
       await supabase.from("game_events").insert({
         game_id: game.id,
         event_type: "witch_poison_kill",
@@ -844,50 +732,14 @@ export async function POST(
         },
       });
 
-      // Check if poison victim was a Wild Child's model
-      await checkWildChildTransformation(supabase, game.id, witchDeathPotion.target_id);
-
-      // Check if poison victim has a lover
-      await checkLoverDeath(supabase, game.id, witchDeathPotion.target_id);
+      await applyDeathCascade(supabase, game.id, witchDeathPotion.target_id);
     }
   }
 
-  // Check victory conditions
-  const { data: alivePlayers } = await supabase
-    .from("players")
-    .select("id, is_mj, role:roles(team)")
-    .eq("game_id", game.id)
-    .eq("is_alive", true);
-
-  const aliveNonMJ = alivePlayers?.filter((p) => !p.is_mj) || [];
-  const remainingWolves = aliveNonMJ.filter(
-    (p) => (p.role as { team: string } | null)?.team === "loups"
-  );
-  const remainingVillagers = aliveNonMJ.filter(
-    (p) => (p.role as { team: string } | null)?.team !== "loups"
-  );
-
-  let winner: string | null = null;
-
-  if (remainingWolves.length === 0) {
-    winner = "village";
-  } else if (remainingWolves.length >= remainingVillagers.length) {
-    winner = "loups";
-  }
+  // Check victory conditions (MJ compté seulement en Auto-Garou, où il joue)
+  const winner = await endGameIfVictory(supabase, game.id, autoMode);
 
   if (winner) {
-    // Game over
-    await supabase
-      .from("games")
-      .update({ status: "terminee" })
-      .eq("id", game.id);
-
-    await supabase.from("game_events").insert({
-      game_id: game.id,
-      event_type: "game_ended",
-      data: { winner },
-    });
-
     return NextResponse.json({
       success: true,
       victim: victim.pseudo,

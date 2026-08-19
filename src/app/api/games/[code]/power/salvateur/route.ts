@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
+import { isAutoMode } from "@/lib/game/resolution";
 
 // POST - Salvateur uses his power to protect a player
 export async function POST(
@@ -22,7 +23,7 @@ export async function POST(
   // Get game
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select("id, status, current_phase")
+    .select("id, status, current_phase, settings")
     .eq("code", code)
     .single();
 
@@ -119,7 +120,8 @@ export async function POST(
     return NextResponse.json({ error: "Cible non trouvée" }, { status: 404 });
   }
 
-  if (!target.is_alive || target.is_mj) {
+  // En Auto-Garou le MJ joue et peut être protégé comme les autres
+  if (!target.is_alive || (target.is_mj && !isAutoMode(game.settings))) {
     return NextResponse.json(
       { error: "Cible invalide" },
       { status: 400 }

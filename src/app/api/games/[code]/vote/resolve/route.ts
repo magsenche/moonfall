@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
+import { applyDeathCascade, endGameIfVictory } from '@/lib/game/deaths';
+import { isAutoMode, tallyVotes } from '@/lib/game/resolution';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,11 +13,11 @@ const supabase = createClient<Database>(
  * Lazy Voting: Force bots to vote randomly before resolution
  * This ensures the game never gets stuck when bots are present
  */
-async function forceBotVotes(gameId: string, phase: number) {
+async function forceBotVotes(gameId: string, phase: number, autoMode: boolean) {
   // Get all alive players
   const { data: alivePlayers } = await supabase
     .from('players')
-    .select('id, pseudo, is_alive')
+    .select('id, pseudo, is_alive, is_mj')
     .eq('game_id', gameId)
     .eq('is_alive', true);
 
@@ -38,8 +40,9 @@ async function forceBotVotes(gameId: string, phase: number) {
 
   if (botsToVote.length === 0) return;
 
-  // Get potential targets (alive players, excluding the bot itself)
-  const targets = alivePlayers.filter(p => p.is_alive);
+  // Get potential targets (alive players, excluding the bot itself ;
+  // le MJ arbitre n'est une cible qu'en Auto-Garou, où il joue)
+  const targets = alivePlayers.filter(p => p.is_alive && (autoMode || !p.is_mj));
 
   // Make each bot vote randomly
   const botVotes = botsToVote.map(bot => {
@@ -59,127 +62,6 @@ async function forceBotVotes(gameId: string, phase: number) {
   if (botVotes.length > 0) {
     await supabase.from('votes').insert(botVotes);
   }
-}
-
-/**
- * Check if dead player has a lover and kill them too (heartbreak death)
- * Returns the lover's info if they died, null otherwise
- */
-async function checkLoverDeath(gameId: string, deadPlayerId: string) {
-  // Check if dead player was in a lovers pair
-  const { data: loversMatch } = await supabase
-    .from("lovers")
-    .select("id, player1_id, player2_id")
-    .eq("game_id", gameId)
-    .or(`player1_id.eq.${deadPlayerId},player2_id.eq.${deadPlayerId}`)
-    .maybeSingle();
-
-  if (!loversMatch) return null;
-
-  // Find the partner
-  const partnerId = loversMatch.player1_id === deadPlayerId 
-    ? loversMatch.player2_id 
-    : loversMatch.player1_id;
-
-  // Check if partner is still alive
-  const { data: partner } = await supabase
-    .from("players")
-    .select("id, pseudo, is_alive, role:roles(name)")
-    .eq("id", partnerId)
-    .single();
-
-  if (!partner || !partner.is_alive) return null;
-
-  // Kill the partner from heartbreak
-  await supabase
-    .from("players")
-    .update({
-      is_alive: false,
-      death_reason: "chagrin",
-      death_at: new Date().toISOString(),
-    })
-    .eq("id", partnerId);
-
-  // Log the heartbreak death event
-  await supabase.from("game_events").insert({
-    game_id: gameId,
-    event_type: "lover_heartbreak_death",
-    data: {
-      lover_id: partnerId,
-      lover_name: partner.pseudo,
-      lover_role: (partner.role as { name: string } | null)?.name,
-      dead_partner_id: deadPlayerId,
-    },
-  });
-
-  return {
-    loverId: partnerId,
-    loverPseudo: partner.pseudo,
-    loverRole: (partner.role as { name: string } | null)?.name,
-  };
-}
-
-/**
- * Check if dead player was a Wild Child's model and transform the child into a wolf
- */
-async function checkWildChildTransformation(gameId: string, deadPlayerId: string) {
-  // Check if dead player was someone's model
-  const { data: wildChildModel } = await supabase
-    .from("wild_child_models")
-    .select("id, child_player_id, transformed")
-    .eq("game_id", gameId)
-    .eq("model_player_id", deadPlayerId)
-    .eq("transformed", false)
-    .maybeSingle();
-
-  if (!wildChildModel) return null;
-
-  // Check if the wild child is still alive
-  const { data: wildChild } = await supabase
-    .from("players")
-    .select("id, pseudo, is_alive, role:roles(name)")
-    .eq("id", wildChildModel.child_player_id)
-    .single();
-
-  if (!wildChild || !wildChild.is_alive) return null;
-
-  // Get the loup_garou role id
-  const { data: wolfRole } = await supabase
-    .from("roles")
-    .select("id")
-    .eq("name", "loup_garou")
-    .single();
-
-  if (!wolfRole) return null;
-
-  // Transform the wild child into a wolf!
-  await supabase
-    .from("players")
-    .update({ role_id: wolfRole.id })
-    .eq("id", wildChildModel.child_player_id);
-
-  // Mark as transformed
-  await supabase
-    .from("wild_child_models")
-    .update({ transformed: true })
-    .eq("id", wildChildModel.id);
-
-  // Log the transformation event
-  await supabase.from("game_events").insert({
-    game_id: gameId,
-    event_type: "wild_child_transformed",
-    data: {
-      child_id: wildChildModel.child_player_id,
-      child_name: wildChild.pseudo,
-      model_id: deadPlayerId,
-      new_role: "loup_garou",
-    },
-  });
-
-  return {
-    childId: wildChildModel.child_player_id,
-    childPseudo: wildChild.pseudo,
-  };
 }
 
 /**
@@ -303,12 +185,12 @@ export async function POST(
 
   // Get settings for night duration
   const settings = (game.settings || {}) as { autoMode?: boolean; nightDurationMinutes?: number };
-  const isAutoMode = settings.autoMode ?? false;
+  const autoMode = isAutoMode(game.settings);
 
   const currentPhase = game.current_phase ?? 1;
 
   // LAZY VOTING: Force bots to vote before resolution
-  await forceBotVotes(game.id, currentPhase);
+  await forceBotVotes(game.id, currentPhase, autoMode);
 
   // Get all votes for this phase
   const { data: votes, error: votesError } = await supabase
@@ -349,13 +231,8 @@ export async function POST(
   });
 
   // Count votes for each target (with double vote bonus)
-  const voteCounts: Record<string, number> = {};
-  for (const vote of votes ?? []) {
-    if (vote.target_id) {
-      const multiplier = doubleVoters.has(vote.voter_id) ? 2 : 1;
-      voteCounts[vote.target_id] = (voteCounts[vote.target_id] || 0) + multiplier;
-    }
-  }
+  const tally = tallyVotes(votes ?? [], (voterId) => (doubleVoters.has(voterId) ? 2 : 1));
+  const voteCounts = tally.counts;
 
   // Get player pseudos for vote details
   const { data: allPlayers } = await supabase
@@ -395,17 +272,8 @@ export async function POST(
   }
 
   // Find player(s) with most votes
-  let maxVotes = 0;
-  let eliminated: string[] = [];
-  
-  for (const [targetId, count] of Object.entries(voteCounts)) {
-    if (count > maxVotes) {
-      maxVotes = count;
-      eliminated = [targetId];
-    } else if (count === maxVotes) {
-      eliminated.push(targetId);
-    }
-  }
+  const maxVotes = tally.max;
+  const eliminated = tally.leaders;
 
   // Check for immunity powers on the potential eliminated player
   let immunityUsed = false;
@@ -508,71 +376,31 @@ export async function POST(
         },
       });
 
-      // Check if dead player was a Wild Child's model
-      await checkWildChildTransformation(game.id, player.id);
-
-      // Check if eliminated player has a lover (heartbreak death)
-      const loverDeath = await checkLoverDeath(game.id, player.id);
+      // Cascade : Enfant Sauvage (modèle), amoureux (chagrin)
+      const cascade = await applyDeathCascade(supabase, game.id, player.id);
 
       // Check if eliminated player was a bot hunter and auto-shoot
       hunterShot = await autoBotHunterShoot(game.id, player.id, currentPhase);
-      
-      // If hunter shot someone, also check for Wild Child transformation and lover
+
+      // If hunter shot someone, apply the same death cascade to their victim
       if (hunterShot?.victimId) {
-        await checkWildChildTransformation(game.id, hunterShot.victimId);
-        await checkLoverDeath(game.id, hunterShot.victimId);
+        await applyDeathCascade(supabase, game.id, hunterShot.victimId);
       }
 
-      // If lover died, also check for Wild Child transformation and hunter
-      if (loverDeath?.loverId) {
-        await checkWildChildTransformation(game.id, loverDeath.loverId);
-        const loverHunterShot = await autoBotHunterShoot(game.id, loverDeath.loverId, currentPhase);
+      // If lover died of heartbreak and was a bot hunter, they shoot too
+      if (cascade.loverDeath?.loverId) {
+        const loverHunterShot = await autoBotHunterShoot(game.id, cascade.loverDeath.loverId, currentPhase);
         if (loverHunterShot?.victimId) {
-          await checkWildChildTransformation(game.id, loverHunterShot.victimId);
+          await applyDeathCascade(supabase, game.id, loverHunterShot.victimId);
         }
       }
     }
   }
 
-  // Check for victory conditions
-  const { data: remainingPlayers } = await supabase
-    .from('players')
-    .select('id, role_id')
-    .eq('game_id', game.id)
-    .eq('is_alive', true)
-    .eq('is_mj', false);
-
-  // Get roles to check teams
-  const { data: roles } = await supabase
-    .from('roles')
-    .select('id, team');
-
-  const roleTeams = new Map(roles?.map(r => [r.id, r.team]));
-  
-  const wolves = remainingPlayers?.filter(p => roleTeams.get(p.role_id!) === 'loups') ?? [];
-  const villagers = remainingPlayers?.filter(p => roleTeams.get(p.role_id!) !== 'loups') ?? [];
-
-  let winner: string | null = null;
-  
-  if (wolves.length === 0) {
-    winner = 'village';
-  } else if (wolves.length >= villagers.length) {
-    winner = 'loups';
-  }
+  // Check for victory conditions (MJ compté seulement en Auto-Garou, où il joue)
+  const winner = await endGameIfVictory(supabase, game.id, autoMode);
 
   if (winner) {
-    // End the game
-    await supabase
-      .from('games')
-      .update({ status: 'terminee' })
-      .eq('id', game.id);
-
-    await supabase.from('game_events').insert({
-      game_id: game.id,
-      event_type: 'game_ended',
-      data: { winner },
-    });
-
     return NextResponse.json({
       success: true,
       eliminated: eliminatedPlayer,
@@ -587,7 +415,7 @@ export async function POST(
   // Transition to night
   // In auto mode, night phase has a timer. In normal mode, no timer (wolves act when ready)
   let nightPhaseEndsAt: string | null = null;
-  if (isAutoMode) {
+  if (autoMode) {
     const nightDurationSeconds = (settings.nightDurationMinutes ?? 2) * 60;
     nightPhaseEndsAt = new Date(Date.now() + nightDurationSeconds * 1000).toISOString();
   }
