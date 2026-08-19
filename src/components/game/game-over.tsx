@@ -76,8 +76,8 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
         className={cn(
           "absolute inset-0",
           winner === 'village' 
-            ? 'bg-linear-to-b from-blue-950/95 via-slate-900/95 to-green-950/95'
-            : 'bg-linear-to-b from-red-950/95 via-slate-900/95 to-purple-950/95'
+            ? 'bg-linear-to-b from-night-700/95 via-night-900/95 to-green-950/95'
+            : 'bg-linear-to-b from-blood-700/95 via-night-900/95 to-night-900/95'
         )} 
       />
       
@@ -128,20 +128,20 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
               <h1 
                 className={cn(
                   "text-5xl font-black mb-2",
-                  winner === 'village' ? 'text-blue-400' : 'text-red-400'
+                  winner === 'village' ? 'text-village-400' : 'text-blood-400'
                 )}
                 style={{ textShadow: '4px 4px 0px rgba(0,0,0,0.5)' }}
               >
                 {winnerTeam} gagne !
               </h1>
-              <p className="text-lg text-slate-300 font-medium">{winnerMessage}</p>
+              <p className="text-lg text-moon-100/70 font-medium">{winnerMessage}</p>
               <motion.span 
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3 }}
                 className={cn(
                   "inline-block mt-3 px-4 py-1 rounded-full text-sm font-medium",
-                  "bg-zinc-800/80 border border-white/20 text-slate-400",
+                  "bg-night-800/80 border border-white/20 text-moon-100/60",
                   "shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
                 )}
               >
@@ -159,8 +159,8 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
               rotation={0}
               className={cn(
                 winner === 'village' 
-                  ? 'border-blue-500/50'
-                  : 'border-red-500/50'
+                  ? 'border-village-400/50'
+                  : 'border-blood-500/50'
               )}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -171,7 +171,7 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
                 <div className="mb-6">
                   <h3 className={cn(
                     "text-sm font-bold mb-3 flex items-center gap-2",
-                    winner === 'village' ? 'text-blue-400' : 'text-red-400'
+                    winner === 'village' ? 'text-village-400' : 'text-blood-400'
                   )}>
                     <span>👑</span>
                     <span>Vainqueurs</span>
@@ -187,8 +187,8 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
                           "flex items-center justify-between p-3 rounded-xl border",
                           "shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]",
                           winner === 'village' 
-                            ? 'bg-blue-900/30 border-blue-500/50' 
-                            : 'bg-red-900/30 border-red-500/50'
+                            ? 'bg-night-700/30 border-village-400/50' 
+                            : 'bg-blood-700/30 border-blood-500/50'
                         )}
                       >
                         <span className="text-white font-bold">
@@ -197,7 +197,7 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
                         </span>
                         <span className={cn(
                           "text-xs px-2 py-1 rounded-full font-medium",
-                          "bg-zinc-700 border border-zinc-500 text-slate-300"
+                          "bg-night-700 border border-night-600 text-moon-100/70"
                         )}>
                           {player.roleName}
                         </span>
@@ -208,7 +208,7 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
 
                 {/* Losers section */}
                 <div className="mb-6">
-                  <h3 className="text-sm font-bold mb-3 text-slate-500 flex items-center gap-2">
+                  <h3 className="text-sm font-bold mb-3 text-moon-100/40 flex items-center gap-2">
                     <span>💀</span>
                     <span>Vaincus</span>
                   </h3>
@@ -221,14 +221,14 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
                         transition={{ delay: 0.8 + i * 0.1 }}
                         className={cn(
                           "flex items-center justify-between p-3 rounded-xl",
-                          "bg-zinc-800/50 border border-zinc-700/50"
+                          "bg-night-800/50 border border-night-700/50"
                         )}
                       >
-                        <span className="text-slate-400">
+                        <span className="text-moon-100/60">
                           {player.pseudo}
                           {player.isAlive ? '' : ' ☠️'}
                         </span>
-                        <span className="text-xs text-slate-500">{player.roleName}</span>
+                        <span className="text-xs text-moon-100/40">{player.roleName}</span>
                       </motion.div>
                     ))}
                   </div>
@@ -239,7 +239,7 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
                   {[
                     { value: players.length, label: 'Joueurs', color: 'text-white' },
                     { value: players.filter(p => p.isAlive).length, label: 'Survivants', color: 'text-green-400' },
-                    { value: players.filter(p => !p.isAlive).length, label: 'Éliminés', color: 'text-red-400' },
+                    { value: players.filter(p => !p.isAlive).length, label: 'Éliminés', color: 'text-blood-400' },
                   ].map((stat, i) => (
                     <motion.div 
                       key={stat.label}
@@ -248,12 +248,12 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
                       transition={{ delay: 1 + i * 0.1 }}
                       className={cn(
                         "p-3 rounded-xl border",
-                        "bg-zinc-800/50 border-zinc-700/50",
+                        "bg-night-800/50 border-night-700/50",
                         "shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]"
                       )}
                     >
                       <div className={cn("text-2xl font-black", stat.color)}>{stat.value}</div>
-                      <div className="text-xs text-slate-500">{stat.label}</div>
+                      <div className="text-xs text-moon-100/40">{stat.label}</div>
                     </motion.div>
                   ))}
                 </div>
@@ -266,8 +266,8 @@ export function GameOver({ winner, gameName, players, onPlayAgain }: GameOverPro
                     className={cn(
                       "w-full py-4 text-lg",
                       winner === 'village'
-                        ? 'bg-blue-600 border-blue-400 hover:bg-blue-500'
-                        : 'bg-red-600 border-red-400 hover:bg-red-500'
+                        ? 'bg-village-600 border-village-400 hover:bg-village-400'
+                        : 'bg-blood-500 border-blood-400 hover:bg-blood-500'
                     )}
                   >
                     🔄 Nouvelle partie

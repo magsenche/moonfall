@@ -9,6 +9,8 @@
 
 'use client';
 
+import { MoonLogo } from '@/components/ui';
+
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleDetailModal } from '@/components/game';
@@ -62,25 +64,25 @@ export function PlayerRoleCard({ role, roleConfig }: PlayerRoleCardProps) {
 
   const teamColors = {
     loups: {
-      border: 'border-red-500',
-      glow: 'shadow-red-500/30',
-      bg: 'from-red-950/80 via-red-900/50 to-zinc-900',
-      accent: 'text-red-400',
-      badge: 'bg-red-500/20 text-red-400 border-red-500/40',
+      border: 'border-blood-500',
+      glow: 'shadow-blood-500/30',
+      bg: 'from-blood-700/80 via-blood-700/50 to-night-900',
+      accent: 'text-blood-400',
+      badge: 'bg-blood-500/20 text-blood-400 border-blood-500/40',
     },
     village: {
-      border: 'border-blue-500',
-      glow: 'shadow-blue-500/30',
-      bg: 'from-blue-950/80 via-indigo-900/50 to-zinc-900',
-      accent: 'text-blue-400',
-      badge: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
+      border: 'border-village-400',
+      glow: 'shadow-village-400/30',
+      bg: 'from-night-700/80 via-night-700/50 to-night-900',
+      accent: 'text-village-400',
+      badge: 'bg-village-400/20 text-village-400 border-village-400/40',
     },
     solo: {
-      border: 'border-purple-500',
-      glow: 'shadow-purple-500/30',
-      bg: 'from-purple-950/80 via-purple-900/50 to-zinc-900',
-      accent: 'text-purple-400',
-      badge: 'bg-purple-500/20 text-purple-400 border-purple-500/40',
+      border: 'border-village-400',
+      glow: 'shadow-village-400/30',
+      bg: 'from-night-900/80 via-night-700/50 to-night-900',
+      accent: 'text-village-300',
+      badge: 'bg-village-400/20 text-village-300 border-village-400/40',
     },
   };
 
@@ -105,7 +107,7 @@ export function PlayerRoleCard({ role, roleConfig }: PlayerRoleCardProps) {
           <motion.div
             className={cn(
               'w-full p-6 rounded-2xl',
-              'border-3 border-white/40 bg-zinc-900',
+              'border-3 border-white/40 bg-night-900',
               'shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)]',
               'backface-hidden'
             )}
@@ -116,16 +118,9 @@ export function PlayerRoleCard({ role, roleConfig }: PlayerRoleCardProps) {
               <div className="relative">
                 <div className={cn(
                   'w-28 h-28 mx-auto rounded-2xl flex items-center justify-center',
-                  'bg-gradient-to-br from-indigo-600/30 to-purple-600/30',
-                  'border-2 border-white/20'
+                  'bg-moon-500/10 border-2 border-moon-500/25'
                 )}>
-                  <motion.span 
-                    className="text-6xl"
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    🌙
-                  </motion.span>
+                  <MoonLogo size={72} />
                 </div>
                 {/* Decorative corners */}
                 <div className="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-white/30 rounded-tl-lg" />
@@ -137,13 +132,13 @@ export function PlayerRoleCard({ role, roleConfig }: PlayerRoleCardProps) {
               <h2 className="text-xl font-black text-white mt-6 tracking-wide">
                 TON RÔLE
               </h2>
-              <p className="text-sm text-zinc-400 mt-2">
+              <p className="text-sm text-moon-100/60 mt-2">
                 Appuie pour révéler
               </p>
               
               {/* Moonfall branding */}
               <div className="mt-6 pt-4 border-t border-white/10">
-                <span className="text-xs text-zinc-600 font-bold tracking-widest">
+                <span className="text-xs text-night-600 font-bold tracking-widest">
                   MOONFALL
                 </span>
               </div>
@@ -194,7 +189,7 @@ export function PlayerRoleCard({ role, roleConfig }: PlayerRoleCardProps) {
               
               {/* Description */}
               <motion.p 
-                className="text-slate-300 mt-3 text-sm leading-relaxed"
+                className="text-moon-100/70 mt-3 text-sm leading-relaxed"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
@@ -214,12 +209,12 @@ export function PlayerRoleCard({ role, roleConfig }: PlayerRoleCardProps) {
                 animate={{ scale: 1, rotate: [-5, 0] }}
                 transition={{ delay: 0.6, type: 'spring' }}
               >
-                {role.team === 'loups' ? '🐺 Loups-Garous' : role.team === 'village' ? '🏘️ Village' : '👤 Solo'}
+                {role.team === 'loups' ? 'Loups-Garous' : role.team === 'village' ? 'Village' : 'Solo'}
               </motion.div>
               
               {/* Tap for more hint */}
               <motion.p 
-                className="mt-4 text-xs text-zinc-500"
+                className="mt-4 text-xs text-moon-100/40"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.8 }}

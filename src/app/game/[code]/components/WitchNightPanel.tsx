@@ -146,7 +146,7 @@ export function WitchNightPanel({
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
-          <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+          <div className="p-3 bg-blood-500/20 border border-blood-500/50 rounded-lg text-blood-400 text-sm">
             {error}
           </div>
         )}
@@ -158,20 +158,20 @@ export function WitchNightPanel({
         )}
 
         {/* Wolf Target Info */}
-        <div className="p-4 bg-slate-800/50 rounded-lg">
-          <h4 className="text-sm font-medium text-slate-300 mb-2">🐺 Cible des loups cette nuit</h4>
+        <div className="p-4 bg-night-800/50 rounded-lg">
+          <h4 className="text-sm font-medium text-moon-100/70 mb-2">🐺 Cible des loups cette nuit</h4>
           {status.wolfTarget ? (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                <span className="text-red-400">💀</span>
+              <div className="w-10 h-10 rounded-full bg-blood-500/20 flex items-center justify-center">
+                <span className="text-blood-400">💀</span>
               </div>
               <div>
                 <p className="text-white font-medium">{status.wolfTarget.pseudo}</p>
-                <p className="text-slate-400 text-xs">Va être dévoré(e)...</p>
+                <p className="text-moon-100/60 text-xs">Va être dévoré(e)...</p>
               </div>
             </div>
           ) : (
-            <p className="text-slate-500 text-sm">Les loups n'ont pas encore voté.</p>
+            <p className="text-moon-100/40 text-sm">Les loups n'ont pas encore voté.</p>
           )}
         </div>
 
@@ -180,14 +180,14 @@ export function WitchNightPanel({
           "p-4 rounded-lg border",
           status.hasLifePotion && !status.usedLifePotion
             ? "bg-emerald-500/10 border-emerald-500/30"
-            : "bg-slate-800/30 border-slate-700/50 opacity-60"
+            : "bg-night-800/30 border-night-700/50 opacity-60"
         )}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-2xl">💚</span>
               <div>
                 <p className="text-white font-medium">Potion de Vie</p>
-                <p className="text-slate-400 text-xs">
+                <p className="text-moon-100/60 text-xs">
                   {status.usedLifePotion 
                     ? 'Déjà utilisée cette partie'
                     : status.hasLifePotion 
@@ -211,14 +211,14 @@ export function WitchNightPanel({
         <div className={cn(
           "p-4 rounded-lg border",
           status.hasDeathPotion && !status.usedDeathPotion
-            ? "bg-purple-500/10 border-purple-500/30"
-            : "bg-slate-800/30 border-slate-700/50 opacity-60"
+            ? "bg-village-400/10 border-village-400/30"
+            : "bg-night-800/30 border-night-700/50 opacity-60"
         )}>
           <div className="flex items-center gap-3 mb-3">
             <span className="text-2xl">💜</span>
             <div>
               <p className="text-white font-medium">Potion de Mort</p>
-              <p className="text-slate-400 text-xs">
+              <p className="text-moon-100/60 text-xs">
                 {status.usedDeathPotion
                   ? 'Déjà utilisée cette partie'
                   : status.hasDeathPotion
@@ -239,8 +239,8 @@ export function WitchNightPanel({
                     className={cn(
                       "w-full p-2 rounded-lg border text-left transition-all text-sm",
                       selectedDeathTarget === player.id
-                        ? "border-purple-500 bg-purple-500/20 text-white"
-                        : "border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-600"
+                        ? "border-village-400 bg-village-400/20 text-white"
+                        : "border-night-700 bg-night-800/50 text-moon-100/70 hover:border-night-600"
                     )}
                   >
                     {player.pseudo}
@@ -251,7 +251,7 @@ export function WitchNightPanel({
                 size="sm"
                 onClick={useDeathPotion}
                 disabled={!selectedDeathTarget || isLoading}
-                className="w-full bg-purple-600 hover:bg-purple-700"
+                className="w-full bg-village-600 hover:bg-village-400"
               >
                 {isLoading ? 'En cours...' : `Empoisonner ${selectedDeathTarget ? validDeathTargets.find(p => p.id === selectedDeathTarget)?.pseudo : '...'}`}
               </Button>
@@ -261,7 +261,7 @@ export function WitchNightPanel({
 
         {/* Status */}
         {!status.hasLifePotion && !status.hasDeathPotion && (
-          <p className="text-center text-slate-500 text-sm">
+          <p className="text-center text-moon-100/40 text-sm">
             Tu as utilisé toutes tes potions. Attends le jour...
           </p>
         )}

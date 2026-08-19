@@ -11,9 +11,9 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant = 'default', children, ...props }, ref) => {
     const variants = {
-      default: 'bg-slate-800/50 border border-slate-700',
-      glass: 'bg-slate-800/30 backdrop-blur-lg border border-slate-700/50',
-      sticker: 'bg-zinc-800 border-2 border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]',
+      default: 'bg-night-800/60 border border-night-600',
+      glass: 'bg-night-800/40 backdrop-blur-lg border border-white/10',
+      sticker: 'bg-night-800 border-2 border-moon-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]',
     };
 
     return (
@@ -44,9 +44,9 @@ export interface MotionCardProps extends Omit<HTMLMotionProps<'div'>, 'children'
 const MotionCard = forwardRef<HTMLDivElement, MotionCardProps>(
   ({ className, variant = 'sticker', rotation = 0, children, ...props }, ref) => {
     const variants = {
-      default: 'bg-slate-800/50 border border-slate-700',
-      glass: 'bg-slate-800/30 backdrop-blur-lg border border-slate-700/50',
-      sticker: 'bg-zinc-800 border-2 border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]',
+      default: 'bg-night-800/60 border border-night-600',
+      glass: 'bg-night-800/40 backdrop-blur-lg border border-white/10',
+      sticker: 'bg-night-800 border-2 border-moon-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]',
     };
 
     return (
@@ -87,7 +87,7 @@ CardTitle.displayName = 'CardTitle';
 
 const CardDescription = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLParagraphElement>>(
   ({ className, ...props }, ref) => (
-    <p ref={ref} className={cn('text-sm text-slate-400 mt-1', className)} {...props} />
+    <p ref={ref} className={cn('text-sm text-moon-100/50 mt-1', className)} {...props} />
   )
 );
 CardDescription.displayName = 'CardDescription';

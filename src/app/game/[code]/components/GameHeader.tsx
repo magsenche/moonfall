@@ -9,6 +9,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { AlarmClock, Timer } from 'lucide-react';
 import { GamePhaseBadge } from '@/components/game';
 import { useGame, useTimerContext } from '../context';
 import { QuitGameButton } from './QuitGameButton';
@@ -30,7 +31,7 @@ export function GameHeader({ className }: GameHeaderProps) {
       <motion.h1 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-2xl font-black text-white text-center mb-4 tracking-tight"
+        className="text-2xl font-black text-white text-center mb-4 tracking-tight px-12 truncate"
         style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}
       >
         {game.name}
@@ -49,10 +50,10 @@ export function GameHeader({ className }: GameHeaderProps) {
             'border-2 border-white/20 backdrop-blur-md',
             'shadow-[0_4px_20px_rgba(0,0,0,0.3)]',
             isUrgent
-              ? 'bg-red-950/80 border-red-500/50'
+              ? 'bg-blood-700/80 border-blood-500/50'
               : isWarning
-                ? 'bg-amber-950/80 border-amber-500/30'
-                : 'bg-zinc-900/80'
+                ? 'bg-night-800/80 border-moon-500/30'
+                : 'bg-night-900/80'
           )}
           animate={isUrgent ? {
             x: [-2, 2, -2, 2, 0],
@@ -86,18 +87,18 @@ export function GameHeader({ className }: GameHeaderProps) {
                 className={cn(
                   'font-mono text-base font-bold flex items-center gap-1.5',
                   isUrgent
-                    ? 'text-red-400'
+                    ? 'text-blood-400'
                     : isWarning
-                      ? 'text-amber-400'
+                      ? 'text-moon-500'
                       : 'text-white'
                 )}
               >
-                <motion.span 
+                <motion.span
                   className="text-sm"
                   animate={isUrgent ? { scale: [1, 1.2, 1] } : {}}
                   transition={{ duration: 0.5, repeat: Infinity }}
                 >
-                  ⏱
+                  <Timer className="w-4 h-4" />
                 </motion.span>
                 <span>{formattedTime}</span>
               </motion.div>
@@ -115,11 +116,11 @@ export function GameHeader({ className }: GameHeaderProps) {
             exit={{ opacity: 0, scale: 0.8 }}
             className={cn(
               'mt-4 mx-auto w-fit px-4 py-2 rounded-xl',
-              'bg-red-600 border-2 border-white text-white font-bold text-sm',
+              'bg-blood-500 border-2 border-white text-white font-bold text-sm',
               'shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]'
             )}
           >
-            ⏰ Temps écoulé !
+            <AlarmClock className="w-4 h-4 inline -mt-0.5" /> Temps écoulé !
           </motion.div>
         )}
       </AnimatePresence>

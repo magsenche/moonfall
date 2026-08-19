@@ -133,7 +133,7 @@ export const Sticker = forwardRef<HTMLDivElement, StickerProps>(
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className={cn(
         'border-2 border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]',
-        'bg-zinc-800 transition-shadow hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)]',
+        'bg-night-800 transition-shadow hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)]',
         className
       )}
       {...props}

@@ -54,12 +54,12 @@ export function SeerPowerPanel({
       <MotionCard 
       variant="sticker" 
       rotation={1}
-      className="mb-6 border-purple-500/50"
+      className="mb-6 border-village-400/50"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
       <CardHeader>
-        <CardTitle className="text-purple-400 flex items-center gap-2">
+        <CardTitle className="text-village-300 flex items-center gap-2">
           <motion.span
             animate={{ scale: [1, 1.1, 1], opacity: [1, 0.7, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
@@ -94,8 +94,8 @@ export function SeerPowerPanel({
                   'inline-block px-6 py-4 rounded-2xl',
                   'border-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]',
                   seerResult.team === 'loups' 
-                    ? 'bg-red-900/50 border-red-500' 
-                    : 'bg-blue-900/50 border-blue-500'
+                    ? 'bg-blood-700/50 border-blood-500' 
+                    : 'bg-night-700/50 border-village-400'
                 )}
               >
                 <p className="text-white text-xl font-black mb-2">
@@ -103,7 +103,7 @@ export function SeerPowerPanel({
                 </p>
                 <p className={cn(
                   "text-lg font-bold",
-                  seerResult.team === 'loups' ? "text-red-400" : "text-blue-400"
+                  seerResult.team === 'loups' ? "text-blood-400" : "text-village-400"
                 )}>
                   {formatRoleName(seerResult.roleName)}
                 </p>
@@ -111,8 +111,8 @@ export function SeerPowerPanel({
                   "inline-block mt-2 px-3 py-1 rounded-full text-sm font-medium",
                   "border shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]",
                   seerResult.team === 'loups'
-                    ? 'bg-red-600 border-red-400 text-white'
-                    : 'bg-blue-600 border-blue-400 text-white'
+                    ? 'bg-blood-500 border-blood-400 text-white'
+                    : 'bg-village-600 border-village-400 text-white'
                 )}>
                   Équipe {seerResult.team === 'loups' ? 'Loups' : 'Village'}
                 </span>
@@ -126,11 +126,11 @@ export function SeerPowerPanel({
               className="text-center py-4"
             >
               <p className="text-2xl mb-2">✅</p>
-              <p className="text-slate-300 font-medium">Pouvoir utilisé cette nuit</p>
+              <p className="text-moon-100/70 font-medium">Pouvoir utilisé cette nuit</p>
             </motion.div>
           ) : (
             <motion.div key="select" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <p className="text-slate-400 text-sm mb-4 text-center">
+              <p className="text-moon-100/60 text-sm mb-4 text-center">
                 Choisissez un joueur pour découvrir son rôle
               </p>
               <div className="grid grid-cols-2 gap-2 mb-4">
@@ -145,8 +145,8 @@ export function SeerPowerPanel({
                     className={cn(
                       "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
                       seerTarget === player.id
-                        ? "bg-purple-500/30 border-2 border-purple-500 shadow-[3px_3px_0px_0px_rgba(139,92,246,0.5)]"
-                        : "bg-zinc-800/50 hover:bg-purple-900/20 border-2 border-transparent"
+                        ? "bg-village-400/30 border-2 border-village-400 shadow-[3px_3px_0px_0px_rgba(139,92,246,0.5)]"
+                        : "bg-night-800/50 hover:bg-night-700/20 border-2 border-transparent"
                     )}
                   >
                     <div className="relative">
@@ -161,7 +161,7 @@ export function SeerPowerPanel({
                           animate={{ scale: 1 }}
                           className={cn(
                             'absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full',
-                            'bg-purple-600 border border-white text-white font-bold',
+                            'bg-village-600 border border-white text-white font-bold',
                             'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)]'
                           )}
                         >
@@ -177,7 +177,7 @@ export function SeerPowerPanel({
               </div>
               <MotionButton
                 variant="sticker"
-                className="w-full bg-purple-600 border-purple-400 hover:bg-purple-500"
+                className="w-full bg-village-600 border-village-300 hover:bg-village-400"
                 onClick={onUsePower}
                 disabled={!seerTarget || isUsingSeerPower}
               >
@@ -189,7 +189,7 @@ export function SeerPowerPanel({
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="text-sm text-red-400 text-center mt-2"
+                    className="text-sm text-blood-400 text-center mt-2"
                   >
                     {seerError}
                   </motion.p>

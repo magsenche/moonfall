@@ -32,19 +32,19 @@ export function MJControls({
   isAutoMode = false,
 }: MJControlsProps) {
   return (
-    <Card className="mb-6 border border-purple-500/30">
+    <Card className="mb-6 border border-village-400/30">
       <CardHeader>
-        <CardTitle className="text-purple-400">
+        <CardTitle className="text-village-300">
           🎭 Contrôles MJ
           {isAutoMode && (
-            <span className="ml-2 text-xs font-normal text-indigo-400">(Auto-Garou)</span>
+            <span className="ml-2 text-xs font-normal text-village-400">(Auto-Garou)</span>
           )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {gameStatus === 'nuit' && (
           <>
-            <div className="text-sm text-slate-400 mb-2 text-center">
+            <div className="text-sm text-moon-100/60 mb-2 text-center">
               🐺 Votes des loups : {wolfVoteCount.voted}/{wolfVoteCount.total}
             </div>
             {showForceConfirm ? (
@@ -53,7 +53,7 @@ export function MJControls({
                   ⚠️ {nightVoteResolveError}
                 </p>
                 <Button
-                  className="w-full bg-red-600 hover:bg-red-700"
+                  className="w-full bg-blood-500 hover:bg-blood-700"
                   onClick={() => onResolveNightVote(true)}
                   disabled={isChangingPhase}
                 >
@@ -70,14 +70,14 @@ export function MJControls({
             ) : (
               <>
                 <Button
-                  className="w-full bg-red-600 hover:bg-red-700"
+                  className="w-full bg-blood-500 hover:bg-blood-700"
                   onClick={() => onResolveNightVote()}
                   disabled={isChangingPhase}
                 >
                   🐺 Résoudre l&apos;attaque des loups
                 </Button>
                 {nightVoteResolveError && !showForceConfirm && (
-                  <p className="text-sm text-red-400 text-center mt-2">{nightVoteResolveError}</p>
+                  <p className="text-sm text-blood-400 text-center mt-2">{nightVoteResolveError}</p>
                 )}
               </>
             )}
@@ -112,7 +112,7 @@ export function MJControls({
         )}
 
         {isChangingPhase && (
-          <p className="text-sm text-slate-400 text-center">⏳ Changement en cours...</p>
+          <p className="text-sm text-moon-100/60 text-center">⏳ Changement en cours...</p>
         )}
       </CardContent>
     </Card>

@@ -12,14 +12,14 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, disabled, children, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center font-bold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]';
+    const baseStyles = 'inline-flex items-center justify-center font-bold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-night-900 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]';
     
     const variants = {
-      primary: 'bg-indigo-600 hover:bg-indigo-500 text-white focus:ring-indigo-500 shadow-lg shadow-indigo-500/25 border-2 border-indigo-400/50',
-      secondary: 'bg-slate-700 hover:bg-slate-600 text-white focus:ring-slate-500 border-2 border-slate-500/50',
-      danger: 'bg-red-600 hover:bg-red-500 text-white focus:ring-red-500 border-2 border-red-400/50',
-      ghost: 'bg-transparent hover:bg-slate-800 text-slate-300 focus:ring-slate-500',
-      sticker: 'bg-zinc-800 text-white border-2 border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:translate-x-[2px] active:translate-y-[2px]',
+      primary: 'bg-moon-500 hover:bg-moon-300 text-night-950 focus:ring-moon-500 shadow-lg shadow-moon-500/20 border-2 border-moon-300/60',
+      secondary: 'bg-night-700 hover:bg-night-600 text-moon-100 focus:ring-night-600 border-2 border-night-600',
+      danger: 'bg-blood-500 hover:bg-blood-400 text-white focus:ring-blood-500 border-2 border-blood-400/50',
+      ghost: 'bg-transparent hover:bg-night-800 text-moon-100/70 hover:text-moon-100 focus:ring-night-600',
+      sticker: 'bg-night-800 text-moon-100 border-2 border-moon-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)] active:translate-x-[2px] active:translate-y-[2px]',
     };
     
     const sizes = {
@@ -61,14 +61,14 @@ export interface MotionButtonProps extends Omit<HTMLMotionProps<'button'>, 'chil
 
 const MotionButton = forwardRef<HTMLButtonElement, MotionButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, disabled, children, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center font-bold rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]';
+    const baseStyles = 'inline-flex items-center justify-center font-bold rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-night-900 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]';
     
     const variants = {
-      primary: 'bg-indigo-600 hover:bg-indigo-500 text-white focus:ring-indigo-500 shadow-lg shadow-indigo-500/25 border-2 border-indigo-400/50',
-      secondary: 'bg-slate-700 hover:bg-slate-600 text-white focus:ring-slate-500 border-2 border-slate-500/50',
-      danger: 'bg-red-600 hover:bg-red-500 text-white focus:ring-red-500 border-2 border-red-400/50',
-      ghost: 'bg-transparent hover:bg-slate-800 text-slate-300 focus:ring-slate-500',
-      sticker: 'bg-zinc-800 text-white border-2 border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]',
+      primary: 'bg-moon-500 hover:bg-moon-300 text-night-950 focus:ring-moon-500 shadow-lg shadow-moon-500/20 border-2 border-moon-300/60',
+      secondary: 'bg-night-700 hover:bg-night-600 text-moon-100 focus:ring-night-600 border-2 border-night-600',
+      danger: 'bg-blood-500 hover:bg-blood-400 text-white focus:ring-blood-500 border-2 border-blood-400/50',
+      ghost: 'bg-transparent hover:bg-night-800 text-moon-100/70 hover:text-moon-100 focus:ring-night-600',
+      sticker: 'bg-night-800 text-moon-100 border-2 border-moon-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]',
     };
     
     const sizes = {

@@ -97,7 +97,7 @@ export function PlayerAvatar({
           animate={{ scale: 1, rotate: -10 }}
           className={cn(
             'absolute -top-1 -right-2 px-1.5 py-0.5 rounded-md',
-            'bg-red-600 border-2 border-white text-white',
+            'bg-blood-500 border-2 border-white text-white',
             'text-[8px] font-black uppercase tracking-wider',
             'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)]'
           )}
@@ -112,7 +112,7 @@ export function PlayerAvatar({
           className={cn(
             'font-bold truncate max-w-[80px] text-center',
             nameSizeClasses[size],
-            isAlive ? 'text-white' : 'text-slate-500'
+            isAlive ? 'text-white' : 'text-moon-100/40'
           )}
         >
           {pseudo}

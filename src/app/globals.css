@@ -1,20 +1,80 @@
 @import "tailwindcss";
 
+/* ============================================
+   Palette "Nuit de village"
+   Une seule source de vérité pour les couleurs :
+   nuit bleu-noir, accent lune crème/ambre,
+   rouge sang réservé aux loups.
+   ============================================ */
 :root {
-  --background: #09090b;
-  --foreground: #f8fafc;
+  /* Fonds nocturnes (bleu-noir, pas de violet) */
+  --night-950: #060a12;
+  --night-900: #0a1120;
+  --night-800: #111a2c;
+  --night-700: #1a2540;
+  --night-600: #273656;
+
+  /* La lune : crème pour le texte fort, ambre pour l'accent chaud */
+  --moon-100: #f4ecda;
+  --moon-300: #eeddb4;
+  --moon-500: #e5bd72;
+  --moon-600: #cfa050;
+
+  /* Équipes */
+  --blood-400: #d05555;   /* loups */
+  --blood-500: #b03a3a;
+  --blood-700: #7e2a2a;
+  --village-300: #a7c4e4; /* village */
+  --village-400: #7da7d9;
+  --village-600: #4d7bb0;
+  --solo-400: #a2a8b3;    /* solo */
+
+  /* Phases de jeu */
+  --phase-nuit: #12203c;
+  --phase-jour: #3a2c14;
+  --phase-conseil: #331318;
+
+  --background: var(--night-950);
+  --foreground: var(--moon-100);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-night-950: var(--night-950);
+  --color-night-900: var(--night-900);
+  --color-night-800: var(--night-800);
+  --color-night-700: var(--night-700);
+  --color-night-600: var(--night-600);
+
+  --color-moon-100: var(--moon-100);
+  --color-moon-300: var(--moon-300);
+  --color-moon-500: var(--moon-500);
+  --color-moon-600: var(--moon-600);
+
+  --color-blood-400: var(--blood-400);
+  --color-blood-500: var(--blood-500);
+  --color-blood-700: var(--blood-700);
+  --color-village-300: var(--village-300);
+  --color-village-400: var(--village-400);
+  --color-village-600: var(--village-600);
+  --color-solo-400: var(--solo-400);
+
   --font-sans: var(--font-inter);
+  --font-display: var(--font-fraunces);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Titres display : Fraunces, serré, avec du caractère */
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.02em;
 }
 
 /* iOS Safe Areas */
@@ -26,9 +86,9 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Y2K Sticker Utility Class */
+/* Sticker : ombre dure façon jeu de société physique */
 .sticker {
-  border: 2px solid white;
+  border: 2px solid var(--moon-100);
   box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.5);
   transition: all 0.2s ease;
 }
@@ -48,17 +108,17 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #18181b;
+  background: var(--night-900);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: var(--night-700);
   border-radius: 4px;
-  border: 1px solid #52525b;
+  border: 1px solid var(--night-600);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: var(--night-600);
 }
 
 /* Smooth transitions */
@@ -68,7 +128,7 @@ body {
 
 /* Focus visible for accessibility */
 :focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid var(--moon-500);
   outline-offset: 2px;
 }
 

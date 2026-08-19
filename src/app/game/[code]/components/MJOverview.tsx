@@ -28,26 +28,26 @@ export function MJOverview({ players, roles, alivePlayers }: MJOverviewProps) {
   }).length;
 
   return (
-    <Card className="mt-6 border border-purple-500/30">
+    <Card className="mt-6 border border-village-400/30">
       <CardHeader>
-        <CardTitle className="text-purple-400">📊 Vue d&apos;ensemble MJ</CardTitle>
+        <CardTitle className="text-village-300">📊 Vue d&apos;ensemble MJ</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Team counts */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="p-3 bg-blue-500/10 rounded-xl text-center">
-            <p className="text-2xl font-bold text-blue-400">{aliveVillagers}</p>
-            <p className="text-xs text-blue-300">Villageois en vie</p>
+          <div className="p-3 bg-village-400/10 rounded-xl text-center">
+            <p className="text-2xl font-bold text-village-400">{aliveVillagers}</p>
+            <p className="text-xs text-village-300">Villageois en vie</p>
           </div>
-          <div className="p-3 bg-red-500/10 rounded-xl text-center">
-            <p className="text-2xl font-bold text-red-400">{aliveWolves}</p>
-            <p className="text-xs text-red-300">Loups en vie</p>
+          <div className="p-3 bg-blood-500/10 rounded-xl text-center">
+            <p className="text-2xl font-bold text-blood-400">{aliveWolves}</p>
+            <p className="text-xs text-blood-400">Loups en vie</p>
           </div>
         </div>
 
         {/* Role distribution */}
         <div>
-          <h4 className="text-sm font-medium text-slate-300 mb-2">Distribution des rôles</h4>
+          <h4 className="text-sm font-medium text-moon-100/70 mb-2">Distribution des rôles</h4>
           <div className="flex flex-wrap gap-2">
             {roles.map(role => {
               const playersWithRole = players.filter(p => p.role_id === role.id);
@@ -61,8 +61,8 @@ export function MJOverview({ players, roles, alivePlayers }: MJOverviewProps) {
                   className={cn(
                     "px-3 py-1 rounded-full text-sm flex items-center gap-1",
                     role.team === 'loups'
-                      ? "bg-red-500/20 text-red-300"
-                      : "bg-blue-500/20 text-blue-300"
+                      ? "bg-blood-500/20 text-blood-400"
+                      : "bg-village-400/20 text-village-300"
                   )}
                 >
                   <span>{roleConfig?.assets.icon}</span>
@@ -74,14 +74,14 @@ export function MJOverview({ players, roles, alivePlayers }: MJOverviewProps) {
         </div>
 
         {/* Victory condition indicator */}
-        <div className="p-3 bg-slate-800/50 rounded-xl">
-          <p className="text-xs text-slate-400 mb-1">Condition de victoire</p>
+        <div className="p-3 bg-night-800/50 rounded-xl">
+          <p className="text-xs text-moon-100/60 mb-1">Condition de victoire</p>
           {aliveWolves === 0 ? (
             <p className="text-green-400 font-medium">🏆 Village gagne (plus de loups)</p>
           ) : aliveWolves >= aliveVillagers ? (
-            <p className="text-red-400 font-medium">🏆 Loups gagnent (majorité)</p>
+            <p className="text-blood-400 font-medium">🏆 Loups gagnent (majorité)</p>
           ) : (
-            <p className="text-slate-300">
+            <p className="text-moon-100/70">
               Les loups doivent éliminer <span className="text-amber-400 font-bold">{aliveVillagers - aliveWolves + 1}</span> villageois
             </p>
           )}

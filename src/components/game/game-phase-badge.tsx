@@ -5,6 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
+import { Hourglass, Sun, Moon, Scale, Trophy, type LucideIcon } from 'lucide-react';
 import { theme } from '@/config/theme';
 import { cn } from '@/lib/utils';
 import { PhaseHelpTooltip } from './phase-help-tooltip';
@@ -32,12 +33,12 @@ const phaseLabels: Record<string, string> = {
   terminee: 'Terminée',
 };
 
-const phaseEmojis: Record<string, string> = {
-  lobby: '⏳',
-  jour: '☀️',
-  nuit: '🌙',
-  conseil: '⚖️',
-  terminee: '🏆',
+const phaseIcons: Record<string, LucideIcon> = {
+  lobby: Hourglass,
+  jour: Sun,
+  nuit: Moon,
+  conseil: Scale,
+  terminee: Trophy,
 };
 
 export function GamePhaseBadge({
@@ -49,6 +50,7 @@ export function GamePhaseBadge({
 }: GamePhaseBadgeProps) {
   const phaseKey = status as keyof typeof theme.phases;
   const phaseConfig = theme.phases[phaseKey] || theme.phases.lobby;
+  const PhaseIcon = phaseIcons[status] || Hourglass;
 
   return (
     <div className="inline-flex items-center gap-2">
@@ -69,7 +71,7 @@ export function GamePhaseBadge({
           animate={{ rotate: [0, 10, -10, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         >
-          {phaseEmojis[status] || phaseConfig.icon}
+          <PhaseIcon className="w-4 h-4" />
         </motion.span>
         {showLabel && <span className="tracking-wide">{phaseLabels[status] || status}</span>}
       </motion.div>

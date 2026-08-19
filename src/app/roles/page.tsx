@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
-import { MotionButton } from '@/components/ui';
+import { MotionButton, MoonLogo, NightSky } from '@/components/ui';
 import { RoleDetailModal } from '@/components/game';
 import { cn } from '@/lib/utils';
+import { ArrowLeft } from 'lucide-react';
 import type { Tables } from '@/types/supabase';
 
 type DBRole = Tables<'roles'>;
@@ -64,37 +65,34 @@ export default function RolesGalleryPage() {
 
   const teamColors = {
     loups: {
-      border: 'border-red-500',
-      glow: 'shadow-red-500/30',
-      bg: 'from-red-950/80 via-red-900/50 to-zinc-900',
-      accent: 'text-red-400',
+      border: 'border-blood-500',
+      glow: 'shadow-blood-500/30',
+      bg: 'from-blood-700/60 via-[#2a1015] to-night-900',
+      accent: 'text-blood-400',
+      dot: 'bg-blood-400',
+      label: 'Loups',
     },
     village: {
-      border: 'border-blue-500',
-      glow: 'shadow-blue-500/30',
-      bg: 'from-blue-950/80 via-indigo-900/50 to-zinc-900',
-      accent: 'text-blue-400',
+      border: 'border-village-600',
+      glow: 'shadow-village-600/30',
+      bg: 'from-village-600/40 via-[#12203c] to-night-900',
+      accent: 'text-village-300',
+      dot: 'bg-village-300',
+      label: 'Village',
     },
     solo: {
-      border: 'border-purple-500',
-      glow: 'shadow-purple-500/30',
-      bg: 'from-purple-950/80 via-purple-900/50 to-zinc-900',
-      accent: 'text-purple-400',
+      border: 'border-solo-400',
+      glow: 'shadow-solo-400/30',
+      bg: 'from-solo-400/25 via-night-700 to-night-900',
+      accent: 'text-solo-400',
+      dot: 'bg-solo-400',
+      label: 'Solo',
     },
   };
 
   return (
     <main className="min-h-screen flex flex-col items-center p-4 pt-safe pb-safe">
-      {/* Y2K Background */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-zinc-900 to-zinc-950" />
-        <div 
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          }}
-        />
-      </div>
+      <NightSky />
 
       <div className="w-full max-w-6xl">
         {/* Header */}
@@ -103,24 +101,15 @@ export default function RolesGalleryPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <motion.div
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            className="inline-block mb-4"
-          >
-            <span className="text-6xl">🃏</span>
-          </motion.div>
-          
-          <h1 className={cn(
-            'text-4xl md:text-5xl font-black mb-3 tracking-tight',
-          )}
-            style={{ textShadow: '4px 4px 0px rgba(0,0,0,0.5)' }}
-          >
-            <span className="text-indigo-400">Collection</span>{' '}
-            <span className="text-purple-400">de Rôles</span>
+          <div className="inline-block mb-3">
+            <MoonLogo size={56} />
+          </div>
+
+          <h1 className="font-display text-4xl md:text-5xl font-semibold mb-3 text-moon-100">
+            Collection de rôles
           </h1>
-          
-          <p className="text-slate-400 text-sm md:text-base">
+
+          <p className="text-moon-100/50 text-sm md:text-base">
             Découvre tous les personnages de Moonfall
           </p>
         </motion.div>
@@ -134,9 +123,9 @@ export default function RolesGalleryPage() {
           <MotionButton
             variant="ghost"
             onClick={() => router.push('/')}
-            className="text-slate-400 hover:text-white"
+            className="gap-2"
           >
-            ← Retour
+            <ArrowLeft className="w-4 h-4" /> Retour
           </MotionButton>
         </motion.div>
 
@@ -144,13 +133,13 @@ export default function RolesGalleryPage() {
         {isLoading && (
           <div className="text-center py-20">
             <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-              className="inline-block text-4xl"
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+              className="inline-block"
             >
-              🌙
+              <MoonLogo size={48} />
             </motion.div>
-            <p className="text-slate-400 mt-4">Chargement des rôles...</p>
+            <p className="text-moon-100/50 mt-4">Chargement des rôles...</p>
           </div>
         )}
 
@@ -187,7 +176,7 @@ export default function RolesGalleryPage() {
                     <div
                       className={cn(
                         'w-full aspect-[3/4] p-6 rounded-2xl',
-                        'border-3 border-white/40 bg-zinc-900',
+                        'border-3 border-moon-100/40 bg-night-900',
                         'shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)]',
                         'backface-hidden'
                       )}
@@ -197,17 +186,16 @@ export default function RolesGalleryPage() {
                         <div className="relative">
                           <div className={cn(
                             'w-20 h-20 mx-auto rounded-2xl flex items-center justify-center',
-                            'bg-gradient-to-br from-indigo-600/30 to-purple-600/30',
-                            'border-2 border-white/20'
+                            'bg-moon-500/10 border-2 border-moon-500/25'
                           )}>
-                            <span className="text-4xl">🌙</span>
+                            <MoonLogo size={48} />
                           </div>
                         </div>
                         
-                        <h3 className="text-lg font-black text-white mt-4 tracking-wide">
+                        <h3 className="font-display text-lg font-semibold text-moon-100 mt-4 tracking-wide">
                           ???
                         </h3>
-                        <p className="text-xs text-zinc-400 mt-2">
+                        <p className="text-xs text-moon-100/40 mt-2">
                           Appuie pour révéler
                         </p>
                       </div>
@@ -241,24 +229,24 @@ export default function RolesGalleryPage() {
                             {role.icon || '❓'}
                           </div>
                           
-                          <h3 
-                            className={cn('text-xl font-black mt-3 tracking-tight', colors.accent)}
-                            style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}
+                          <h3
+                            className={cn('font-display text-xl font-semibold mt-3 tracking-tight', colors.accent)}
                           >
                             {role.display_name}
                           </h3>
                           
-                          <p className="text-slate-300 text-xs mt-2 line-clamp-3">
+                          <p className="text-moon-100/70 text-xs mt-2 line-clamp-3">
                             {role.short_description || role.description}
                           </p>
                         </div>
 
                         {/* Bottom Section */}
                         <div className="w-full pt-3 border-t border-white/10">
-                          <span className="text-xs text-zinc-500 font-bold tracking-widest uppercase">
-                            {role.team === 'loups' ? '🐺 Loups' : role.team === 'village' ? '🏘️ Village' : '👤 Solo'}
+                          <span className="inline-flex items-center gap-1.5 text-xs text-moon-100/60 font-bold tracking-widest uppercase">
+                            <span className={cn('w-2 h-2 rounded-full', colors.dot)} />
+                            {colors.label}
                           </span>
-                          <p className="text-[10px] text-zinc-600 mt-1">
+                          <p className="text-[10px] text-moon-100/30 mt-1">
                             Appuie pour plus de détails
                           </p>
                         </div>
@@ -274,7 +262,7 @@ export default function RolesGalleryPage() {
         {/* Empty State */}
         {!isLoading && roles.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-slate-400">Aucun rôle disponible pour le moment.</p>
+            <p className="text-moon-100/50">Aucun rôle disponible pour le moment.</p>
           </div>
         )}
       </div>

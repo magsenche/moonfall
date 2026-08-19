@@ -68,7 +68,7 @@ export function PhaseHelpTooltip({ phase }: PhaseHelpTooltipProps) {
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className={cn(
               'relative w-full max-w-lg max-h-[85vh] overflow-y-auto',
-              'bg-zinc-900 border-2 border-white/40',
+              'bg-night-900 border-2 border-white/40',
               'rounded-2xl',
               'shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]'
             )}
@@ -76,7 +76,7 @@ export function PhaseHelpTooltip({ phase }: PhaseHelpTooltipProps) {
           >
             {/* Drag indicator (mobile) */}
             <div className="sm:hidden flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 bg-zinc-600 rounded-full" />
+              <div className="w-10 h-1 bg-night-600 rounded-full" />
             </div>
 
             <div className="p-5">
@@ -95,7 +95,7 @@ export function PhaseHelpTooltip({ phase }: PhaseHelpTooltipProps) {
                   </h4>
                   <span className={cn(
                     'inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium',
-                    'bg-zinc-700 border border-zinc-500 text-slate-300'
+                    'bg-night-700 border border-night-600 text-moon-100/70'
                   )}>
                     ⏱ {phaseDesc.duration}
                   </span>
@@ -103,13 +103,13 @@ export function PhaseHelpTooltip({ phase }: PhaseHelpTooltipProps) {
               </div>
 
               {/* Description */}
-              <p className="text-sm text-slate-300 mb-5 leading-relaxed">
+              <p className="text-sm text-moon-100/70 mb-5 leading-relaxed">
                 {phaseDesc.longDescription}
               </p>
 
               {/* What to do */}
               <div className="space-y-2.5">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-xs font-bold text-moon-100/60 uppercase tracking-wider">
                   Que faire ?
                 </p>
                 {phaseDesc.whatToDo.map((item, index) => (
@@ -120,7 +120,7 @@ export function PhaseHelpTooltip({ phase }: PhaseHelpTooltipProps) {
                     transition={{ delay: 0.1 + index * 0.1 }}
                     className={cn(
                       'text-sm text-white p-3 rounded-xl',
-                      'bg-zinc-800 border border-zinc-700',
+                      'bg-night-800 border border-night-700',
                       'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]'
                     )}
                   >
@@ -135,7 +135,7 @@ export function PhaseHelpTooltip({ phase }: PhaseHelpTooltipProps) {
                 onClick={() => setIsOpen(false)}
                 className={cn(
                   'mt-6 w-full py-3.5 rounded-xl font-bold text-white',
-                  'bg-indigo-600 border-2 border-indigo-400',
+                  'bg-village-600 border-2 border-village-400',
                   'shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]',
                   'active:shadow-[1px_1px_0px_0px_rgba(0,0,0,0.4)]',
                   'transition-all touch-manipulation'

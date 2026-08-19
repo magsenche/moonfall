@@ -4,6 +4,8 @@
 
 'use client';
 
+import { Vote, CheckCircle2 } from 'lucide-react';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { MotionCard, CardHeader, CardTitle, CardContent, MotionButton } from '@/components/ui';
 import { PlayerAvatar } from '@/components/game';
@@ -61,7 +63,7 @@ export function VotingPanel({
     >
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-amber-400">
-          <span className="text-2xl">🗳️</span>
+          <Vote className="w-6 h-6 text-moon-500" />
           Votre vote
         </CardTitle>
       </CardHeader>
@@ -85,7 +87,7 @@ export function VotingPanel({
                   'shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]'
                 )}
               >
-                ✅ Vote enregistré !
+                <CheckCircle2 className="w-4 h-4 inline -mt-0.5" /> Vote enregistré !
               </motion.div>
               
               {confirmedVoteTarget && (
@@ -95,7 +97,7 @@ export function VotingPanel({
                   transition={{ delay: 0.2 }}
                   className="text-sm text-amber-400 mt-3"
                 >
-                  🗳️ Vous avez voté contre : 
+                  Vous avez voté contre : 
                   <span className="font-bold ml-1">
                     {alivePlayers.find(p => p.id === confirmedVoteTarget)?.pseudo || 'Inconnu'}
                   </span>
@@ -106,9 +108,9 @@ export function VotingPanel({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="mt-4 text-xs text-slate-400"
+                className="mt-4 text-xs text-moon-100/60"
               >
-                <span className="inline-block px-3 py-1 rounded-full bg-slate-800/50 border border-slate-700">
+                <span className="inline-block px-3 py-1 rounded-full bg-night-800/50 border border-night-700">
                   En attente... ({votesCount}/{totalVoters})
                 </span>
               </motion.div>
@@ -132,8 +134,8 @@ export function VotingPanel({
                     className={cn(
                       "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
                       selectedTarget === player.id
-                        ? "bg-red-500/30 border-2 border-red-500 shadow-[3px_3px_0px_0px_rgba(220,38,38,0.5)]"
-                        : "bg-zinc-800/50 hover:bg-red-900/30 border-2 border-transparent"
+                        ? "bg-blood-500/30 border-2 border-blood-500 shadow-[3px_3px_0px_0px_rgba(220,38,38,0.5)]"
+                        : "bg-night-800/50 hover:bg-blood-700/30 border-2 border-transparent"
                     )}
                   >
                     <div className="relative">
@@ -149,7 +151,7 @@ export function VotingPanel({
                           animate={{ scale: 1 }}
                           className={cn(
                             'absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full',
-                            'bg-red-600 border border-white text-white font-bold',
+                            'bg-blood-500 border border-white text-white font-bold',
                             'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)]'
                           )}
                         >
@@ -169,13 +171,13 @@ export function VotingPanel({
                 className={cn(
                   "w-full",
                   selectedTarget 
-                    ? "bg-red-600 border-red-400 hover:bg-red-500" 
-                    : "bg-zinc-700"
+                    ? "bg-blood-500 border-blood-400 hover:bg-blood-500" 
+                    : "bg-night-700"
                 )}
                 onClick={onSubmitVote}
                 disabled={!selectedTarget || isVoting}
               >
-                {isVoting ? '⏳ Vote en cours...' : '🗳️ Confirmer le vote'}
+                {isVoting ? 'Vote en cours...' : 'Confirmer le vote'}
               </MotionButton>
               
               <AnimatePresence>
@@ -186,7 +188,7 @@ export function VotingPanel({
                     exit={{ opacity: 0 }}
                     className={cn(
                       'text-sm text-center mt-3 px-3 py-2 rounded-lg',
-                      'bg-red-900/50 border border-red-500/50 text-red-400'
+                      'bg-blood-700/50 border border-blood-500/50 text-blood-400'
                     )}
                   >
                     {voteError}

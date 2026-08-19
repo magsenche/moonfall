@@ -40,14 +40,14 @@ export function TipToast({ tipId, show, onDismiss }: TipToastProps) {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-40 flex justify-center animate-in slide-in-from-bottom-4 duration-300">
-      <div className="max-w-sm w-full bg-zinc-800 border border-zinc-700 rounded-xl shadow-lg p-4 flex items-start gap-3">
+      <div className="max-w-sm w-full bg-night-800 border border-night-700 rounded-xl shadow-lg p-4 flex items-start gap-3">
         <span className="text-2xl shrink-0">{tip.icon}</span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-zinc-200">{tip.message}</p>
+          <p className="text-sm text-moon-100/80">{tip.message}</p>
         </div>
         <button
           onClick={handleDismiss}
-          className="shrink-0 p-1 text-zinc-500 hover:text-zinc-300 transition-colors"
+          className="shrink-0 p-1 text-moon-100/40 hover:text-moon-100/70 transition-colors"
           aria-label="Fermer"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

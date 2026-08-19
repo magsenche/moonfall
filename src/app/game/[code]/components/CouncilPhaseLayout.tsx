@@ -37,7 +37,7 @@ export function CouncilPhaseLayout() {
       <MotionCard
         variant="sticker"
         rotation={-0.5}
-        className="border-purple-500/50"
+        className="border-village-400/50"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -53,7 +53,7 @@ export function CouncilPhaseLayout() {
             <h3 className="font-black text-white text-lg mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.3)' }}>
               Conseil du village
             </h3>
-            <p className="text-slate-300 text-sm">
+            <p className="text-moon-100/70 text-sm">
               {voting.hasVoted
                 ? `✅ Vote enregistré ! (${voting.votesCount}/${voting.totalVoters})`
                 : '⚡ Le moment est venu de désigner un suspect à éliminer.'}
@@ -64,7 +64,7 @@ export function CouncilPhaseLayout() {
                 animate={{ opacity: 1 }}
                 className={cn(
                   'inline-block mt-3 px-3 py-1 rounded-full text-xs font-medium',
-                  'bg-purple-600/50 border border-purple-400/50 text-purple-200'
+                  'bg-village-600/50 border border-village-300/50 text-village-300'
                 )}
               >
                 👇 Choisissez un joueur à éliminer ci-dessous
@@ -99,7 +99,7 @@ export function CouncilPhaseLayout() {
         <MotionCard 
           variant="sticker" 
           rotation={1}
-          className="border-zinc-600"
+          className="border-night-600"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
@@ -111,7 +111,7 @@ export function CouncilPhaseLayout() {
             >
               👻
             </motion.p>
-            <p className="text-slate-400 text-sm">
+            <p className="text-moon-100/60 text-sm">
               Vous êtes mort... Observez le vote en silence.
             </p>
           </CardContent>

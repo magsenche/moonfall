@@ -135,7 +135,7 @@ export function SalvateurNightPanel({
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="p-3 mb-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+          <div className="p-3 mb-4 bg-blood-500/20 border border-blood-500/50 rounded-lg text-blood-400 text-sm">
             {error}
           </div>
         )}
@@ -158,7 +158,7 @@ export function SalvateurNightPanel({
               <p className="text-cyan-400 font-bold text-lg mb-2">
                 {successMessage || `${protectedPlayerName} est protégé(e)`}
               </p>
-              <p className="text-slate-400 text-sm">
+              <p className="text-moon-100/60 text-sm">
                 Si les loups l'attaquent, il/elle survivra.
               </p>
             </motion.div>
@@ -168,7 +168,7 @@ export function SalvateurNightPanel({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <p className="text-slate-400 text-sm mb-4 text-center">
+              <p className="text-moon-100/60 text-sm mb-4 text-center">
                 Choisissez un joueur à protéger cette nuit
               </p>
 
@@ -191,7 +191,7 @@ export function SalvateurNightPanel({
                       'flex flex-col items-center gap-2 p-3 rounded-xl transition-all',
                       selectedTarget === player.id
                         ? 'bg-cyan-500/30 border-2 border-cyan-500 shadow-[3px_3px_0px_0px_rgba(34,211,238,0.5)]'
-                        : 'bg-zinc-800/50 hover:bg-cyan-900/20 border-2 border-transparent'
+                        : 'bg-night-800/50 hover:bg-cyan-900/20 border-2 border-transparent'
                     )}
                   >
                     <PlayerAvatar

@@ -6,6 +6,8 @@
 
 'use client';
 
+import { ClipboardCopy, Check, Settings2, Moon as MoonIcon, Bot, Play, ArrowLeft, Hourglass, Users, FlaskConical, Vote, Save } from 'lucide-react';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { MotionCard, CardContent, CardHeader, CardTitle, MotionButton, Button } from '@/components/ui';
 import { PlayerAvatar, RulesButton, PhaseBackground, OnboardingTooltips } from '@/components/game';
@@ -57,35 +59,35 @@ export function LobbyView() {
             transition={{ delay: 0.2, type: 'spring' }}
             className={cn(
               'inline-block px-4 py-1.5 rounded-full',
-              'bg-indigo-600/30 border-2 border-indigo-400/50 text-indigo-300',
+              'bg-village-600/30 border-2 border-village-400/50 text-village-300',
               'text-sm font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]'
             )}
           >
-            ⏳ En attente des joueurs...
+            <Hourglass className="w-4 h-4 inline -mt-0.5" /> En attente des joueurs...
           </motion.div>
         </motion.div>
 
         {/* Game Code - Sticker Card */}
         <MotionCard variant="sticker" rotation={1} className="mb-6">
           <CardContent className="pt-6">
-            <p className="text-sm text-slate-400 text-center mb-2 font-medium">Code de la partie</p>
+            <p className="text-sm text-moon-100/60 text-center mb-2 font-medium">Code de la partie</p>
             <motion.button
               onClick={actions.copyCode}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className={cn(
                 'w-full text-4xl font-mono font-black text-center tracking-widest',
-                'text-indigo-400 hover:text-indigo-300 transition-colors',
+                'text-village-400 hover:text-village-300 transition-colors',
                 'py-2'
               )}
             >
               {game.code}
             </motion.button>
             <motion.p 
-              className="text-sm text-slate-500 text-center mt-2"
+              className="text-sm text-moon-100/40 text-center mt-2"
               animate={ui.copied ? { scale: [1, 1.1, 1] } : {}}
             >
-              {ui.copied ? '✅ Copié !' : '📋 Clique pour copier'}
+              {ui.copied ? <><Check className="w-4 h-4 inline -mt-0.5" /> Copié !</> : <><ClipboardCopy className="w-4 h-4 inline -mt-0.5" /> Clique pour copier</>}
             </motion.p>
           </CardContent>
         </MotionCard>
@@ -103,12 +105,12 @@ export function LobbyView() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <span className="text-2xl">👥</span>
+                <Users className="w-6 h-6 text-village-300" />
                 Joueurs
               </span>
               <span className={cn(
                 'px-3 py-1 rounded-full text-sm font-bold',
-                'bg-indigo-500/20 border border-indigo-500/40 text-indigo-300'
+                'bg-village-400/20 border border-village-400/40 text-village-300'
               )}>
                 {game.players.length} / 20
               </span>
@@ -128,7 +130,7 @@ export function LobbyView() {
                   layout
                   className={cn(
                     'relative flex flex-col items-center p-3 rounded-xl',
-                    'bg-indigo-900/50 border-2 border-indigo-400',
+                    'bg-night-700/50 border-2 border-village-400',
                     'shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]'
                   )}
                 >
@@ -157,9 +159,9 @@ export function LobbyView() {
                   whileHover={{ scale: 1.05 }}
                   className={cn(
                     'flex flex-col items-center p-3 rounded-xl',
-                    'bg-zinc-800/80 border-2 border-white/30',
+                    'bg-night-800/80 border-2 border-white/30',
                     'shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]',
-                    player.id === currentPlayerId && 'border-indigo-400 bg-indigo-900/30'
+                    player.id === currentPlayerId && 'border-village-400 bg-night-700/30'
                   )}
                   style={{ transform: `rotate(${(i % 2 === 0 ? 1 : -1) * (i % 3)}deg)` }}
                 >
@@ -168,7 +170,7 @@ export function LobbyView() {
                   {player.id === currentPlayerId && (
                     <span className={cn(
                       'absolute -top-1 -left-1 px-1.5 py-0.5 rounded-md',
-                      'bg-indigo-500 border-2 border-white text-white',
+                      'bg-village-400 border-2 border-white text-white',
                       'text-[8px] font-bold uppercase',
                       'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.4)]'
                     )}>
@@ -187,7 +189,7 @@ export function LobbyView() {
                 animate={{ opacity: 1 }}
                 className={cn(
                   'mt-4 p-4 rounded-xl text-center',
-                  'border-2 border-dashed border-slate-600 text-slate-500'
+                  'border-2 border-dashed border-night-600 text-moon-100/40'
                 )}
               >
                 En attente de joueurs... (min. 3)
@@ -196,8 +198,8 @@ export function LobbyView() {
 
             {/* Bots buttons (MJ only, for testing) */}
             {isMJ && (
-              <div className="mt-4 pt-4 border-t border-slate-700">
-                <p className="text-xs text-slate-500 mb-2">🧪 Mode dev</p>
+              <div className="mt-4 pt-4 border-t border-night-700">
+                <p className="text-xs text-moon-100/40 mb-2"><FlaskConical className="w-3.5 h-3.5 inline -mt-0.5" /> Mode dev</p>
                 <div className="flex gap-2">
                   <MotionButton
                     variant="secondary"
@@ -206,7 +208,7 @@ export function LobbyView() {
                     disabled={ui.isAddingBots}
                     className="flex-1"
                   >
-                    {ui.isAddingBots ? '⏳...' : '🤖 +5 Bots'}
+                    {ui.isAddingBots ? '...' : <><Bot className="w-4 h-4 inline -mt-0.5" /> +5 Bots</>}
                   </MotionButton>
                   {players.some((p) => p.pseudo.startsWith('🤖')) && (
                     <MotionButton
@@ -214,7 +216,7 @@ export function LobbyView() {
                       size="sm"
                       onClick={actions.removeBotsFromGame}
                       disabled={ui.isAddingBots}
-                      className="text-red-400 hover:text-red-300"
+                      className="text-blood-400 hover:text-blood-400"
                     >
                       🗑️ Retirer bots
                     </MotionButton>
@@ -234,13 +236,13 @@ export function LobbyView() {
                 onClick={() => setShowSettings(!showSettings)}
                 className="flex items-center justify-between w-full text-left"
               >
-                <CardTitle className="text-sm font-bold text-slate-300 flex items-center gap-2">
-                  <span>⚙️</span>
+                <CardTitle className="text-sm font-bold text-moon-100/70 flex items-center gap-2">
+                  <Settings2 className="w-5 h-5 text-moon-500" />
                   Paramètres de la partie
                 </CardTitle>
                 <motion.span 
                   animate={{ rotate: showSettings ? 180 : 0 }}
-                  className="text-slate-400"
+                  className="text-moon-100/60"
                 >
                   ▼
                 </motion.span>
@@ -251,7 +253,7 @@ export function LobbyView() {
               <CardContent className="space-y-4">
                 {/* Night Duration */}
                 <div>
-                  <label className="text-sm text-slate-400 mb-1 block font-medium">🌙 Durée de la nuit</label>
+                  <label className="text-sm text-moon-100/60 mb-1 block font-medium">Durée de la nuit</label>
                   <div className="flex items-center gap-3">
                     <input
                       type="range"
@@ -265,11 +267,11 @@ export function LobbyView() {
                           nightDurationMinutes: parseFloat(e.target.value),
                         })
                       }
-                      className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                      className="flex-1 h-2 bg-night-700 rounded-lg appearance-none cursor-pointer accent-village-400"
                     />
                     <span className={cn(
                       'text-white font-bold w-16 text-right px-2 py-1 rounded-lg',
-                      'bg-slate-700/50 text-sm'
+                      'bg-night-700/50 text-sm'
                     )}>
                       {gameSettings.nightDurationMinutes < 1
                         ? `${Math.round(gameSettings.nightDurationMinutes * 60)}s`
@@ -280,8 +282,8 @@ export function LobbyView() {
 
                 {/* Vote Duration */}
                 <div>
-                  <label className="text-sm text-slate-400 mb-1 block font-medium">
-                    🗳️ Durée du vote (conseil)
+                  <label className="text-sm text-moon-100/60 mb-1 block font-medium">
+                    <Vote className="w-4 h-4 inline -mt-0.5" /> Durée du vote (conseil)
                   </label>
                   <div className="flex items-center gap-3">
                     <input
@@ -296,11 +298,11 @@ export function LobbyView() {
                           voteDurationMinutes: parseFloat(e.target.value),
                         })
                       }
-                      className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                      className="flex-1 h-2 bg-night-700 rounded-lg appearance-none cursor-pointer accent-village-400"
                     />
                     <span className={cn(
                       'text-white font-bold w-16 text-right px-2 py-1 rounded-lg',
-                      'bg-slate-700/50 text-sm'
+                      'bg-night-700/50 text-sm'
                     )}>
                       {gameSettings.voteDurationMinutes < 1
                         ? `${Math.round(gameSettings.voteDurationMinutes * 60)}s`
@@ -311,7 +313,7 @@ export function LobbyView() {
 
                 {/* Council Interval */}
                 <div>
-                  <label className="text-sm text-slate-400 mb-1 block">
+                  <label className="text-sm text-moon-100/60 mb-1 block">
                     ☀️ Durée du jour (avant conseil)
                   </label>
                   <div className="flex items-center gap-3">
@@ -327,7 +329,7 @@ export function LobbyView() {
                           councilIntervalMinutes: parseInt(e.target.value),
                         })
                       }
-                      className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                      className="flex-1 h-2 bg-night-700 rounded-lg appearance-none cursor-pointer"
                     />
                     <span className="text-white font-medium w-16 text-right">
                       {gameSettings.councilIntervalMinutes >= 60
@@ -338,11 +340,11 @@ export function LobbyView() {
                 </div>
 
                 {/* Auto-Garou Mode */}
-                <div className="border-t border-slate-700 pt-4 mt-4">
+                <div className="border-t border-night-700 pt-4 mt-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <label className="text-sm text-slate-400 block">🤖 Mode Auto-Garou</label>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <label className="text-sm text-moon-100/60 block">Mode Auto-Garou</label>
+                      <p className="text-xs text-moon-100/40 mt-1">
                         Sans MJ dédié : phases automatiques, tout le monde joue
                       </p>
                     </div>
@@ -355,7 +357,7 @@ export function LobbyView() {
                         })
                       }
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        gameSettings.autoMode ? 'bg-indigo-600' : 'bg-slate-700'
+                        gameSettings.autoMode ? 'bg-village-600' : 'bg-night-700'
                       }`}
                     >
                       <span
@@ -368,9 +370,9 @@ export function LobbyView() {
                 </div>
 
                 {/* Roles Distribution */}
-                <div className="border-t border-slate-700 pt-4 mt-4">
-                  <label className="text-sm text-slate-400 mb-3 block">🎭 Distribution des rôles</label>
-                  <p className="text-xs text-slate-500 mb-3">
+                <div className="border-t border-night-700 pt-4 mt-4">
+                  <label className="text-sm text-moon-100/60 mb-3 block">🎭 Distribution des rôles</label>
+                  <p className="text-xs text-moon-100/40 mb-3">
                     Laisse à 0 pour une distribution automatique (~1/3 loups, 1 voyante)
                   </p>
                   <div className="space-y-3">
@@ -383,7 +385,7 @@ export function LobbyView() {
                         return (
                           <div
                             key={role.id}
-                            className="flex items-center justify-between gap-3 p-2 bg-slate-800 rounded-lg"
+                            className="flex items-center justify-between gap-3 p-2 bg-night-800 rounded-lg"
                           >
                             <div className="flex items-center gap-2">
                               <span>{roleConfig.assets.icon}</span>
@@ -403,7 +405,7 @@ export function LobbyView() {
                                     },
                                   })
                                 }
-                                className="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 text-white font-bold"
+                                className="w-8 h-8 rounded-full bg-night-700 hover:bg-night-600 text-white font-bold"
                                 disabled={count === 0}
                               >
                                 -
@@ -420,7 +422,7 @@ export function LobbyView() {
                                     },
                                   })
                                 }
-                                className="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 text-white font-bold"
+                                className="w-8 h-8 rounded-full bg-night-700 hover:bg-night-600 text-white font-bold"
                               >
                                 +
                               </button>
@@ -431,15 +433,15 @@ export function LobbyView() {
                   </div>
                   {/* Total count indicator */}
                   {Object.values(gameSettings.rolesDistribution).some((v) => v > 0) && (
-                    <div className="mt-3 p-2 bg-slate-700/50 rounded-lg">
+                    <div className="mt-3 p-2 bg-night-700/50 rounded-lg">
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">Rôles configurés:</span>
+                        <span className="text-moon-100/60">Rôles configurés:</span>
                         <span className="text-white font-medium">
                           {Object.values(gameSettings.rolesDistribution).reduce((a, b) => a + b, 0)} rôles
                         </span>
                       </div>
                       <div className="flex justify-between text-sm mt-1">
-                        <span className="text-slate-400">Joueurs dans le lobby:</span>
+                        <span className="text-moon-100/60">Joueurs dans le lobby:</span>
                         <span className="text-white font-medium">{playersForRoles} joueurs</span>
                       </div>
                       {Object.values(gameSettings.rolesDistribution).reduce((a, b) => a + b, 0) !==
@@ -455,11 +457,11 @@ export function LobbyView() {
                 {/* Save Button - Y2K sticker style */}
                 <MotionButton 
                   variant="sticker" 
-                  className="w-full bg-indigo-600 border-indigo-400" 
+                  className="w-full bg-village-600 border-village-400" 
                   onClick={saveSettings} 
                   disabled={isSavingSettings}
                 >
-                  {isSavingSettings ? '⏳ Sauvegarde...' : '💾 Sauvegarder'}
+                  {isSavingSettings ? 'Sauvegarde...' : <><Save className="w-4 h-4 inline -mt-0.5" /> Sauvegarder</>}
                 </MotionButton>
               </CardContent>
             )}
@@ -473,12 +475,12 @@ export function LobbyView() {
             animate={{ opacity: 1, scale: 1 }}
             className={cn(
               'mt-4 p-3 rounded-xl text-center',
-              'bg-indigo-900/50 border-2 border-indigo-500/50',
+              'bg-night-700/50 border-2 border-village-400/50',
               'shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]'
             )}
           >
-            <span className="text-indigo-300 text-sm font-bold">🤖 Mode Auto-Garou activé</span>
-            <p className="text-xs text-indigo-400/80 mt-1">Tout le monde joue • Phases automatiques</p>
+            <span className="text-village-300 text-sm font-bold">Mode Auto-Garou activé</span>
+            <p className="text-xs text-village-400/80 mt-1">Tout le monde joue • Phases automatiques</p>
           </motion.div>
         )}
 
@@ -499,18 +501,18 @@ export function LobbyView() {
               onClick={actions.startGame} 
               disabled={ui.isStarting}
             >
-              {ui.isStarting ? '⏳ Lancement...' : '🎮 Lancer la partie'}
+              {ui.isStarting ? 'Lancement...' : <><Play className="w-5 h-5 inline -mt-0.5" /> Lancer la partie</>}
             </MotionButton>
             {ui.startError && (
               <motion.p 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-sm text-red-400 text-center mt-2"
+                className="text-sm text-blood-400 text-center mt-2"
               >
                 {ui.startError}
               </motion.p>
             )}
-            <p className="text-xs text-slate-500 text-center mt-2">
+            <p className="text-xs text-moon-100/40 text-center mt-2">
               {gameSettings.autoMode
                 ? 'Tu recevras aussi un rôle !'
                 : 'Les rôles seront attribués aléatoirement'}
@@ -524,7 +526,7 @@ export function LobbyView() {
           className="w-full mt-4" 
           onClick={() => router.push('/')}
         >
-          ← Quitter le lobby
+          <ArrowLeft className="w-4 h-4 inline -mt-0.5" /> Quitter le lobby
         </MotionButton>
       </div>
 

@@ -40,14 +40,14 @@ export function RoleBadge({
         <div
           className={cn(
             'rounded-full flex items-center justify-center',
-            'bg-slate-700 border-2 border-slate-600',
+            'bg-night-700 border-2 border-night-600',
             sizeClasses[size]
           )}
         >
           <span className="select-none">❓</span>
         </div>
         {showName && (
-          <span className={cn('text-slate-400', nameSizeClasses[size])}>
+          <span className={cn('text-moon-100/60', nameSizeClasses[size])}>
             ???
           </span>
         )}
@@ -75,7 +75,7 @@ export function RoleBadge({
         </span>
       )}
       {showDescription && (
-        <span className="text-xs text-slate-400 text-center max-w-36">
+        <span className="text-xs text-moon-100/60 text-center max-w-36">
           {config.shortDescription}
         </span>
       )}
@@ -97,17 +97,17 @@ export function RoleCard({ roleId, revealed = true, className }: RoleCardProps) 
     return (
       <div
         className={cn(
-          'p-6 rounded-xl bg-slate-800/50 border border-slate-700',
+          'p-6 rounded-xl bg-night-800/50 border border-night-700',
           'flex flex-col items-center gap-4',
           className
         )}
       >
-        <div className="w-24 h-24 rounded-full bg-slate-700 flex items-center justify-center text-5xl">
+        <div className="w-24 h-24 rounded-full bg-night-700 flex items-center justify-center text-5xl">
           ❓
         </div>
         <div className="text-center">
-          <h3 className="text-xl font-bold text-slate-400">Rôle inconnu</h3>
-          <p className="text-sm text-slate-500 mt-2">
+          <h3 className="text-xl font-bold text-moon-100/60">Rôle inconnu</h3>
+          <p className="text-sm text-moon-100/40 mt-2">
             Ton rôle sera révélé au début de la partie
           </p>
         </div>
@@ -129,7 +129,7 @@ export function RoleCard({ roleId, revealed = true, className }: RoleCardProps) 
       <div
         className={cn(
           'w-24 h-24 rounded-full flex items-center justify-center text-5xl',
-          'bg-slate-900/50 border-2 border-current/30'
+          'bg-night-900/50 border-2 border-current/30'
         )}
       >
         {config.assets.icon}
@@ -137,7 +137,7 @@ export function RoleCard({ roleId, revealed = true, className }: RoleCardProps) 
       <div className="text-center">
         <h3 className="text-xl font-bold">{config.displayName}</h3>
         <p className="text-sm opacity-80 mt-1">{config.shortDescription}</p>
-        <p className="text-xs text-slate-300 mt-3 max-w-64">
+        <p className="text-xs text-moon-100/70 mt-3 max-w-64">
           {config.description}
         </p>
       </div>
