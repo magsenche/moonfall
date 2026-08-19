@@ -55,6 +55,12 @@ export interface GameSettings {
   };
   // Auto-Garou mode: no dedicated MJ, phases auto-advance, votes auto-resolve
   autoMode: boolean;
+  // Partie classique : composition starter calculée au démarrage selon le
+  // nombre de joueurs (ignore rolesDistribution), cf. lib/game/composition
+  classicComposition: boolean;
+  // Systèmes optionnels — désactivables pour une première partie épurée
+  missionsEnabled: boolean;
+  shopEnabled: boolean;
 }
 
 // Default game settings
@@ -66,6 +72,9 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
   voteDurationMinutes: 2,     // 2 minutes council by default
   rolesDistribution: {},
   autoMode: true, // Default to Auto-Garou (no dedicated MJ, everyone plays)
+  classicComposition: false,
+  missionsEnabled: true,
+  shopEnabled: true,
 };
 
 // Player in a game (frontend/camelCase version)

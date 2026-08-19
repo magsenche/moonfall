@@ -84,6 +84,8 @@ export interface GameContextType {
 
   // Mode flags
   isAutoMode: boolean;
+  missionsEnabled: boolean;
+  shopEnabled: boolean;
 
   // Voting (conseil)
   voting: {
@@ -282,6 +284,9 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
   const alivePlayers = useMemo(() => players.filter((p) => p.is_alive !== false), [players]);
   const isMJ = currentPlayerId === mj?.id;
   const isAutoMode = (game.settings as { autoMode?: boolean })?.autoMode ?? false;
+  const gameSettingsJson = game.settings as { missionsEnabled?: boolean; shopEnabled?: boolean } | null;
+  const missionsEnabled = gameSettingsJson?.missionsEnabled !== false;
+  const shopEnabled = gameSettingsJson?.shopEnabled !== false;
 
   const currentPlayer = currentPlayerId
     ? game.players.find((p) => p.id === currentPlayerId)
@@ -519,6 +524,8 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
 
       // Mode flags
       isAutoMode,
+      missionsEnabled,
+      shopEnabled,
 
       // Voting
       voting: {
@@ -649,6 +656,8 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
       isTrublion,
       isWildChild,
       isAutoMode,
+      missionsEnabled,
+      shopEnabled,
       voting,
       nightActionsHook,
       wolfChatHook,

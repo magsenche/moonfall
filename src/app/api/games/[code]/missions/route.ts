@@ -183,6 +183,14 @@ export async function POST(
   // Check if Auto-Garou mode is enabled
   const isAutoMode = (game.settings as Record<string, unknown>)?.autoMode === true;
 
+  // Missions désactivées (partie classique) : pas de création
+  if ((game.settings as Record<string, unknown>)?.missionsEnabled === false) {
+    return NextResponse.json(
+      { error: 'Les missions sont désactivées pour cette partie' },
+      { status: 400 }
+    );
+  }
+
   // Verify creator is MJ
   const { data: creator } = await supabase
     .from('players')

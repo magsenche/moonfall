@@ -259,7 +259,10 @@ class GameClient {
   }
 
   /** Configure la distribution des rôles par NOM de rôle (ex: { loup_garou: 2, villageois: 6 }). */
-  async configureRoles(distribution: Record<string, number>): Promise<void> {
+  async configureRoles(
+    distribution: Record<string, number>,
+    extraSettings?: Record<string, unknown>
+  ): Promise<void> {
     const byId: Record<string, number> = {};
     for (const [name, count] of Object.entries(distribution)) {
       byId[this.roleId(name)] = count;
@@ -267,7 +270,7 @@ class GameClient {
     checkStatus(
       await api('PATCH', `/api/games/${this.code}/settings`, {
         playerId: this.mjId,
-        settings: { rolesDistribution: byId, autoMode: true },
+        settings: { rolesDistribution: byId, autoMode: true, ...(extraSettings ?? {}) },
       }),
       200,
       'Configuration des rôles'
@@ -581,7 +584,12 @@ async function fundPlayer(g: GameClient, playerId: string, times: number): Promi
 
 interface ScenarioContext {
   rolesByName: Map<string, RoleRow>;
-  newGame: (name: string, nPlayers: number, distribution: Record<string, number>) => Promise<GameClient>;
+  newGame: (
+    name: string,
+    nPlayers: number,
+    distribution: Record<string, number>,
+    extraSettings?: Record<string, unknown>
+  ) => Promise<GameClient>;
   log: (message: string) => void;
 }
 
@@ -1149,6 +1157,46 @@ const scenarios: Record<string, Scenario> = {
     log('l\'enfant transformé chasse avec la meute ✓');
   },
 
+  /** Partie classique : composition starter, missions et boutique verrouillées. */
+  'partie-classique': async ({ newGame, log }) => {
+    const g = await newGame('partie classique', 8, {}, {
+      classicComposition: true,
+      missionsEnabled: false,
+      shopEnabled: false,
+    });
+
+    const count = (roleName: string) => g.players().filter((p) => p.role?.name === roleName).length;
+    check(count('loup_garou') === 2, `Classique 8j : 2 loups attendus, reçu ${count('loup_garou')}`);
+    check(count('voyante') === 1, 'Classique 8j : 1 voyante attendue');
+    check(count('sorciere') === 1, 'Classique 8j : 1 sorcière attendue');
+    check(count('chasseur') === 1, 'Classique 8j : 1 chasseur attendu');
+    check(count('villageois') === 3, `Classique 8j : 3 villageois attendus, reçu ${count('villageois')}`);
+    log('composition starter 8 joueurs : 2🐺 1🔮 1🧙 1🔫 3👨‍🌾 ✓');
+
+    // Missions verrouillées.
+    const mission = await api('POST', `/api/games/${g.code}/missions`, {
+      creatorId: g.mjId,
+      title: 'Interdite',
+      description: 'Les missions sont désactivées',
+      missionType: 'collective',
+    });
+    check(mission.status === 400, `Création de mission désactivée : 400 attendu, reçu ${mission.status}`);
+
+    // Boutique verrouillée.
+    const item = await shopItem(g, 'double_vote');
+    const purchase = await api('POST', `/api/games/${g.code}/shop`, {
+      playerId: g.wolves()[0].id,
+      itemId: item.id,
+    });
+    check(purchase.status === 400, `Achat boutique désactivé : 400 attendu, reçu ${purchase.status}`);
+    log('missions et boutique verrouillées ✓');
+
+    // La partie se joue normalement.
+    const night = await g.nightKill(g.plainVillagers()[0].id);
+    check(night.victim !== undefined, 'La nuit se résout normalement en partie classique');
+    log('la partie classique se déroule normalement ✓');
+  },
+
   /** Missions compétitives : first_wins et best_score créditent le vainqueur. */
   'missions-points': async ({ newGame, log }) => {
     const g = await newGame('missions points', 8, { loup_garou: 2, villageois: 6 });
@@ -1573,11 +1621,11 @@ async function main(): Promise<void> {
     const games: GameClient[] = [];
     const ctx: ScenarioContext = {
       rolesByName,
-      newGame: async (gameName, nPlayers, distribution) => {
+      newGame: async (gameName, nPlayers, distribution, extraSettings) => {
         const g = new GameClient(rolesByName);
         await g.create(gameName, nPlayers);
         games.push(g);
-        await g.configureRoles(distribution);
+        await g.configureRoles(distribution, extraSettings);
         await g.start();
         return g;
       },

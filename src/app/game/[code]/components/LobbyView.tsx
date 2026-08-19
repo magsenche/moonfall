@@ -13,6 +13,7 @@ import { MotionCard, CardContent, CardHeader, CardTitle, MotionButton, Button } 
 import { PlayerAvatar, RulesButton, PhaseBackground, OnboardingTooltips } from '@/components/game';
 import { NotificationPrompt } from '@/components/game/notification-prompt';
 import { getRoleConfig } from '@/config/roles';
+import { classicComposition } from '@/lib/game/composition';
 import { cn } from '@/lib/utils';
 import { useGame } from '../context';
 
@@ -26,8 +27,38 @@ const itemVariants = {
 export function LobbyView() {
   const { game, roles, currentPlayerId, isMJ, settings, actions, ui, router } = useGame();
 
-  const { gameSettings, showSettings, isSavingSettings, setShowSettings, setGameSettings, saveSettings } =
-    settings;
+  const {
+    gameSettings,
+    showSettings,
+    isSavingSettings,
+    setShowSettings,
+    setGameSettings,
+    saveSettings,
+    applySettings,
+  } = settings;
+
+  const isClassic = gameSettings.classicComposition;
+
+  const applyClassicPreset = () =>
+    applySettings({
+      ...gameSettings,
+      classicComposition: true,
+      missionsEnabled: false,
+      shopEnabled: false,
+      rolesDistribution: {},
+      autoMode: true,
+      nightDurationMinutes: 2,
+      voteDurationMinutes: 3,
+      councilIntervalMinutes: 10,
+    });
+
+  const applyFullPreset = () =>
+    applySettings({
+      ...gameSettings,
+      classicComposition: false,
+      missionsEnabled: true,
+      shopEnabled: true,
+    });
 
   const mj = game.players.find((p) => p.is_mj);
   const players = game.players.filter((p) => !p.is_mj);
@@ -227,6 +258,82 @@ export function LobbyView() {
           </CardContent>
         </MotionCard>
 
+        {/* Presets (MJ only) - Y2K Style */}
+        {isMJ && (
+          <MotionCard variant="sticker" rotation={-0.4} className="mt-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-bold text-moon-100/70 flex items-center gap-2">
+                <MoonIcon className="w-5 h-5 text-moon-500" />
+                Type de partie
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3">
+                <MotionButton
+                  variant="sticker"
+                  onClick={applyClassicPreset}
+                  disabled={isSavingSettings}
+                  className={cn(
+                    'flex-col py-3 h-auto',
+                    isClassic
+                      ? 'bg-village-600 border-village-300'
+                      : 'bg-night-700 border-night-500'
+                  )}
+                >
+                  <span className="font-black">🐺 Classique</span>
+                  <span className="text-[10px] font-medium opacity-80 normal-case">
+                    Comme le jeu de cartes
+                  </span>
+                </MotionButton>
+                <MotionButton
+                  variant="sticker"
+                  onClick={applyFullPreset}
+                  disabled={isSavingSettings}
+                  className={cn(
+                    'flex-col py-3 h-auto',
+                    !isClassic
+                      ? 'bg-village-600 border-village-300'
+                      : 'bg-night-700 border-night-500'
+                  )}
+                >
+                  <span className="font-black">✨ Complète</span>
+                  <span className="text-[10px] font-medium opacity-80 normal-case">
+                    Missions + boutique
+                  </span>
+                </MotionButton>
+              </div>
+
+              {isClassic && (
+                <div className="mt-3 p-3 bg-night-800/80 rounded-xl border border-night-600">
+                  <p className="text-xs text-moon-100/60 mb-2 font-medium">
+                    Composition pour {playersForRoles} joueur{playersForRoles > 1 ? 's' : ''} :
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(classicComposition(playersForRoles)).map(([roleName, count]) => {
+                      const roleConfig = getRoleConfig(roleName);
+                      return (
+                        <span
+                          key={roleName}
+                          className={cn(
+                            'px-2 py-1 rounded-lg text-xs font-bold',
+                            'bg-night-700/80 border border-night-500 text-white'
+                          )}
+                        >
+                          {count}× {roleConfig.assets.icon} {roleConfig.displayName}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-moon-100/40 mt-2">
+                    Recalculée au lancement selon les joueurs présents · missions et boutique
+                    désactivées
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </MotionCard>
+        )}
+
         {/* Game Settings (MJ only) - Y2K Style */}
         {isMJ && (
           <MotionCard variant="sticker" rotation={0.3} className="mt-4">
@@ -369,7 +476,8 @@ export function LobbyView() {
                   </div>
                 </div>
 
-                {/* Roles Distribution */}
+                {/* Roles Distribution (masquée en partie classique : composition auto) */}
+                {!isClassic && (
                 <div className="border-t border-night-700 pt-4 mt-4">
                   <label className="text-sm text-moon-100/60 mb-3 block">🎭 Distribution des rôles</label>
                   <p className="text-xs text-moon-100/40 mb-3">
@@ -453,6 +561,7 @@ export function LobbyView() {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Save Button - Y2K sticker style */}
                 <MotionButton 

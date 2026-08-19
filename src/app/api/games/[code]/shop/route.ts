@@ -152,12 +152,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   // Get game
   const { data: game, error: gameError } = await supabase
     .from('games')
-    .select('id, status, current_phase')
+    .select('id, status, current_phase, settings')
     .eq('code', code)
     .single();
 
   if (gameError || !game) {
     return NextResponse.json({ error: 'Game not found' }, { status: 404 });
+  }
+
+  // Boutique désactivée (partie classique) : pas d'achat
+  if ((game.settings as Record<string, unknown> | null)?.shopEnabled === false) {
+    return NextResponse.json(
+      { error: 'La boutique est désactivée pour cette partie' },
+      { status: 400 }
+    );
   }
 
   // Get player

@@ -34,6 +34,7 @@ export function GameLayout() {
     router,
     isSeer,
     nightActions,
+    missionsEnabled,
   } = useGame();
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -138,7 +139,7 @@ export function GameLayout() {
       <RulesButton variant="floating" />
 
       {/* Floating Missions Drawer */}
-      {gameStatus !== 'terminee' && <MissionsDrawerWrapper />}
+      {gameStatus !== 'terminee' && missionsEnabled && <MissionsDrawerWrapper />}
     </main>
   );
 }

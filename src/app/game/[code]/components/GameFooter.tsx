@@ -39,6 +39,7 @@ export function GameFooter() {
     voting,
     actions,
     ui,
+    shopEnabled,
   } = useGame();
 
   const [showWallet, setShowWallet] = useState(false);
@@ -48,7 +49,7 @@ export function GameFooter() {
   const [playerShopData, setPlayerShopData] = useState<ShopPlayerData | null>(null);
   const [isShopLoading, setIsShopLoading] = useState(true);
 
-  const showWalletAndShop = currentPlayerId && (!isMJ || isAutoMode) && isAlive;
+  const showWalletAndShop = currentPlayerId && (!isMJ || isAutoMode) && isAlive && shopEnabled;
 
   // Prefetch shop data when component mounts (not when expanded)
   const fetchShopData = useCallback(async () => {

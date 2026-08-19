@@ -42,6 +42,9 @@ export function useGameSettings({
         councilIntervalMinutes: settings.councilIntervalMinutes ?? DEFAULT_GAME_SETTINGS.councilIntervalMinutes,
         rolesDistribution: settings.rolesDistribution ?? {},
         autoMode: settings.autoMode ?? DEFAULT_GAME_SETTINGS.autoMode,
+        classicComposition: settings.classicComposition ?? DEFAULT_GAME_SETTINGS.classicComposition,
+        missionsEnabled: settings.missionsEnabled ?? DEFAULT_GAME_SETTINGS.missionsEnabled,
+        shopEnabled: settings.shopEnabled ?? DEFAULT_GAME_SETTINGS.shopEnabled,
       });
     } catch (err) {
       console.error('Failed to load settings:', err);
@@ -63,6 +66,23 @@ export function useGameSettings({
     }
   }, [currentPlayerId, gameCode, gameSettings]);
 
+  // Apply a full settings object and persist it immediately (presets)
+  const applySettings = useCallback(
+    async (next: GameSettings) => {
+      if (!currentPlayerId) return;
+      setGameSettings(next);
+      setIsSavingSettings(true);
+      try {
+        await updateSettings(gameCode, currentPlayerId, next);
+      } catch (err) {
+        console.error('Apply settings error:', err instanceof ApiError ? err.message : err);
+      } finally {
+        setIsSavingSettings(false);
+      }
+    },
+    [currentPlayerId, gameCode]
+  );
+
   // Load settings on mount (MJ only, lobby only)
   useEffect(() => {
     if (isMJ && gameStatus === 'lobby') {
@@ -78,5 +98,6 @@ export function useGameSettings({
     setGameSettings,
     loadSettings,
     saveSettings,
+    applySettings,
   };
 }
