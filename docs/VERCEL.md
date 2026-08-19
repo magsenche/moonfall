@@ -43,11 +43,17 @@ Configurer dans Vercel Dashboard → Settings → Environment Variables.
 
 | Variable | Environnement | Description |
 |----------|---------------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | All | URL Supabase |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | All | Clé publique Supabase |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | All | Clé publique VAPID |
+| `NEXT_PUBLIC_SUPABASE_URL` | Production + Preview | URL Supabase |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Production + Preview | Clé publique Supabase |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Production | Clé publique VAPID |
 
 > Note: Les variables `NEXT_PUBLIC_*` sont exposées côté client.
+
+> ⚠️ Les variables Supabase doivent être cochées pour **chaque environnement** utilisé
+> (Production ET Preview) : le build échoue avec `Error: supabaseUrl is required` si
+> elles manquent, car les routes API créent le client Supabase au chargement du module.
+> `NEXT_PUBLIC_VAPID_PUBLIC_KEY` est optionnelle en Preview (fallback dans
+> `useNotifications.ts`, seules les notifications push sont désactivées).
 
 ---
 
