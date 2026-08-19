@@ -16,6 +16,7 @@
 import { useMemo } from 'react';
 import { GameProvider, TimerProvider, useGame, useTimerContext } from './context';
 import { GameLayout } from './components/GameLayout';
+import { SoundEffects } from './components/SoundEffects';
 import { useAutoGarou } from './hooks';
 import type { GameWithPlayers, Role } from './hooks';
 
@@ -77,6 +78,7 @@ export function GameClient({ initialGame, roles }: GameClientProps) {
     <GameProvider initialGame={initialGame} roles={roles}>
       <TimerWrapper>
         <GameLogic />
+        <SoundEffects />
         <GameLayout />
       </TimerWrapper>
     </GameProvider>

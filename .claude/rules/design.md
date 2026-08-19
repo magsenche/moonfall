@@ -21,3 +21,6 @@ paths:
   soleil le jour, braises au conseil) avec fondu croisé.
 - CTA principal = ambre lunaire ; vérifier le contraste sur fond nuit avant de
   pousser un nouveau couple couleur/texte.
+- **Son** : jingles de phase synthétisés WebAudio dans `src/lib/sounds`
+  (aucun asset audio), joués par `SoundEffects` + vibrations ; mute persisté,
+  déblocage iOS au premier tap. Tout nouveau son passe par ce module.
