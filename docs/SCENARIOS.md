@@ -40,12 +40,13 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 (`src/lib/game/resolution.test.ts`) se lancent avec `npm run test:unit`
 (runner natif `node --test`, aucune dépendance).
 
-## Couverture actuelle (14 scénarios)
+## Couverture actuelle (15 scénarios)
 
 | Scénario | Ce qui est validé |
 |----------|-------------------|
 | `vanilla-victoire-village` | Dévoration nocturne, élimination au conseil, victoire village quand tous les loups sont morts |
 | `vanilla-victoire-loups` | Victoire loups à parité loups/non-loups |
+| `loup-garou` | Un kill par nuit tant qu'un loup vit (3 nuits d'affilée, meute puis loup seul), résolution bloquée tant que la meute n'a pas toute voté (`canForce`), pas de loup contre loup, les morts ne votent plus et ne sont plus ciblables |
 | `voyante` | Vision correcte du rôle, 1 sondage/nuit, réservé à la voyante |
 | `sorciere` | Vision de la cible des loups, potion de vie qui sauve, potion de mort qui tue, chaque potion à usage unique |
 | `chasseur` | Tir mortel à la mort, tir unique |

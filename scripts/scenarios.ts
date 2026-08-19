@@ -502,6 +502,81 @@ const scenarios: Record<string, Scenario> = {
     log('victoire des loups (parité loups/villageois) ✓');
   },
 
+  /** Loup-garou : dévore chaque nuit tant qu'il est en vie, dans les règles de la meute. */
+  'loup-garou': async ({ newGame, log }) => {
+    const g = await newGame('loup garou', 8, { loup_garou: 2, villageois: 6 });
+    const [wolf1, wolf2] = g.wolves();
+
+    // Un loup ne peut pas dévorer un autre loup.
+    const cannibal = await api('POST', `/api/games/${g.code}/vote/night`, {
+      visitorId: wolf1.id,
+      targetId: wolf2.id,
+    });
+    check(cannibal.status === 400, `Loup contre loup : 400 attendu, reçu ${cannibal.status}`);
+
+    // Tant que toute la meute n'a pas voté, la résolution est refusée (sans force).
+    const prey1 = g.plainVillagers()[0];
+    checkStatus(
+      await api('POST', `/api/games/${g.code}/vote/night`, { visitorId: wolf1.id, targetId: prey1.id }),
+      200,
+      'Vote du premier loup'
+    );
+    const partial = await api<{ voted?: number; total?: number; canForce?: boolean }>(
+      'POST',
+      `/api/games/${g.code}/vote/night/resolve`,
+      {}
+    );
+    check(partial.status === 400, `Résolution avec meute incomplète : 400 attendu, reçu ${partial.status}`);
+    check(partial.data.canForce === true, 'La résolution incomplète doit proposer canForce');
+    await g.refresh();
+    check(g.player(prey1.id).is_alive, 'Personne ne meurt tant que la meute n\'a pas résolu');
+    log(`meute incomplète bloquée (${partial.data.voted}/${partial.data.total} votes)`);
+
+    // Meute complète → la victime meurt.
+    checkStatus(
+      await api('POST', `/api/games/${g.code}/vote/night`, { visitorId: wolf2.id, targetId: prey1.id }),
+      200,
+      'Vote du second loup'
+    );
+    const night1 = await g.resolveNight();
+    check(night1.victim !== undefined, 'Nuit 1 : une victime attendue');
+    check(!g.player(prey1.id).is_alive, 'Nuit 1 : la proie doit être morte');
+    log(`nuit 1 : ${prey1.pseudo} dévoré par la meute complète`);
+
+    // Le conseil élimine un loup.
+    await g.councilKill(wolf1.id);
+    check(!g.player(wolf1.id).is_alive, 'Le loup visé au conseil doit être mort');
+
+    // Nuit 2 : le loup mort ne vote plus.
+    const deadVote = await api('POST', `/api/games/${g.code}/vote/night`, {
+      visitorId: wolf1.id,
+      targetId: g.plainVillagers()[0].id,
+    });
+    check(deadVote.status === 400, `Vote d'un loup mort : 400 attendu, reçu ${deadVote.status}`);
+
+    // Une cible déjà morte est refusée.
+    const deadTarget = await api('POST', `/api/games/${g.code}/vote/night`, {
+      visitorId: wolf2.id,
+      targetId: prey1.id,
+    });
+    check(deadTarget.status === 400, `Cible déjà morte : 400 attendu, reçu ${deadTarget.status}`);
+
+    // Le loup survivant dévore seul, nuit après nuit.
+    const prey2 = g.plainVillagers()[0];
+    await g.nightKill(prey2.id);
+    check(!g.player(prey2.id).is_alive, 'Nuit 2 : le loup survivant dévore seul');
+    log(`nuit 2 : ${prey2.pseudo} dévoré par le loup restant`);
+
+    await g.toCouncil();
+    await g.resolveCouncil(); // conseil blanc
+
+    const prey3 = g.plainVillagers()[0];
+    const night3 = await g.nightKill(prey3.id);
+    check(!g.player(prey3.id).is_alive, 'Nuit 3 : le loup dévore encore tant qu\'il est en vie');
+    check(night3.gameOver !== true, 'La partie continue (1 loup vs 3 non-loups)');
+    log(`nuit 3 : ${prey3.pseudo} dévoré — un kill par nuit tant que le loup vit ✓`);
+  },
+
   /** La voyante sonde un loup et reçoit son vrai rôle ; un seul sondage par nuit. */
   voyante: async ({ newGame, log }) => {
     const g = await newGame('voyante', 8, { loup_garou: 2, voyante: 1, villageois: 5 });
