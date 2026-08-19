@@ -19,7 +19,7 @@ cd moonfall
 npm install
 
 # Configurer (copier et remplir les variables)
-cp .env.example .env.local
+cp .env.local.example .env.local
 
 # Lancer
 npm run dev
