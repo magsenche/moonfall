@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 import { PHASE_DURATIONS } from '@/types/game';
 import type { GameSettings } from '@/types/game';
-import { castBotWolfVotes, castBotCouncilVotes } from '@/lib/game/bots';
+import { runBotNightEntryActions, runBotCouncilEntryActions } from '@/lib/game/bots';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -103,9 +103,9 @@ export async function POST(
   // Les bots votent dès l'entrée de phase : compteurs justes et résolution
   // jamais bloquée, même en mode MJ arbitre où rien ne s'auto-résout
   if (phase === 'nuit') {
-    await castBotWolfVotes(supabase, game.id, game.current_phase ?? 1, isAutoMode);
+    await runBotNightEntryActions(supabase, game.id, game.current_phase ?? 1, isAutoMode);
   } else if (phase === 'conseil') {
-    await castBotCouncilVotes(supabase, game.id, game.current_phase ?? 1, isAutoMode);
+    await runBotCouncilEntryActions(supabase, game.id, game.current_phase ?? 1, isAutoMode);
   }
 
   // Log event

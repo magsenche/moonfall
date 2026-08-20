@@ -161,12 +161,24 @@ VALUES
 ### Interactions Spécifiques
 
 - **Voyante vs Changement de Phase** : L'état "pouvoir utilisé" est reset à chaque nouvelle nuit. L'historique est conservé.
-- **Bots** : Les bots (pseudos 🤖) votent automatiquement **dès l'entrée de
-  phase** (loups à l'entrée de nuit, tous au conseil — `lib/game/bots.ts`,
-  appelé par start/phase/résolutions) : les compteurs sont justes et la
-  résolution n'est jamais bloquée par un bot, y compris en mode MJ arbitre où
-  rien ne s'auto-résout au timer. Les résolutions gardent un filet de sécurité
-  idempotent, plus les automatismes existants (sorcière bot, chasseur bot).
+- **Bots** : tout le comportement automatique vit dans `lib/game/bots.ts`
+  (orchestrateurs appelés par start / route phase / résolutions), avec une
+  séquence garantie et des fonctions idempotentes (les résolutions rappellent
+  le module en filet de sécurité) :
+  - **Entrée de nuit** : Cupidon bot (nuit 1 — couple aléatoire, avant toute
+    mort), Enfant Sauvage bot (choix du modèle), Salvateur bot (protection
+    aléatoire, jamais deux fois la même cible d'affilée), puis vote de meute
+    (cible commune, alignée sur un loup humain qui a déjà voté).
+  - **Résolution de nuit** : Sorcière bot (après le vote des loups — 50 %
+    potion de vie, 30 % potion de mort, usage unique), puis Chasseur bot si
+    la victime en est un. **Conseil** : vote de chaque bot dès l'entrée,
+    Chasseur bot à l'élimination.
+  - Compteurs justes et résolutions jamais bloquées par un bot, y compris en
+    mode MJ arbitre où rien ne s'auto-résout au timer.
+  - **Passifs par choix** (leur inaction ne bloque rien) : Voyante (action
+    invisible sans effet de jeu), Petite Fille et Ancien (passifs), Trublion
+    et Assassin (un échange de rôles ou un kill silencieux décidé par un bot
+    dégraderait la partie des humains).
 
 ---
 

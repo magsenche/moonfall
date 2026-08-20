@@ -4,107 +4,12 @@ import type { Database } from '@/types/database';
 import { applyDeathCascade, endGameIfVictory } from '@/lib/game/deaths';
 import { isAutoMode, tallyVotes } from '@/lib/game/resolution';
 import { acquirePhaseLock } from '@/lib/game/phaseLock';
-import { castBotCouncilVotes, castBotWolfVotes } from '@/lib/game/bots';
+import { castBotCouncilVotes, runBotNightEntryActions, autoBotHunterShoot } from '@/lib/game/bots';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
 );
-
-/**
- * Auto-activate bot hunter power when they die
- * Hunters shoot a random alive player when eliminated
- */
-async function autoBotHunterShoot(gameId: string, deadPlayerId: string, phase: number) {
-  // Check if dead player is a bot hunter
-  const { data: deadPlayer } = await supabase
-    .from("players")
-    .select("id, pseudo, role:roles(id, name)")
-    .eq("id", deadPlayerId)
-    .single();
-
-  if (!deadPlayer || !deadPlayer.pseudo.startsWith('🤖')) return null;
-  
-  const role = deadPlayer.role as { id: string; name: string } | null;
-  if (!role || role.name !== 'chasseur') return null;
-
-  // Get the tir_mortel power
-  const { data: hunterPower } = await supabase
-    .from("powers")
-    .select("id")
-    .eq("role_id", role.id)
-    .eq("name", "tir_mortel")
-    .single();
-
-  if (!hunterPower) return null;
-
-  // Check if already used
-  const { data: powerUse } = await supabase
-    .from("power_uses")
-    .select("id")
-    .eq("game_id", gameId)
-    .eq("player_id", deadPlayerId)
-    .eq("power_id", hunterPower.id)
-    .maybeSingle();
-
-  if (powerUse) return null; // Already used
-
-  // Get all alive players (random target)
-  const { data: alivePlayers } = await supabase
-    .from("players")
-    .select("id, pseudo")
-    .eq("game_id", gameId)
-    .eq("is_alive", true);
-
-  if (!alivePlayers || alivePlayers.length === 0) return null;
-
-  // Pick random target
-  const randomTarget = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
-
-  // Kill the target
-  const { data: shotVictim } = await supabase
-    .from("players")
-    .update({
-      is_alive: false,
-      death_reason: "tir_chasseur",
-      death_at: new Date().toISOString(),
-    })
-    .eq("id", randomTarget.id)
-    .select("pseudo, role:roles(name)")
-    .single();
-
-  if (!shotVictim) return null;
-
-  // Record power use
-  await supabase.from("power_uses").insert({
-    game_id: gameId,
-    player_id: deadPlayerId,
-    power_id: hunterPower.id,
-    target_id: randomTarget.id,
-    phase,
-    result: { auto_bot: true },
-  });
-
-  // Log event
-  await supabase.from("game_events").insert({
-    game_id: gameId,
-    event_type: "hunter_shot",
-    data: {
-      hunter_id: deadPlayerId,
-      hunter_name: deadPlayer.pseudo,
-      victim_id: randomTarget.id,
-      victim_name: shotVictim.pseudo,
-      victim_role: (shotVictim.role as { name: string } | null)?.name,
-      auto_bot: true,
-    },
-  });
-
-  return {
-    victimId: randomTarget.id,
-    victimPseudo: shotVictim.pseudo,
-    victimRole: (shotVictim.role as { name: string } | null)?.name,
-  };
-}
 
 export async function POST(
   request: NextRequest,
@@ -339,7 +244,7 @@ export async function POST(
       const cascade = await applyDeathCascade(supabase, game.id, player.id);
 
       // Check if eliminated player was a bot hunter and auto-shoot
-      hunterShot = await autoBotHunterShoot(game.id, player.id, currentPhase);
+      hunterShot = await autoBotHunterShoot(supabase, game.id, player.id, currentPhase);
 
       // If hunter shot someone, apply the same death cascade to their victim
       if (hunterShot?.victimId) {
@@ -348,7 +253,7 @@ export async function POST(
 
       // If lover died of heartbreak and was a bot hunter, they shoot too
       if (cascade.loverDeath?.loverId) {
-        const loverHunterShot = await autoBotHunterShoot(game.id, cascade.loverDeath.loverId, currentPhase);
+        const loverHunterShot = await autoBotHunterShoot(supabase, game.id, cascade.loverDeath.loverId, currentPhase);
         if (loverHunterShot?.victimId) {
           await applyDeathCascade(supabase, game.id, loverHunterShot.victimId);
         }
@@ -398,8 +303,8 @@ export async function POST(
     },
   });
 
-  // Les loups bots votent dès l'entrée de la nouvelle nuit
-  await castBotWolfVotes(supabase, game.id, currentPhase + 1, autoMode);
+  // Actions des bots à l'entrée de la nouvelle nuit (salvateur, meute…)
+  await runBotNightEntryActions(supabase, game.id, currentPhase + 1, autoMode);
 
   return NextResponse.json({
     success: true,
