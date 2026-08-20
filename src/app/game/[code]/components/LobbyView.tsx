@@ -6,9 +6,12 @@
 
 'use client';
 
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { ClipboardCopy, Check, Settings2, Moon as MoonIcon, Bot, Play, ArrowLeft, Hourglass, Users, FlaskConical, Vote, Save } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { playJoinCue } from '@/lib/sounds';
 import { MotionCard, CardContent, CardHeader, CardTitle, MotionButton, Button } from '@/components/ui';
 import { PlayerAvatar, RulesButton, PhaseBackground, OnboardingTooltips } from '@/components/game';
 import { NotificationPrompt } from '@/components/game/notification-prompt';
@@ -16,6 +19,8 @@ import { getRoleConfig } from '@/config/roles';
 import { classicComposition } from '@/lib/game/composition';
 import { cn } from '@/lib/utils';
 import { useGame } from '../context';
+
+const emptySubscribe = () => () => {};
 
 // Simple item animation - no stagger to avoid flickering on realtime updates
 const itemVariants = {
@@ -62,6 +67,24 @@ export function LobbyView() {
 
   const mj = game.players.find((p) => p.is_mj);
   const players = game.players.filter((p) => !p.is_mj);
+
+  // Lien de join encodé dans le QR — origin connu côté client uniquement
+  // (SSR-safe : null côté serveur, pas de setState dans un effet)
+  const origin = useSyncExternalStore(
+    emptySubscribe,
+    () => window.location.origin,
+    () => null
+  );
+  const joinUrl = origin ? `${origin}/?join=${game.code}` : null;
+
+  // Pop sonore + vibration à chaque arrivée (façon Kahoot)
+  const previousCountRef = useRef(game.players.length);
+  useEffect(() => {
+    if (game.players.length > previousCountRef.current) {
+      playJoinCue();
+    }
+    previousCountRef.current = game.players.length;
+  }, [game.players.length]);
 
   // In Auto-Garou mode, MJ plays too so count all players for role distribution
   const playersForRoles = gameSettings.autoMode ? game.players.length : players.length;
@@ -114,12 +137,29 @@ export function LobbyView() {
             >
               {game.code}
             </motion.button>
-            <motion.p 
+            <motion.p
               className="text-sm text-moon-100/40 text-center mt-2"
               animate={ui.copied ? { scale: [1, 1.1, 1] } : {}}
             >
               {ui.copied ? <><Check className="w-4 h-4 inline -mt-0.5" /> Copié !</> : <><ClipboardCopy className="w-4 h-4 inline -mt-0.5" /> Clique pour copier</>}
             </motion.p>
+
+            {/* QR de join : scanner → home avec le code prérempli */}
+            {joinUrl && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className="mt-4 flex flex-col items-center gap-2"
+              >
+                <div className="bg-white rounded-2xl p-3 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)] rotate-1">
+                  <QRCodeSVG value={joinUrl} size={150} bgColor="#ffffff" fgColor="#131629" />
+                </div>
+                <p className="text-xs text-moon-100/40">
+                  Scanne-moi : plus qu&apos;un pseudo à choisir
+                </p>
+              </motion.div>
+            )}
           </CardContent>
         </MotionCard>
 
