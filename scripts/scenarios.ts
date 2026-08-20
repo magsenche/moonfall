@@ -1304,6 +1304,204 @@ const scenarios: Record<string, Scenario> = {
     log(`verdict rendu : ${verdict.value} ✓`);
   },
 
+  /** Partie réelle : MJ arbitre + table remplie de bots — les bots votent
+   * dès l'entrée de phase, le MJ n'est jamais bloqué (bug rapporté). */
+  'partie-mj-bots': async ({ newGame, log }) => {
+    // MJ arbitre (pas de rôle) + 7 bots : tous les loups sont des bots
+    const g = await newGame(
+      'mj et bots',
+      1,
+      { loup_garou: 2, villageois: 5 },
+      { autoMode: false },
+      7
+    );
+    g.expectStatus('nuit', 'Après démarrage');
+
+    const wolfStatus = () =>
+      api<{ voted: number; total: number }>(
+        'GET',
+        `/api/games/${g.code}/vote/night/resolve`
+      );
+
+    // LE fix : les loups bots ont voté dès l'entrée de la nuit 1
+    const night1 = checkStatus(await wolfStatus(), 200, 'Compteur de meute');
+    check(night1.total === 2, `2 loups bots attendus, reçu ${night1.total}`);
+    check(
+      night1.voted === night1.total,
+      `Les loups bots doivent avoir voté à l'entrée de nuit (${night1.voted}/${night1.total})`
+    );
+    log(`meute bot ${night1.voted}/${night1.total} dès l'entrée de nuit ✓`);
+
+    // Le MJ résout la nuit sans forcer : une victime tombe
+    const resolve1 = await g.resolveNight();
+    check(resolve1.victim !== undefined, 'La meute bot doit dévorer quelqu\'un');
+    g.expectStatus('jour', 'Après résolution de nuit');
+
+    // Conseil : les bots votent dès l'entrée, le MJ résout directement
+    await g.toCouncil();
+    const council = await g.resolveCouncil();
+    check(council.success === true, 'La résolution du conseil doit passer');
+    check(
+      council.eliminated != null || council.tie === true,
+      'Le conseil bot doit trancher : élimination ou égalité assumée'
+    );
+    log(`conseil résolu sur les seuls votes bots (${council.tie ? 'égalité' : 'élimination'}) ✓`);
+
+    // Le MJ arbitre n'est jamais une cible
+    check(g.player(g.mjId).is_alive, 'Le MJ arbitre doit être vivant');
+
+    // La partie se joue jusqu'au bout sans intervention d'un humain-joueur
+    let rounds = 0;
+    while (g.status !== 'terminee' && rounds < 20) {
+      rounds++;
+      if (g.status === 'nuit') {
+        const s = checkStatus(await wolfStatus(), 200, 'Compteur de meute');
+        check(
+          s.voted === s.total,
+          `Nuit ${g.phase} : loups bots ${s.voted}/${s.total} — votes d'entrée manquants`
+        );
+        await g.resolveNight();
+      } else if (g.status === 'jour') {
+        await g.toCouncil();
+      } else if (g.status === 'conseil') {
+        await g.resolveCouncil();
+      }
+    }
+    g.expectStatus('terminee', `La partie doit se finir seule (${rounds} tours)`);
+    check(g.player(g.mjId).is_alive, 'Le MJ arbitre ne meurt jamais');
+    log(`partie complète en ${rounds} tours, sans blocage ✓`);
+  },
+
+  /** Partie réelle : MJ arbitre + 2 humains + bots (la config du bug
+   * rapporté) — humains et bots cohabitent sans bloquer les résolutions. */
+  'partie-mixte-bots': async ({ newGame, log }) => {
+    const g = await newGame(
+      'mixte humains bots',
+      3,
+      { loup_garou: 2, villageois: 5 },
+      { autoMode: false },
+      5
+    );
+    const isBot = (pseudo: string) => pseudo.startsWith('🤖');
+    const humans = () => g.alive().filter((p) => !isBot(p.pseudo) && !p.is_mj);
+
+    // Les loups bots ont déjà voté ; il ne manque que les loups humains
+    const status1 = checkStatus(
+      await api<{ voted: number; total: number }>(
+        'GET',
+        `/api/games/${g.code}/vote/night/resolve`
+      ),
+      200,
+      'Compteur de meute'
+    );
+    const botWolves = g.wolves().filter((p) => isBot(p.pseudo)).length;
+    const humanWolves = g.wolves().filter((p) => !isBot(p.pseudo));
+    check(
+      status1.voted >= botWolves,
+      `Les ${botWolves} loups bots doivent avoir voté (reçu ${status1.voted})`
+    );
+
+    // Sans le vote des loups humains, la résolution refuse (canForce)
+    if (humanWolves.length > 0) {
+      const blocked = await api('POST', `/api/games/${g.code}/vote/night/resolve`, {});
+      check(
+        blocked.status === 400,
+        `Résolution avec loup humain muet : 400 attendu, reçu ${blocked.status}`
+      );
+      const prey = g.plainVillagers().find((p) => isBot(p.pseudo)) ?? g.plainVillagers()[0];
+      check(prey, 'Une proie est requise');
+      for (const wolf of humanWolves) {
+        checkStatus(
+          await api('POST', `/api/games/${g.code}/vote/night`, {
+            visitorId: wolf.id,
+            targetId: prey.id,
+          }),
+          200,
+          `Vote du loup humain ${wolf.pseudo}`
+        );
+      }
+      log(`loup(s) humain(s) : blocage sans leur vote puis vote ✓`);
+    } else {
+      log('meute 100% bots cette fois : résolution directe ✓');
+    }
+    const night = await g.resolveNight();
+    check(night.victim !== undefined, 'La nuit doit faire une victime');
+    g.expectStatus('jour', 'Après la nuit');
+
+    // Conseil : les humains vivants votent, les bots ont déjà voté à l'entrée
+    await g.toCouncil();
+    const targetBot = g.alive().find((p) => isBot(p.pseudo));
+    check(targetBot, 'Un bot vivant est requis comme cible');
+    await g.councilVote(targetBot.id, humans());
+    const council = await g.resolveCouncil();
+    check(council.success === true, 'Le conseil doit se résoudre');
+    log('conseil mixte humains + bots résolu ✓');
+  },
+
+  /** Temps écoulé : ce que font les clients Auto-Garou à l'expiration du
+   * timer (resolve forcé la nuit, changement de phase le jour, resolve au
+   * conseil) fonctionne côté serveur. */
+  'temps-ecoule': async ({ newGame, log }) => {
+    const g = await newGame('temps ecoule', 6, { loup_garou: 1, villageois: 5 });
+
+    const expireTimer = async () => {
+      const url = envVar('NEXT_PUBLIC_SUPABASE_URL');
+      const key = envVar('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
+      const res = await fetch(`${url}/rest/v1/games?code=eq.${g.code}`, {
+        method: 'PATCH',
+        headers: {
+          apikey: key,
+          authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phase_ends_at: new Date(Date.now() - 5000).toISOString() }),
+      });
+      check(res.ok, `Expiration du timer refusée : HTTP ${res.status}`);
+    };
+
+    // Nuit expirée sans aucun vote de loup → resolve forcé (ce que le client
+    // envoie) : passage au jour sans victime
+    await expireTimer();
+    const forced = checkStatus(
+      await api<NightResolveResponse>('POST', `/api/games/${g.code}/vote/night/resolve`, {
+        force: true,
+      }),
+      200,
+      'Résolution de nuit forcée'
+    );
+    check(forced.victim === undefined, 'Nuit sans vote : personne ne meurt');
+    await g.refresh();
+    g.expectStatus('jour', 'Après nuit expirée');
+    log('nuit expirée sans vote → jour sans victime ✓');
+
+    // Jour expiré → le client bascule au conseil via la route phase
+    await expireTimer();
+    await g.toCouncil();
+    g.expectStatus('conseil', 'Après jour expiré');
+
+    // Conseil expiré avec un seul vote : la résolution tranche quand même
+    const wolf = g.wolves()[0];
+    const target = g.plainVillagers()[0];
+    checkStatus(
+      await api('POST', `/api/games/${g.code}/vote`, {
+        voterId: wolf.id,
+        targetId: target.id,
+        voteType: 'jour',
+      }),
+      200,
+      'Vote unique au conseil'
+    );
+    await expireTimer();
+    const council = await g.resolveCouncil();
+    check(
+      council.eliminated?.id === target.id,
+      'Le seul vote posé doit décider de l\'élimination'
+    );
+    g.expectStatus('nuit', 'Le conseil expiré enchaîne sur la nuit suivante');
+    check(g.phase === 2, `La phase doit s'incrémenter (reçu ${g.phase})`);
+    log('conseil expiré à un seul vote → élimination + nuit 2 ✓');
+  },
+
   /** Prêt collectif : l'unanimité des humains vivants écourte la phase. */
   'pret-collectif': async ({ newGame, log }) => {
     // 6 humains + 2 bots : les bots ne comptent jamais dans l'unanimité.

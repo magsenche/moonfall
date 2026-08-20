@@ -4,67 +4,7 @@ import type { GameSettings } from "@/types/game";
 import { applyDeathCascade, endGameIfVictory } from "@/lib/game/deaths";
 import { isAutoMode } from "@/lib/game/resolution";
 import { acquirePhaseLock } from "@/lib/game/phaseLock";
-
-/**
- * Lazy Voting: Force bot wolves to vote randomly before resolution
- * Wolves should vote on the same target to be effective
- */
-async function forceBotWolfVotes(gameId: string, phase: number, aliveWolves: { id: string; pseudo?: string }[], autoMode: boolean) {
-  // Get existing votes
-  const supabase = createClient();
-  const { data: existingVotes } = await supabase
-    .from('votes')
-    .select('voter_id, target_id')
-    .eq('game_id', gameId)
-    .eq('phase', phase)
-    .eq('vote_type', 'nuit_loup');
-
-  const votedIds = new Set(existingVotes?.map(v => v.voter_id) ?? []);
-
-  // Get all alive wolves with their pseudos
-  const { data: wolfPlayers } = await supabase
-    .from('players')
-    .select('id, pseudo')
-    .in('id', aliveWolves.map(w => w.id));
-
-  if (!wolfPlayers) return;
-
-  // Find bot wolves who haven't voted
-  const botWolves = wolfPlayers.filter(
-    p => p.pseudo.startsWith('🤖') && !votedIds.has(p.id)
-  );
-
-  if (botWolves.length === 0) return;
-
-  // Get all alive non-wolf players as potential targets
-  // (le MJ arbitre n'est une cible qu'en Auto-Garou, où il joue)
-  const { data: allPlayers } = await supabase
-    .from('players')
-    .select('id, is_mj, role:roles(team)')
-    .eq('game_id', gameId)
-    .eq('is_alive', true);
-
-  const nonWolfTargets = allPlayers?.filter(
-    p => (p.role as { team: string } | null)?.team !== 'loups' && (autoMode || !p.is_mj)
-  ) ?? [];
-
-  if (nonWolfTargets.length === 0) return;
-
-  // Pick one random target for ALL bot wolves (they vote together)
-  const randomTarget = nonWolfTargets[Math.floor(Math.random() * nonWolfTargets.length)];
-
-  const botVotes = botWolves.map(bot => ({
-    game_id: gameId,
-    voter_id: bot.id,
-    target_id: randomTarget.id,
-    vote_type: 'nuit_loup' as const,
-    phase,
-  }));
-
-  if (botVotes.length > 0) {
-    await supabase.from('votes').insert(botVotes);
-  }
-}
+import { castBotWolfVotes } from "@/lib/game/bots";
 
 /**
  * Auto-activate bot witch potions during night
@@ -365,8 +305,9 @@ export async function POST(
     (p) => (p.role as { team: string } | null)?.team === "loups"
   ) || [];
 
-  // LAZY VOTING: Force bot wolves to vote before resolution
-  await forceBotWolfVotes(game.id, game.current_phase ?? 1, aliveWolves, autoMode);
+  // Filet de sécurité : les loups bots votent normalement à l'entrée de la
+  // nuit, on rattrape ici tout retardataire (idempotent)
+  await castBotWolfVotes(supabase, game.id, game.current_phase ?? 1, autoMode);
 
   // BOT WITCH AUTO-ACTIVATION: Make bot witches use their potions randomly
   await autoBotWitchPotions(supabase, game.id, game.current_phase ?? 1, autoMode);

@@ -4,66 +4,12 @@ import type { Database } from '@/types/database';
 import { applyDeathCascade, endGameIfVictory } from '@/lib/game/deaths';
 import { isAutoMode, tallyVotes } from '@/lib/game/resolution';
 import { acquirePhaseLock } from '@/lib/game/phaseLock';
+import { castBotCouncilVotes, castBotWolfVotes } from '@/lib/game/bots';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
 );
-
-/**
- * Lazy Voting: Force bots to vote randomly before resolution
- * This ensures the game never gets stuck when bots are present
- */
-async function forceBotVotes(gameId: string, phase: number, autoMode: boolean) {
-  // Get all alive players
-  const { data: alivePlayers } = await supabase
-    .from('players')
-    .select('id, pseudo, is_alive, is_mj')
-    .eq('game_id', gameId)
-    .eq('is_alive', true);
-
-  if (!alivePlayers || alivePlayers.length === 0) return;
-
-  // Get existing votes
-  const { data: existingVotes } = await supabase
-    .from('votes')
-    .select('voter_id')
-    .eq('game_id', gameId)
-    .eq('phase', phase)
-    .eq('vote_type', 'jour');
-
-  const votedIds = new Set(existingVotes?.map(v => v.voter_id) ?? []);
-
-  // Find bots who haven't voted
-  const botsToVote = alivePlayers.filter(
-    p => p.pseudo.startsWith('🤖') && !votedIds.has(p.id)
-  );
-
-  if (botsToVote.length === 0) return;
-
-  // Get potential targets (alive players, excluding the bot itself ;
-  // le MJ arbitre n'est une cible qu'en Auto-Garou, où il joue)
-  const targets = alivePlayers.filter(p => p.is_alive && (autoMode || !p.is_mj));
-
-  // Make each bot vote randomly
-  const botVotes = botsToVote.map(bot => {
-    // Filter out the bot itself from targets
-    const validTargets = targets.filter(t => t.id !== bot.id);
-    const randomTarget = validTargets[Math.floor(Math.random() * validTargets.length)];
-    
-    return {
-      game_id: gameId,
-      voter_id: bot.id,
-      target_id: randomTarget.id,
-      vote_type: 'jour' as const,
-      phase,
-    };
-  });
-
-  if (botVotes.length > 0) {
-    await supabase.from('votes').insert(botVotes);
-  }
-}
 
 /**
  * Auto-activate bot hunter power when they die
@@ -201,8 +147,9 @@ export async function POST(
 
   const currentPhase = game.current_phase ?? 1;
 
-  // LAZY VOTING: Force bots to vote before resolution
-  await forceBotVotes(game.id, currentPhase, autoMode);
+  // Filet de sécurité : les bots votent normalement à l'entrée du conseil,
+  // on rattrape ici ceux qui auraient rejoint entre-temps (idempotent)
+  await castBotCouncilVotes(supabase, game.id, currentPhase, autoMode);
 
   // Get all votes for this phase
   const { data: votes, error: votesError } = await supabase
@@ -450,6 +397,9 @@ export async function POST(
       phase: currentPhase + 1 
     },
   });
+
+  // Les loups bots votent dès l'entrée de la nouvelle nuit
+  await castBotWolfVotes(supabase, game.id, currentPhase + 1, autoMode);
 
   return NextResponse.json({
     success: true,

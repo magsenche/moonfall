@@ -239,7 +239,7 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
               />
               <FaqItem 
                 question="Comment fonctionne le Mode Auto-Garou ?"
-                answer="Pas de MJ dédié : les phases avancent automatiquement et tout le monde reçoit un rôle, y compris le créateur de la partie."
+                answer="Pas de Maître du jeu dédié : les phases avancent automatiquement et tout le monde reçoit un rôle, y compris le créateur de la partie."
               />
               <FaqItem 
                 question="À quoi servent les points de mission ?"
