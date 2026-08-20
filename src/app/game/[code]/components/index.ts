@@ -43,6 +43,7 @@ export * from './MJControls';
 export * from './MJOverview';
 export * from './PlayersList';
 export * from './SessionRecovery';
+export * from './CouncilRecapCard';
 export * from './LobbyView';
 export * from './PlayerWallet';
 export * from './Shop';

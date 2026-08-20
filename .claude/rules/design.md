@@ -29,6 +29,11 @@ paths:
   le job). Bande flottante : FAB missions/règles z-30 à `bottom-20`, mute et
   « Prêt » z-40 à `bottom-4`, `TipToast` à `bottom-36` (jamais sur un bouton),
   contenu avec `pb-36`. Pas de doublon d'information sur un même scroll.
+- **Narration** : le rideau de phase (`PhaseCurtain`, z-[70]) tombe à chaque
+  transition et raconte la partie (textes composés serveur dans
+  `lib/game/narration.ts` — mêmes lignes sur tous les téléphones, causes
+  secrètes jamais révélées). Tap pour passer, disparition auto. Le récap du
+  dernier conseil vit dans `CouncilRecapCard` (footer, repliée).
 - **Son** : jingles de phase synthétisés WebAudio dans `src/lib/sounds`
   (aucun asset audio), joués par `SoundEffects` + vibrations ; mute persisté,
   déblocage iOS au premier tap. Tout nouveau son passe par ce module.

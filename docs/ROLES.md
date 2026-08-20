@@ -167,8 +167,12 @@ VALUES
   le module en filet de sécurité) :
   - **Entrée de nuit** : Cupidon bot (nuit 1 — couple aléatoire, avant toute
     mort), Enfant Sauvage bot (choix du modèle), Salvateur bot (protection
-    aléatoire, jamais deux fois la même cible d'affilée), puis vote de meute
-    (cible commune, alignée sur un loup humain qui a déjà voté).
+    aléatoire, jamais deux fois la même cible d'affilée), puis vote de meute.
+  - **Les loups humains décident** : la meute bot vote une cible commune,
+    mais dès qu'un loup humain vote, tous les loups bots se rallient à la
+    pluralité des votes humains (re-synchronisé à chaque vote humain et à la
+    résolution) — un humain minoritaire face aux bots impose quand même sa
+    cible.
   - **Résolution de nuit** : Sorcière bot (après le vote des loups — 50 %
     potion de vie, 30 % potion de mort, usage unique), puis Chasseur bot si
     la victime en est un. **Conseil** : vote de chaque bot dès l'entrée,

@@ -261,6 +261,26 @@ export async function POST(
     }
   }
 
+  // Récap du conseil, visible par TOUS les joueurs (le retour de cette route
+  // n'atteint que le client qui résout) — votes anonymes masqués AVANT
+  // persistance, l'événement ne contient jamais l'identité cachée
+  await supabase.from('game_events').insert({
+    game_id: game.id,
+    event_type: 'council_results',
+    data: {
+      phase: currentPhase,
+      eliminated: eliminatedPlayer,
+      tie: eliminated.length > 1,
+      immunity_used: immunityUsed,
+      vote_details: voteDetails.map((v) => ({
+        voter_pseudo: v.isAnonymous ? null : v.voterPseudo,
+        target_pseudo: v.targetPseudo,
+        is_anonymous: v.isAnonymous,
+        is_double: v.isDouble,
+      })),
+    },
+  });
+
   // Check for victory conditions (MJ compté seulement en Auto-Garou, où il joue)
   const winner = await endGameIfVictory(supabase, game.id, autoMode);
 

@@ -1507,6 +1507,195 @@ const scenarios: Record<string, Scenario> = {
     log('conseil mixte humains + bots résolu ✓');
   },
 
+  /** Récap du conseil : le détail « qui a voté contre qui » est persisté à
+   * la résolution et servi à TOUS les joueurs (avant, seul le client
+   * résolveur le recevait, et il disparaissait au changement de phase). */
+  'recap-conseil': async ({ newGame, log }) => {
+    const g = await newGame('recap conseil', 8, { loup_garou: 2, villageois: 6 });
+
+    // Avant tout conseil : pas de récap
+    const empty = checkStatus(
+      await api<{ council: unknown }>('GET', `/api/games/${g.code}/council-recap`),
+      200,
+      'Récap avant conseil'
+    );
+    check(empty.council === null, 'Aucun récap avant le premier conseil');
+
+    // Nuit 1 puis conseil : tout le monde élimine une cible précise
+    const prey = g.plainVillagers()[0];
+    await g.nightKill(prey.id);
+    const target = g.plainVillagers()[0];
+    await g.councilKill(target.id);
+
+    interface CouncilRecap {
+      phase: number;
+      eliminated: { pseudo: string } | null;
+      tie: boolean;
+      vote_details: {
+        voter_pseudo: string | null;
+        target_pseudo: string;
+        is_anonymous: boolean;
+      }[];
+    }
+    const recap = checkStatus(
+      await api<{ council: CouncilRecap | null }>(
+        'GET',
+        `/api/games/${g.code}/council-recap`
+      ),
+      200,
+      'Récap après conseil'
+    );
+    check(recap.council !== null, 'Le récap du conseil doit exister');
+    const council = recap.council;
+    check(
+      council.eliminated?.pseudo === target.pseudo,
+      `Éliminé attendu ${target.pseudo}, reçu ${council.eliminated?.pseudo}`
+    );
+    check(council.phase === 1, `Conseil de phase 1 attendu, reçu ${council.phase}`);
+    const votesOnTarget = council.vote_details.filter(
+      (v) => v.target_pseudo === target.pseudo
+    );
+    check(
+      votesOnTarget.length >= 6,
+      `Les votes contre ${target.pseudo} doivent être détaillés (reçu ${votesOnTarget.length})`
+    );
+    check(
+      votesOnTarget.every((v) => v.voter_pseudo !== null && !v.is_anonymous),
+      'Sans achat d\'anonymat, chaque votant est nommé'
+    );
+    log(`récap du conseil : ${target.pseudo} éliminé, ${votesOnTarget.length} votes détaillés et nommés ✓`);
+  },
+
+  /** Narration : le rideau raconte la bonne histoire à chaque phase. */
+  narration: async ({ newGame, log }) => {
+    const g = await newGame('narration', 8, { loup_garou: 2, villageois: 6 });
+    const getNarration = () =>
+      api<{ status: string; phase: number; lines: string[] }>(
+        'GET',
+        `/api/games/${g.code}/narration`
+      );
+
+    // Nuit 1 : endormissement, sans verdict fantôme
+    const night1 = checkStatus(await getNarration(), 200, 'Narration nuit 1');
+    check(night1.lines.length === 1 && night1.lines[0].includes('🌙'), 'Nuit 1 : une ligne d\'endormissement');
+
+    // Dévoration → le jour annonce la victime et son rôle
+    const prey = g.plainVillagers()[0];
+    await g.nightKill(prey.id);
+    const day = checkStatus(await getNarration(), 200, 'Narration du jour');
+    const dayText = day.lines.join(' ');
+    check(
+      dayText.includes(prey.pseudo) && dayText.includes('ne se réveillera plus'),
+      `Le jour doit annoncer la mort de ${prey.pseudo} (reçu : ${dayText})`
+    );
+
+    // Conseil → ouverture ; puis la nuit suivante rappelle le verdict
+    await g.toCouncil();
+    const council = checkStatus(await getNarration(), 200, 'Narration du conseil');
+    check(council.lines.length === 1, 'Le conseil ouvre en une ligne');
+    const target = g.plainVillagers()[0];
+    await g.councilVote(target.id);
+    await g.resolveCouncil();
+    const night2 = checkStatus(await getNarration(), 200, 'Narration nuit 2');
+    const nightText = night2.lines.join(' ');
+    check(
+      nightText.includes(target.pseudo) && nightText.includes('bûcher'),
+      `La nuit 2 doit rappeler le bûcher de ${target.pseudo} (reçu : ${nightText})`
+    );
+    log(`narration : mort annoncée, verdict rappelé, village endormi ✓`);
+  },
+
+  /** Meute mixte : le loup HUMAIN décide, les loups bots s'alignent sur sa
+   * cible (bug rapporté : la majorité bot écrasait le vote de la louve). */
+  'meute-mixte': async ({ newGame, rolesByName, log }) => {
+    const g = await newGame(
+      'meute mixte',
+      2,
+      { loup_garou: 3, villageois: 4 },
+      { autoMode: false },
+      6
+    );
+    const isBot = (pseudo: string) => pseudo.startsWith('🤖');
+    const human = g.players().find((p) => !p.is_mj && !isBot(p.pseudo));
+    check(human, 'Un joueur humain non-MJ est requis');
+
+    const url = envVar('NEXT_PUBLIC_SUPABASE_URL');
+    const key = envVar('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
+    const rest = async (method: string, path: string, body?: unknown) => {
+      const res = await fetch(`${url}/rest/v1/${path}`, {
+        method,
+        headers: {
+          apikey: key,
+          authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      check(res.ok, `REST ${method} ${path} : HTTP ${res.status}`);
+      return method === 'GET' ? ((await res.json()) as Record<string, unknown>[]) : [];
+    };
+
+    // Setup déterministe : si l'humain n'est pas loup, on échange son rôle
+    // avec un loup bot (bidouille de test assumée, via REST)
+    if (human.role?.team !== 'loups') {
+      const botWolf = g.wolves().find((p) => isBot(p.pseudo));
+      check(botWolf, 'Un loup bot est requis pour l\'échange');
+      const wolfRoleId = rolesByName.get('loup_garou')?.id;
+      const villagerRoleId = rolesByName.get('villageois')?.id;
+      check(wolfRoleId && villagerRoleId, 'Rôles requis');
+      await rest('PATCH', `players?id=eq.${human.id}`, { role_id: wolfRoleId });
+      await rest('PATCH', `players?id=eq.${botWolf.id}`, { role_id: villagerRoleId });
+      await g.refresh();
+    }
+    check(g.player(human.id).role?.team === 'loups', 'L\'humain doit être loup');
+    const botWolves = g.wolves().filter((p) => isBot(p.pseudo));
+    check(botWolves.length >= 1, 'Au moins un loup bot est requis');
+
+    // La louve humaine vote une cible DIFFÉRENTE de celle des bots
+    const gameId = (await rest('GET', `games?code=eq.${g.code}&select=id`))[0].id as string;
+    const currentVotes = (await rest(
+      'GET',
+      `votes?game_id=eq.${gameId}&vote_type=eq.nuit_loup&phase=eq.1&select=voter_id,target_id`
+    )) as { voter_id: string; target_id: string | null }[];
+    const botTarget = currentVotes.find((v) =>
+      botWolves.some((w) => w.id === v.voter_id)
+    )?.target_id;
+    const humanTarget = g
+      .plainVillagers()
+      .find((p) => p.id !== botTarget && p.id !== human.id);
+    check(humanTarget, 'Une cible distincte de celle des bots est requise');
+    checkStatus(
+      await api('POST', `/api/games/${g.code}/vote/night`, {
+        visitorId: human.id,
+        targetId: humanTarget.id,
+      }),
+      200,
+      'Vote de la louve humaine'
+    );
+
+    // Toute la meute bot doit s'être alignée sur SA cible
+    const alignedVotes = (await rest(
+      'GET',
+      `votes?game_id=eq.${gameId}&vote_type=eq.nuit_loup&phase=eq.1&select=voter_id,target_id`
+    )) as { voter_id: string; target_id: string | null }[];
+    for (const wolf of botWolves) {
+      const vote = alignedVotes.find((v) => v.voter_id === wolf.id);
+      check(
+        vote?.target_id === humanTarget.id,
+        `${wolf.pseudo} doit suivre la cible de la louve humaine`
+      );
+    }
+    log(`meute bot alignée sur la cible de ${human.pseudo} ✓`);
+
+    // Et la résolution dévore bien la cible choisie par l'humaine
+    const night = await g.resolveNight();
+    check(
+      night.victim === humanTarget.pseudo,
+      `Victime attendue ${humanTarget.pseudo}, reçu ${night.victim}`
+    );
+    log('le vote du loup humain décide, la meute suit ✓');
+  },
+
   /** Temps écoulé : ce que font les clients Auto-Garou à l'expiration du
    * timer (resolve forcé la nuit, changement de phase le jour, resolve au
    * conseil) fonctionne côté serveur. */

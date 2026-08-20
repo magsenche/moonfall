@@ -12,6 +12,7 @@ import { useGame } from '../context';
 import { getRoleConfig } from '@/config/roles';
 import { GameOver, TipToast, RulesButton, PhaseBackground, MissionsDrawer } from '@/components/game';
 import { GhostBanner } from './GhostBanner';
+import { PhaseCurtain } from './PhaseCurtain';
 import { ReadyButton } from './ReadyButton';
 
 import { SessionRecovery } from './SessionRecovery';
@@ -150,6 +151,9 @@ export function GameLayout() {
 
       {/* « Prêt » collectif : écourter la phase quand tout le monde a fini */}
       <ReadyButton />
+
+      {/* Rideau de narration entre les phases */}
+      <PhaseCurtain />
 
       {/* Floating Missions Drawer */}
       {gameStatus !== 'terminee' && missionsEnabled && <MissionsDrawerWrapper />}

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
 import { isAutoMode } from "@/lib/game/resolution";
+import { castBotWolfVotes } from "@/lib/game/bots";
 
 // POST - Submit a wolf vote (night phase)
 export async function POST(
@@ -139,6 +140,10 @@ export async function POST(
       );
     }
   }
+
+  // Les loups humains décident : après chaque vote humain, la meute bot se
+  // rallie à la cible portée par les humains (voir lib/game/bots.ts)
+  await castBotWolfVotes(supabase, game.id, game.current_phase ?? 1, isAutoMode(game.settings));
 
   return NextResponse.json({ success: true });
 }
