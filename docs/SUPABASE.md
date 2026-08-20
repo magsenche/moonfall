@@ -37,6 +37,10 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
 | `power_uses` | Historique pouvoirs utilisés |
 | `game_events` | Audit log (triggers les notifications push) |
 | `push_subscriptions` | Abonnements Web Push |
+| `phase_ready` | « Prêt » collectif par (game, phase, status) — migration 007 : l'unanimité des humains vivants ramène `phase_ends_at` à ~3s (skip de phase Auto-Garou) |
+
+> Tables annexes de rôles : `lovers` (Cupidon), `wild_child_models`
+> (Enfant Sauvage), `salvateur_protections` (Salvateur).
 
 ### Enums
 

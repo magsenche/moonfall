@@ -12,6 +12,7 @@ import { useGame } from '../context';
 import { getRoleConfig } from '@/config/roles';
 import { GameOver, TipToast, RulesButton, PhaseBackground, MissionsDrawer } from '@/components/game';
 import { GhostBanner } from './GhostBanner';
+import { ReadyButton } from './ReadyButton';
 
 import { SessionRecovery } from './SessionRecovery';
 import { HunterDeathModal } from './HunterDeathModal';
@@ -145,6 +146,9 @@ export function GameLayout() {
 
       {/* Floating Rules Button - Sticker style */}
       <RulesButton variant="floating" />
+
+      {/* « Prêt » collectif : écourter la phase quand tout le monde a fini */}
+      <ReadyButton />
 
       {/* Floating Missions Drawer */}
       {gameStatus !== 'terminee' && missionsEnabled && <MissionsDrawerWrapper />}
