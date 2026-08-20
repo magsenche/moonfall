@@ -39,7 +39,9 @@ export function TipToast({ tipId, show, onDismiss }: TipToastProps) {
   if (!tip || isDismissed || !isVisible) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-40 flex justify-center animate-in slide-in-from-bottom-4 duration-300">
+    // bottom-36 : au-dessus de la bande flottante (mute/prêt à bottom-4,
+    // FAB missions/règles à bottom-20) pour ne recouvrir aucun bouton
+    <div className="fixed bottom-36 left-4 right-4 z-30 flex justify-center animate-in slide-in-from-bottom-4 duration-300">
       <div className="max-w-sm w-full bg-night-800 border border-night-700 rounded-xl shadow-lg p-4 flex items-start gap-3">
         <span className="text-2xl shrink-0">{tip.icon}</span>
         <div className="flex-1 min-w-0">

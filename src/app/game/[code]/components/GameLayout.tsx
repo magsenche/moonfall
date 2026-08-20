@@ -99,7 +99,8 @@ export function GameLayout() {
         players={game.players}
       />
 
-      <div className="relative z-10 max-w-lg mx-auto px-4 pt-8 pb-24">
+      {/* pb-36 : la bande flottante (FAB à bottom-20 + 48px) fait ~128px */}
+      <div className="relative z-10 max-w-lg mx-auto px-4 pt-8 pb-36">
         {/* Unified Header - Dynamic Island style */}
         <GameHeader />
 

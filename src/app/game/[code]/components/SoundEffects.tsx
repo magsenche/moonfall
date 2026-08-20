@@ -71,21 +71,25 @@ export function SoundEffects() {
   };
 
   return (
-    <button
-      type="button"
-      onClick={toggleMute}
-      aria-label={muted ? 'Activer le son' : 'Couper le son'}
-      className={cn(
-        'fixed bottom-4 left-4 z-40 w-11 h-11 rounded-full',
-        'flex items-center justify-center',
-        'border-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]',
-        'transition-colors safe-area-bottom',
-        muted
-          ? 'bg-night-800/90 border-night-600 text-moon-100/50'
-          : 'bg-village-600/90 border-village-400 text-white'
-      )}
-    >
-      {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-    </button>
+    // safe-area sur le conteneur, pas sur le bouton : un padding sur le
+    // cercle 44px le déformait sur les iPhone à home indicator
+    <div className="fixed bottom-4 left-4 z-40 safe-area-bottom">
+      <button
+        type="button"
+        onClick={toggleMute}
+        aria-label={muted ? 'Activer le son' : 'Couper le son'}
+        className={cn(
+          'w-11 h-11 rounded-full',
+          'flex items-center justify-center',
+          'border-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]',
+          'transition-colors',
+          muted
+            ? 'bg-night-800/90 border-night-600 text-moon-100/50'
+            : 'bg-village-600/90 border-village-400 text-white'
+        )}
+      >
+        {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+      </button>
+    </div>
   );
 }

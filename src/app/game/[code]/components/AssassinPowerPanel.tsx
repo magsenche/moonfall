@@ -116,7 +116,7 @@ export function AssassinPowerPanel({
     <MotionCard
       variant="sticker"
       rotation={1.5}
-      className="mb-6 border-rose-500/50"
+      className="border-rose-500/50"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >

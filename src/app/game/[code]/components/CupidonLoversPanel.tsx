@@ -138,7 +138,7 @@ export function CupidonLoversPanel({
       <MotionCard
         variant="sticker"
         rotation={1}
-        className="mb-6 border-pink-500/50"
+        className="border-pink-500/50"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
       >
@@ -196,7 +196,7 @@ export function CupidonLoversPanel({
     <MotionCard
       variant="sticker"
       rotation={1}
-      className="mb-6 border-pink-500/50"
+      className="border-pink-500/50"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >

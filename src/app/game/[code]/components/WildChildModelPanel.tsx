@@ -120,7 +120,7 @@ export function WildChildModelPanel({
       <MotionCard
         variant="sticker"
         rotation={2}
-        className="mb-6 border-blood-500/50"
+        className="border-blood-500/50"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
       >
@@ -162,7 +162,7 @@ export function WildChildModelPanel({
     <MotionCard
       variant="sticker"
       rotation={-0.5}
-      className="mb-6 border-emerald-500/50"
+      className="border-emerald-500/50"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >

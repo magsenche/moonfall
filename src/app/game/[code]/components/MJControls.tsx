@@ -32,7 +32,7 @@ export function MJControls({
   isAutoMode = false,
 }: MJControlsProps) {
   return (
-    <Card className="mb-6 border border-village-400/30">
+    <Card className="border border-village-400/30">
       <CardHeader>
         <CardTitle className="text-village-300">
           🎭 Contrôles MJ

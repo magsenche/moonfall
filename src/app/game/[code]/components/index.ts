@@ -9,8 +9,7 @@
  * - GameFooter: Common footer (MJ controls, missions, players, wallet)
  * 
  * Feature components:
- * - PhaseTimer: Countdown timer
- * - PhaseInstructions: Current phase info
+ * - PhaseHint: One-line phase instruction strip
  * - PlayerRoleCard: Player's role display
  * - WolfPack: Wolf teammates list
  * - WolfNightVote: Wolf night vote UI
@@ -21,7 +20,6 @@
  * - MJOverview: Game master overview
  * - PlayersList: Players list
  * - SessionRecovery: Session recovery screen
- * - MissionsSection: Missions display
  * - PlayerWallet: Points and active powers
  * - Shop: Purchase powers with points
  */
@@ -34,8 +32,7 @@ export * from './CouncilPhaseLayout';
 export * from './GameFooter';
 
 // Feature components
-export * from './PhaseTimer';
-export * from './PhaseInstructions';
+export * from './PhaseHint';
 export * from './PlayerRoleCard';
 export * from './WolfPack';
 export * from './WolfNightVote';
@@ -46,7 +43,6 @@ export * from './MJControls';
 export * from './MJOverview';
 export * from './PlayersList';
 export * from './SessionRecovery';
-export * from './MissionsSection';
 export * from './LobbyView';
 export * from './PlayerWallet';
 export * from './Shop';

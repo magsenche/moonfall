@@ -21,6 +21,14 @@ paths:
   soleil le jour, braises au conseil) avec fondu croisé.
 - CTA principal = ambre lunaire ; vérifier le contraste sur fond nuit avant de
   pousser un nouveau couple couleur/texte.
+- **Écran de jeu mobile-first** : dans les layouts de phase, l'ordre est
+  consigne (`PhaseHint`, une ligne) → rôle (`PlayerRoleCard`, pilule compacte
+  une fois révélé) → panneau d'action — l'action de la phase reste au-dessus du
+  fold (~740 px utiles sur iPhone). La liste des joueurs du footer est
+  repliable (dépliée le jour, repliée nuit/conseil où la grille de cibles fait
+  le job). Bande flottante : FAB missions/règles z-30 à `bottom-20`, mute et
+  « Prêt » z-40 à `bottom-4`, `TipToast` à `bottom-36` (jamais sur un bouton),
+  contenu avec `pb-36`. Pas de doublon d'information sur un même scroll.
 - **Son** : jingles de phase synthétisés WebAudio dans `src/lib/sounds`
   (aucun asset audio), joués par `SoundEffects` + vibrations ; mute persisté,
   déblocage iOS au premier tap. Tout nouveau son passe par ce module.

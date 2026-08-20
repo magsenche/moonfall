@@ -7,11 +7,9 @@
 
 'use client';
 
-import { motion } from 'framer-motion';
-import { MotionCard, CardContent } from '@/components/ui';
-import { cn } from '@/lib/utils';
 import { useGame } from '../context';
 
+import { PhaseHint } from './PhaseHint';
 import { PlayerRoleCard } from './PlayerRoleCard';
 import { VotingPanel } from './VotingPanel';
 import { VoteResults } from './VoteResults';
@@ -19,7 +17,6 @@ import { VoteResults } from './VoteResults';
 export function CouncilPhaseLayout() {
   const {
     currentPlayerId,
-    currentPlayer,
     currentRole,
     roleConfig,
     alivePlayers,
@@ -33,51 +30,18 @@ export function CouncilPhaseLayout() {
 
   return (
     <div className="space-y-4">
-      {/* Council atmosphere instruction */}
-      <MotionCard
-        variant="sticker"
-        rotation={-0.5}
-        className="border-village-400/50"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <CardContent className="pt-5 pb-4">
-          <div className="text-center">
-            <motion.p 
-              className="text-4xl mb-2"
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              ⚖️
-            </motion.p>
-            <h3 className="font-black text-white text-lg mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.3)' }}>
-              Conseil du village
-            </h3>
-            <p className="text-moon-100/70 text-sm">
-              {voting.hasVoted
-                ? `✅ Vote enregistré ! (${voting.votesCount}/${voting.totalVoters})`
-                : '⚡ Le moment est venu de désigner un suspect à éliminer.'}
-            </p>
-            {!voting.hasVoted && canVote && (
-              <motion.p 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className={cn(
-                  'inline-block mt-3 px-3 py-1 rounded-full text-xs font-medium',
-                  'bg-village-600/50 border border-village-300/50 text-village-300'
-                )}
-              >
-                👇 Choisissez un joueur à éliminer ci-dessous
-              </motion.p>
-            )}
-          </div>
-        </CardContent>
-      </MotionCard>
+      {/* Consigne du conseil : une ligne — le panneau de vote juste dessous
+          porte déjà l'état « vote enregistré » et le compteur */}
+      <PhaseHint emoji="⚖️" className="border-village-400/50">
+        {canVote
+          ? 'Le moment est venu de désigner un suspect à éliminer.'
+          : 'Le village vote... Observez en silence.'}
+      </PhaseHint>
 
-      {/* Player's Role Card */}
+      {/* Rôle : grande carte tant qu'il n'est pas révélé, pilule ensuite */}
       {currentRole && roleConfig && <PlayerRoleCard role={currentRole} roleConfig={roleConfig} />}
 
-      {/* Voting Panel */}
+      {/* Voting Panel - l'action du conseil, au-dessus du fold */}
       {canVote && (
         <VotingPanel
           alivePlayers={alivePlayers}
@@ -92,30 +56,6 @@ export function CouncilPhaseLayout() {
           onSelectTarget={voting.setSelectedTarget}
           onSubmitVote={voting.submitVote}
         />
-      )}
-
-      {/* Dead player message */}
-      {!isAlive && (
-        <MotionCard 
-          variant="sticker" 
-          rotation={1}
-          className="border-night-600"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          <CardContent className="py-6 text-center">
-            <motion.p 
-              className="text-4xl mb-2"
-              animate={{ y: [0, -5, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              👻
-            </motion.p>
-            <p className="text-moon-100/60 text-sm">
-              Vous êtes mort... Observez le vote en silence.
-            </p>
-          </CardContent>
-        </MotionCard>
       )}
 
       {/* Vote Results - Show after resolution */}

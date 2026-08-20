@@ -54,7 +54,7 @@ export function SeerPowerPanel({
       <MotionCard 
       variant="sticker" 
       rotation={1}
-      className="mb-6 border-village-400/50"
+      className="border-village-400/50"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >

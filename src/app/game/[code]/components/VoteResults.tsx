@@ -40,7 +40,7 @@ export function VoteResults({ results, onDismiss }: VoteResultsProps) {
     <MotionCard 
       variant="sticker" 
       rotation={-0.5}
-      className="mb-6 border-village-400/50"
+      className="border-village-400/50"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
     >
