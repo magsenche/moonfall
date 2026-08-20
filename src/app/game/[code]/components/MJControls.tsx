@@ -35,7 +35,7 @@ export function MJControls({
     <Card className="border border-village-400/30">
       <CardHeader>
         <CardTitle className="text-village-300">
-          🎭 Contrôles MJ
+          🎭 Contrôles du Maître du jeu
           {isAutoMode && (
             <span className="ml-2 text-xs font-normal text-village-400">(Auto-Garou)</span>
           )}

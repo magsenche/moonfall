@@ -161,7 +161,12 @@ VALUES
 ### Interactions Spécifiques
 
 - **Voyante vs Changement de Phase** : L'état "pouvoir utilisé" est reset à chaque nouvelle nuit. L'historique est conservé.
-- **Bots** : Les bots (mode démo/test) votent automatiquement pour ne pas bloquer la partie ("Lazy Voting").
+- **Bots** : Les bots (pseudos 🤖) votent automatiquement **dès l'entrée de
+  phase** (loups à l'entrée de nuit, tous au conseil — `lib/game/bots.ts`,
+  appelé par start/phase/résolutions) : les compteurs sont justes et la
+  résolution n'est jamais bloquée par un bot, y compris en mode MJ arbitre où
+  rien ne s'auto-résout au timer. Les résolutions gardent un filet de sécurité
+  idempotent, plus les automatismes existants (sorcière bot, chasseur bot).
 
 ---
 

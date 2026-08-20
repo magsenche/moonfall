@@ -215,7 +215,7 @@ export function LobbyView() {
                     'text-[8px] font-black uppercase',
                     'shadow-[2px_2px_0px_0px_rgba(0,0,0,0.4)]'
                   )}>
-                    MJ
+                    Maître du jeu
                   </span>
                 </motion.div>
               )}
@@ -506,7 +506,7 @@ export function LobbyView() {
                     <div>
                       <label className="text-sm text-moon-100/60 block">Mode Auto-Garou</label>
                       <p className="text-xs text-moon-100/40 mt-1">
-                        Sans MJ dédié : phases automatiques, tout le monde joue
+                        Sans Maître du jeu dédié : phases automatiques, tout le monde joue
                       </p>
                     </div>
                     <button

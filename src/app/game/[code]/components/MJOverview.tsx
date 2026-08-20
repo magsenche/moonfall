@@ -30,7 +30,7 @@ export function MJOverview({ players, roles, alivePlayers }: MJOverviewProps) {
   return (
     <Card className="mt-6 border border-village-400/30">
       <CardHeader>
-        <CardTitle className="text-village-300">📊 Vue d&apos;ensemble MJ</CardTitle>
+        <CardTitle className="text-village-300">📊 Vue d&apos;ensemble du Maître du jeu</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Team counts */}

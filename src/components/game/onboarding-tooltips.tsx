@@ -26,7 +26,7 @@ const TIPS: Tip[] = [
     id: 'auto-garou',
     icon: '🤖',
     title: 'Mode Auto-Garou activé',
-    description: 'Tout le monde joue, même le créateur ! Les phases avancent automatiquement. Pour un MJ dédié, désactive dans les paramètres.',
+    description: 'Tout le monde joue, même le créateur ! Les phases avancent automatiquement. Pour un Maître du jeu dédié, désactive dans les paramètres.',
     showOn: 'lobby',
   },
   {

@@ -461,7 +461,7 @@ export default function HomePage() {
                 <LogIn className="w-5 h-5 text-moon-500" /> Rejoindre une partie
               </CardTitle>
               <CardDescription>
-                Entre le code fourni par le MJ
+                Entre le code fourni par le Maître du jeu
               </CardDescription>
             </CardHeader>
             <CardContent>
