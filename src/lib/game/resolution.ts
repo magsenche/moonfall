@@ -69,6 +69,42 @@ export function basePointsForDifficulty(difficulty: number | null | undefined): 
   return Math.max(1, Math.min(5, difficulty ?? 1)) * 2;
 }
 
+/** Les bots (mode démo) sont reconnus par leur pseudo préfixé 🤖. */
+export function isBotPseudo(pseudo: string): boolean {
+  return pseudo.startsWith('🤖');
+}
+
+export interface ReadinessPlayer {
+  id: string;
+  pseudo: string;
+  isAlive: boolean;
+}
+
+export interface Readiness {
+  readyCount: number;
+  totalHumans: number;
+  allReady: boolean;
+}
+
+/**
+ * Consensus « prêt » d'une phase : seuls les humains vivants comptent
+ * (les bots suivent, les morts regardent). Aucun humain vivant = pas de
+ * skip possible — une partie de bots avance au timer.
+ */
+export function computeReadiness(
+  players: ReadinessPlayer[],
+  readyPlayerIds: Iterable<string>
+): Readiness {
+  const ready = new Set(readyPlayerIds);
+  const aliveHumans = players.filter((p) => p.isAlive && !isBotPseudo(p.pseudo));
+  const readyCount = aliveHumans.filter((p) => ready.has(p.id)).length;
+  return {
+    readyCount,
+    totalHumans: aliveHumans.length,
+    allReady: aliveHumans.length > 0 && readyCount === aliveHumans.length,
+  };
+}
+
 /** Lit le drapeau Auto-Garou depuis le JSON settings d'une partie. */
 export function isAutoMode(settings: unknown): boolean {
   return (

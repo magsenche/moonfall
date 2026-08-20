@@ -145,6 +145,7 @@ interface GameRow {
   code: string;
   status: string;
   current_phase: number | null;
+  phase_ends_at: string | null;
   players: PlayerRow[];
 }
 
@@ -258,6 +259,15 @@ class GameClient {
     }
   }
 
+  /** Ajoute des bots 🤖 dans le lobby (mode démo). */
+  async addBots(count: number): Promise<void> {
+    checkStatus(
+      await api('POST', `/api/games/${this.code}/bots`, { count, mjPlayerId: this.mjId }),
+      200,
+      'Ajout de bots'
+    );
+  }
+
   /** Configure la distribution des rôles par NOM de rôle (ex: { loup_garou: 2, villageois: 6 }). */
   async configureRoles(
     distribution: Record<string, number>,
@@ -299,6 +309,11 @@ class GameClient {
   get phase(): number {
     check(this.state, 'Partie non chargée');
     return this.state.current_phase ?? 1;
+  }
+
+  get phaseEndsAt(): string | null {
+    check(this.state, 'Partie non chargée');
+    return this.state.phase_ends_at;
   }
 
   expectStatus(expected: string, context: string): void {
@@ -588,7 +603,8 @@ interface ScenarioContext {
     name: string,
     nPlayers: number,
     distribution: Record<string, number>,
-    extraSettings?: Record<string, unknown>
+    extraSettings?: Record<string, unknown>,
+    botCount?: number
   ) => Promise<GameClient>;
   log: (message: string) => void;
 }
@@ -1155,6 +1171,113 @@ const scenarios: Record<string, Scenario> = {
     const night = await g.nightKill(nextPrey.id);
     check(night.victim !== undefined, 'La meute élargie doit dévorer');
     log('l\'enfant transformé chasse avec la meute ✓');
+  },
+
+  /** Prêt collectif : l'unanimité des humains vivants écourte la phase. */
+  'pret-collectif': async ({ newGame, log }) => {
+    // 6 humains + 2 bots : les bots ne comptent jamais dans l'unanimité.
+    const g = await newGame('pret collectif', 6, {}, {}, 2);
+    const isBot = (pseudo: string) => pseudo.startsWith('🤖');
+    const humans = () => g.alive().filter((p) => !isBot(p.pseudo));
+    const humanWolves = () => g.wolves().filter((p) => !isBot(p.pseudo));
+
+    const ready = (playerId: string, value = true) =>
+      api<{ readyCount: number; totalHumans: number; allReady: boolean; skipTriggered: boolean; isReady: boolean }>(
+        'POST',
+        `/api/games/${g.code}/ready`,
+        { playerId, ready: value }
+      );
+    // ── Nuit 1 ──
+    const nonWolfHuman = humans().find((p) => p.role?.team !== 'loups');
+    check(nonWolfHuman, 'Un humain non-loup est requis');
+    const first = checkStatus(await ready(nonWolfHuman.id), 200, 'Premier prêt');
+    check(first.readyCount === 1 && first.totalHumans === 6, `1/6 attendu, reçu ${first.readyCount}/${first.totalHumans}`);
+    check(first.allReady === false, 'Pas d\'unanimité avec 1/6');
+
+    // Un loup humain ne peut pas être prêt avant d'avoir voté.
+    if (humanWolves().length > 0) {
+      const impatientWolf = await ready(humanWolves()[0].id);
+      check(impatientWolf.status === 400, `Loup prêt sans vote : 400 attendu, reçu ${impatientWolf.status}`);
+    }
+
+    // La meute (humains + bots pilotés par le runner) vote une proie — bot de préférence.
+    const prey =
+      g.alive().find((p) => isBot(p.pseudo) && p.role?.team !== 'loups') ??
+      g.alive().find((p) => p.role?.team !== 'loups' && p.id !== nonWolfHuman.id);
+    check(prey, 'Une proie est requise');
+    await g.wolfVote(prey.id);
+
+    // Se rétracter fonctionne.
+    const retract = checkStatus(await ready(nonWolfHuman.id, false), 200, 'Rétractation');
+    check(retract.readyCount === 0, 'La rétractation doit décompter');
+
+    // Tout le monde se déclare prêt : pas de skip avant l'unanimité.
+    const nightHumans = humans();
+    for (let i = 0; i < nightHumans.length; i++) {
+      const response = checkStatus(await ready(nightHumans[i].id), 200, `Prêt de ${nightHumans[i].pseudo}`);
+      if (i < nightHumans.length - 1) {
+        check(response.allReady === false, `Pas d'unanimité à ${response.readyCount}/${response.totalHumans}`);
+        check(response.skipTriggered === false, 'Pas de skip avant l\'unanimité');
+      } else {
+        check(response.allReady === true, 'Unanimité au dernier prêt');
+        check(response.skipTriggered === true, 'Le skip doit se déclencher à l\'unanimité');
+      }
+    }
+    await g.refresh();
+    const nightEnds = g.phaseEndsAt;
+    check(
+      nightEnds !== null && new Date(nightEnds).getTime() <= Date.now() + 10_000,
+      `Le timer de nuit doit être ramené à ~3s, reçu ${nightEnds}`
+    );
+    log(`nuit écourtée à l'unanimité (6/6 humains, bots ignorés) ✓`);
+
+    // Le runner joue le rôle des clients : résolution puis jour.
+    checkStatus(await api('POST', `/api/games/${g.code}/vote/night/resolve`, { force: true }), 200, 'Résolution de nuit');
+    await g.refresh();
+    g.expectStatus('jour', 'Après la nuit écourtée');
+
+    // ── Jour ──
+    for (const human of humans()) {
+      checkStatus(await ready(human.id), 200, `Prêt jour de ${human.pseudo}`);
+    }
+    await g.refresh();
+    const dayEnds = g.phaseEndsAt;
+    check(
+      dayEnds !== null && new Date(dayEnds).getTime() <= Date.now() + 10_000,
+      'Le timer du jour doit être ramené à ~3s'
+    );
+    log('jour écourté ✓');
+    checkStatus(await api('POST', `/api/games/${g.code}/phase`, { phase: 'conseil' }), 200, 'Passage au conseil');
+    await g.refresh();
+
+    // ── Conseil ──
+    const councilHumans = humans();
+    const hasty = await ready(councilHumans[0].id);
+    check(hasty.status === 400, `Prêt au conseil sans avoir voté : 400 attendu, reçu ${hasty.status}`);
+
+    const target =
+      g.alive().find((p) => isBot(p.pseudo)) ?? g.alive().find((p) => p.id !== councilHumans[0].id);
+    check(target, 'Une cible de conseil est requise');
+    await g.councilVote(target.id, councilHumans);
+    for (const human of councilHumans) {
+      checkStatus(await ready(human.id), 200, `Prêt conseil de ${human.pseudo}`);
+    }
+    await g.refresh();
+    const councilEnds = g.phaseEndsAt;
+    check(
+      councilEnds !== null && new Date(councilEnds).getTime() <= Date.now() + 10_000,
+      'Le timer du conseil doit être ramené à ~3s'
+    );
+    checkStatus(await api('POST', `/api/games/${g.code}/vote/resolve`, {}), 200, 'Résolution du conseil');
+    log('conseil écourté puis résolu ✓');
+
+    // ── Hors Auto-Garou : pas de prêt collectif ──
+    const manual = await newGame('pret manuel', 4, {}, { autoMode: false });
+    const manualPlayer = manual.players().find((p) => !p.is_mj);
+    check(manualPlayer, 'Un joueur non-MJ est requis');
+    const denied = await api('POST', `/api/games/${manual.code}/ready`, { playerId: manualPlayer.id });
+    check(denied.status === 400, `Prêt hors Auto-Garou : 400 attendu, reçu ${denied.status}`);
+    log('réservé à l\'Auto-Garou ✓');
   },
 
   /** Intuition de nuit : l'action des non-loups, restituée au récap (Flair du village). */
@@ -1771,10 +1894,11 @@ async function main(): Promise<void> {
     const games: GameClient[] = [];
     const ctx: ScenarioContext = {
       rolesByName,
-      newGame: async (gameName, nPlayers, distribution, extraSettings) => {
+      newGame: async (gameName, nPlayers, distribution, extraSettings, botCount) => {
         const g = new GameClient(rolesByName);
         await g.create(gameName, nPlayers);
         games.push(g);
+        if (botCount) await g.addBots(botCount);
         await g.configureRoles(distribution, extraSettings);
         await g.start();
         return g;

@@ -474,6 +474,55 @@ export type Database = {
           },
         ]
       }
+      phase_ready: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          phase: number
+          player_id: string
+          status: Database["public"]["Enums"]["game_status"]
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          phase: number
+          player_id: string
+          status: Database["public"]["Enums"]["game_status"]
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          phase?: number
+          player_id?: string
+          status?: Database["public"]["Enums"]["game_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phase_ready_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "phase_ready_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "player_wallet"
+            referencedColumns: ["player_id"]
+          },
+          {
+            foreignKeyName: "phase_ready_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_purchases: {
         Row: {
           cost_paid: number

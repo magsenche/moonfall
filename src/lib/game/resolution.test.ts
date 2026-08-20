@@ -2,9 +2,12 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   basePointsForDifficulty,
+  computeReadiness,
   computeWinner,
   isAutoMode,
+  isBotPseudo,
   tallyVotes,
+  type ReadinessPlayer,
   type VictoryPlayer,
 } from './resolution.ts';
 
@@ -113,6 +116,45 @@ describe('basePointsForDifficulty', () => {
     assert.equal(basePointsForDifficulty(9), 10);
     assert.equal(basePointsForDifficulty(null), 2);
     assert.equal(basePointsForDifficulty(undefined), 2);
+  });
+});
+
+describe('computeReadiness', () => {
+  const rp = (id: string, pseudo: string, isAlive = true): ReadinessPlayer => ({ id, pseudo, isAlive });
+  const table = [
+    rp('h1', 'Aline'),
+    rp('h2', 'Basile'),
+    rp('h3', 'Chloe', false), // morte : ne compte pas
+    rp('b1', '🤖 Alice'), // bot : ne compte pas
+  ];
+
+  it('seuls les humains vivants comptent dans l\'unanimité', () => {
+    assert.deepEqual(computeReadiness(table, ['h1']), {
+      readyCount: 1,
+      totalHumans: 2,
+      allReady: false,
+    });
+    assert.deepEqual(computeReadiness(table, ['h1', 'h2']), {
+      readyCount: 2,
+      totalHumans: 2,
+      allReady: true,
+    });
+  });
+
+  it('les prêts des morts et des bots sont ignorés', () => {
+    const r = computeReadiness(table, ['h3', 'b1']);
+    assert.equal(r.readyCount, 0);
+    assert.equal(r.allReady, false);
+  });
+
+  it('aucun humain vivant → jamais prêt (parties 100 % bots au timer)', () => {
+    const bots = [rp('b1', '🤖 Alice'), rp('b2', '🤖 Bob')];
+    assert.equal(computeReadiness(bots, ['b1', 'b2']).allReady, false);
+  });
+
+  it('isBotPseudo reconnaît le préfixe 🤖', () => {
+    assert.equal(isBotPseudo('🤖 Alice'), true);
+    assert.equal(isBotPseudo('Aline'), false);
   });
 });
 

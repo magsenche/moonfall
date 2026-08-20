@@ -40,7 +40,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 (`src/lib/game/resolution.test.ts`) se lancent avec `npm run test:unit`
 (runner natif `node --test`, aucune dépendance).
 
-## Couverture actuelle (23 scénarios)
+## Couverture actuelle (24 scénarios)
 
 | Scénario | Ce qui est validé |
 |----------|-------------------|
@@ -59,6 +59,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 | `assassin-amoureux` | La cascade chagrin s'applique aussi à un assassinat |
 | `chasseur-amoureux` | La cascade chagrin s'applique aussi au tir du chasseur |
 | `enfant-sauvage` | Transformation en loup à la mort du modèle, chasse avec la meute |
+| `pret-collectif` | « Prêt » collectif : unanimité des humains vivants (bots exclus) → `phase_ends_at` ramené à ~3s sur nuit/jour/conseil ; loup non-voté et conseil non-voté refusés ; rétractation ; réservé à l'Auto-Garou |
 | `intuition` | Action de nuit des non-loups : pose/changement/restauration, interdite aux loups, aux morts, de jour et sur soi-même ; sans effet sur la résolution ; titre « Flair du village » au récap |
 | `recap` | Chronique narrative de fin (dévorations, conseils, victoire) + titres, refusée (400) tant que la partie est en cours |
 | `resolution-concurrente` | Verrou de résolution : deux resolve simultanés (nuit puis conseil) → un seul passe (409 pour l'autre), une seule victime |
