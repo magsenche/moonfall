@@ -11,7 +11,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
-import { getDefaultAvatar, getDefaultColor } from '@/config/players';
+import { getAvatarFor, getDefaultColor } from '@/config/players';
 import type { PartialPlayer } from '@/app/game/[code]/hooks/types';
 
 type GamePhase = 'lobby' | 'jour' | 'nuit' | 'conseil' | 'terminee';
@@ -185,7 +185,7 @@ export function PhaseBackground({ phase, players = [], className }: PhaseBackgro
         const pos = floatingPositions[i];
         if (!pos) return null;
 
-        const avatar = getDefaultAvatar(player.id);
+        const avatar = getAvatarFor(player.id);
         const color = getDefaultColor(player.id);
 
         return (

@@ -12,7 +12,7 @@ export type { GameSettings, GameStatus, Team, VoteType } from '@/types/game';
 // Partial player type for what we actually select from DB
 export type PartialPlayer = Pick<
   Database['public']['Tables']['players']['Row'],
-  'id' | 'pseudo' | 'is_alive' | 'is_mj' | 'role_id' | 'created_at'
+  'id' | 'pseudo' | 'is_alive' | 'is_mj' | 'role_id' | 'created_at' | 'avatar_url'
 >;
 
 // Game with players joined

@@ -21,7 +21,8 @@ export default async function GamePage({ params }: GamePageProps) {
         is_alive,
         is_mj,
         role_id,
-        created_at
+        created_at,
+        avatar_url
       )
     `)
     .eq('code', code.toUpperCase())

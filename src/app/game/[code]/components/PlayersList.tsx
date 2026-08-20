@@ -13,7 +13,7 @@ import { motion } from 'framer-motion';
 import { Users } from 'lucide-react';
 import { MotionCard, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { getRoleConfig } from '@/config/roles';
-import { getDefaultAvatar, getDefaultColor } from '@/config/players';
+import { getAvatarFor, getDefaultColor } from '@/config/players';
 import { cn } from '@/lib/utils';
 import type { PartialPlayer, Role } from '../hooks/types';
 
@@ -74,7 +74,7 @@ export function PlayersList({
             const canSeeRole =
               isMJ || viewerIsDead || isCurrentPlayer || (isWolf && wolves.some(w => w.id === player.id));
             
-            const avatar = getDefaultAvatar(player.id);
+            const avatar = getAvatarFor(player.id);
             const color = getDefaultColor(player.id);
 
             return (

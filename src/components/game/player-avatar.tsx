@@ -10,7 +10,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { getDefaultAvatar, getDefaultColor } from '@/config/players';
+import { getAvatarFor, getDefaultColor } from '@/config/players';
 import { cn } from '@/lib/utils';
 
 interface PlayerAvatarProps {
@@ -55,7 +55,7 @@ export function PlayerAvatar({
   className,
   showDeadSticker = true,
 }: PlayerAvatarProps) {
-  const avatar = getDefaultAvatar(playerId);
+  const avatar = getAvatarFor(playerId);
   const color = getDefaultColor(playerId);
 
   return (

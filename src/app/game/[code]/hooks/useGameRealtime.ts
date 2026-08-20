@@ -57,7 +57,8 @@ export function useGameRealtime({ game, onGameUpdate, onPlayersChange }: UseGame
           is_mj,
           role_id,
           created_at,
-          mission_points
+          mission_points,
+          avatar_url
         )
       `)
       .eq('id', game.id)
