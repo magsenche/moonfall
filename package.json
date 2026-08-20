@@ -9,7 +9,8 @@
     "lint": "eslint",
     "scenarios": "node scripts/scenarios.ts",
     "test:unit": "node --test src/lib/game/*.test.ts",
-    "supabase:types": "npx supabase gen types typescript --project-id hlwvndtulatbnlkukvts > src/types/supabase.ts"
+    "supabase:types": "npx supabase gen types typescript --project-id hlwvndtulatbnlkukvts > src/types/supabase.ts",
+    "tutorial:shots": "node scripts/tutorial-screenshots.mjs"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.32.1",
@@ -33,6 +34,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "playwright-core": "^1.62.1",
     "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "typescript": "^5"
