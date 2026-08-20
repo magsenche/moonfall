@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { Coins, Zap, ShoppingBag, Users } from 'lucide-react';
 import { useGame } from '../context';
 
+import { CouncilRecapCard } from './CouncilRecapCard';
 import { MJControls } from './MJControls';
 import { MJOverview } from './MJOverview';
 import { PlayersList } from './PlayersList';
@@ -114,6 +115,11 @@ export function GameFooter() {
           onCancelForce={() => nightActions.setShowForceConfirm(false)}
           isAutoMode={isAutoMode}
         />
+      )}
+
+      {/* Dernier conseil : qui a voté contre qui (repliée par défaut) */}
+      {gameStatus !== 'terminee' && (
+        <CouncilRecapCard gameCode={game.code} gameStatus={gameStatus} />
       )}
 
       {/* Wallet & Shop Toggle - Y2K Sticker Style */}

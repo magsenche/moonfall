@@ -65,8 +65,7 @@ export async function castBotWolfVotes(
     .eq('phase', phase)
     .eq('vote_type', 'nuit_loup');
 
-  const votedIds = new Set(existingVotes?.map((v) => v.voter_id) ?? []);
-  const botWolves = wolves.filter((p) => isBot(p.pseudo) && !votedIds.has(p.id));
+  const botWolves = wolves.filter((p) => isBot(p.pseudo));
   if (botWolves.length === 0) return;
 
   const targets = alivePlayers.filter(
@@ -75,35 +74,67 @@ export async function castBotWolfVotes(
   );
   if (targets.length === 0) return;
 
-  // Si un loup (humain ou bot) a déjà voté, la meute bot suit la cible la
-  // plus votée ; sinon elle en tire une au hasard.
-  const wolfVoteCounts = new Map<string, number>();
-  for (const vote of existingVotes ?? []) {
-    if (vote.target_id && wolves.some((w) => w.id === vote.voter_id)) {
-      wolfVoteCounts.set(vote.target_id, (wolfVoteCounts.get(vote.target_id) ?? 0) + 1);
-    }
-  }
+  // LES LOUPS HUMAINS DÉCIDENT, la meute bot suit : cible = pluralité des
+  // votes des loups humains (égalité → le vote humain le plus récent).
+  // Sans vote humain : la cible bot déjà posée, sinon une au hasard.
+  const wolfVotes = (existingVotes ?? []).filter(
+    (v) => v.target_id && wolves.some((w) => w.id === v.voter_id)
+  );
+  const humanWolfIds = new Set(
+    wolves.filter((w) => !isBot(w.pseudo)).map((w) => w.id)
+  );
+  const humanVotes = wolfVotes.filter((v) => humanWolfIds.has(v.voter_id));
+
   let targetId: string | null = null;
-  let best = 0;
-  for (const [id, count] of wolfVoteCounts) {
-    if (count > best && targets.some((t) => t.id === id)) {
-      best = count;
-      targetId = id;
+  const pickPlurality = (votes: typeof wolfVotes) => {
+    const counts = new Map<string, number>();
+    for (const vote of votes) {
+      if (vote.target_id && targets.some((t) => t.id === vote.target_id)) {
+        counts.set(vote.target_id, (counts.get(vote.target_id) ?? 0) + 1);
+      }
     }
-  }
+    // Égalité entre cibles : >= garde la dernière vue, donc le vote le plus
+    // récent parmi les ex æquo l'emporte
+    let best = 0;
+    let picked: string | null = null;
+    for (const [id, count] of counts) {
+      if (count >= best) {
+        best = count;
+        picked = id;
+      }
+    }
+    return picked;
+  };
+  targetId = pickPlurality(humanVotes) ?? pickPlurality(wolfVotes);
   if (!targetId) {
     targetId = targets[Math.floor(Math.random() * targets.length)].id;
   }
 
-  await supabase.from('votes').insert(
-    botWolves.map((bot) => ({
-      game_id: gameId,
-      voter_id: bot.id,
-      target_id: targetId,
-      vote_type: 'nuit_loup' as const,
-      phase,
-    }))
+  // Upsert : les bots sans vote votent, ceux qui divergent se rallient
+  const votedTarget = new Map(
+    (existingVotes ?? []).map((v) => [v.voter_id, v.target_id])
   );
+  for (const bot of botWolves) {
+    const current = votedTarget.get(bot.id);
+    if (current === targetId) continue;
+    if (votedTarget.has(bot.id)) {
+      await supabase
+        .from('votes')
+        .update({ target_id: targetId })
+        .eq('game_id', gameId)
+        .eq('voter_id', bot.id)
+        .eq('vote_type', 'nuit_loup')
+        .eq('phase', phase);
+    } else {
+      await supabase.from('votes').insert({
+        game_id: gameId,
+        voter_id: bot.id,
+        target_id: targetId,
+        vote_type: 'nuit_loup' as const,
+        phase,
+      });
+    }
+  }
 }
 
 /**
