@@ -40,7 +40,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 (`src/lib/game/resolution.test.ts`) se lancent avec `npm run test:unit`
 (runner natif `node --test`, aucune dépendance).
 
-## Couverture actuelle (25 scénarios)
+## Couverture actuelle (26 scénarios)
 
 | Scénario | Ce qui est validé |
 |----------|-------------------|
@@ -69,6 +69,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 | `missions-encheres` | Min/max/surenchère, fermeture MJ, enchère refusée après fermeture, vainqueur crédité, échec sans points |
 | `boutique` | Solde et déduction, `max_per_player`, achat interdit aux morts, vision loup (usage unique), vote double et vote anonyme au conseil, immunité qui annule l'élimination |
 | `avatar` | Choix d'avatar au lobby : emoji de la grille persisté dans `players.avatar_url`, emoji hors grille refusé (400), changement verrouillé une fois la partie lancée, l'avatar choisi survit au démarrage |
+| `proces` | Procès d'avant-partie : accusation secrète au lobby (`votes` phase 0), upsert sans doublon, auto-accusation refusée, MJ arbitre exclu en mode manuel mais accusateur en Auto-Garou, tribunal fermé après le start, verdict « Délit de faciès » au récap (coupable 🐺 / innocenté 🐑), sans polluer « Flair du village » |
 
 Le financement des joueurs dans les scénarios boutique passe par le helper
 `fundPlayer` (missions compétitives difficulté 5 validées par le MJ, +10 pts de
