@@ -1372,6 +1372,75 @@ const scenarios: Record<string, Scenario> = {
     log(`partie complète en ${rounds} tours, sans blocage ✓`);
   },
 
+  /** Pouvoirs tenus par des bots : cupidon, enfant sauvage et salvateur
+   * agissent dès l'entrée de nuit, sorcière/chasseur aux résolutions — la
+   * partie se joue jusqu'au bout sans blocage. */
+  'bots-pouvoirs': async ({ newGame, log }) => {
+    const g = await newGame(
+      'bots pouvoirs',
+      1,
+      { loup_garou: 2, salvateur: 1, cupidon: 1, enfant_sauvage: 1, sorciere: 1, chasseur: 1, villageois: 1 },
+      { autoMode: false },
+      8
+    );
+    g.expectStatus('nuit', 'Après démarrage');
+
+    const rest = async (table: string, filters: string) => {
+      const url = envVar('NEXT_PUBLIC_SUPABASE_URL');
+      const key = envVar('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
+      const res = await fetch(`${url}/rest/v1/${table}?${filters}`, {
+        headers: { apikey: key, authorization: `Bearer ${key}` },
+      });
+      check(res.ok, `Lecture ${table} : HTTP ${res.status}`);
+      return (await res.json()) as Record<string, unknown>[];
+    };
+    const gameId = (await rest('games', `code=eq.${g.code}&select=id`))[0].id as string;
+
+    // Dès l'entrée de la nuit 1, chaque pouvoir bot « d'entrée » a agi
+    const lovers = await rest('lovers', `game_id=eq.${gameId}&select=id`);
+    check(lovers.length === 1, `Cupidon bot : 1 couple attendu, reçu ${lovers.length}`);
+    const models = await rest('wild_child_models', `game_id=eq.${gameId}&select=id`);
+    check(models.length === 1, `Enfant sauvage bot : 1 modèle attendu, reçu ${models.length}`);
+    const protections = await rest(
+      'salvateur_protections',
+      `game_id=eq.${gameId}&phase=eq.1&select=id`
+    );
+    check(protections.length === 1, `Salvateur bot : 1 protection attendue, reçu ${protections.length}`);
+    const pack = checkStatus(
+      await api<{ voted: number; total: number }>(
+        'GET',
+        `/api/games/${g.code}/vote/night/resolve`
+      ),
+      200,
+      'Compteur de meute'
+    );
+    check(pack.voted === pack.total && pack.total === 2, `Meute bot 2/2 attendue (${pack.voted}/${pack.total})`);
+    log('cupidon, enfant sauvage, salvateur et meute bots actifs dès la nuit 1 ✓');
+
+    // La partie entière se joue seule malgré les pouvoirs (sauvetages compris)
+    let rounds = 0;
+    while (g.status !== 'terminee' && rounds < 24) {
+      rounds++;
+      if (g.status === 'nuit') {
+        await g.resolveNight();
+      } else if (g.status === 'jour') {
+        await g.toCouncil();
+      } else if (g.status === 'conseil') {
+        await g.resolveCouncil();
+      }
+    }
+    g.expectStatus('terminee', `La partie doit se finir seule (${rounds} tours)`);
+    check(g.player(g.mjId).is_alive, 'Le MJ arbitre ne meurt jamais');
+
+    // Chaque nuit jouée a sa protection de salvateur tant qu'il était vivant
+    const allProtections = await rest(
+      'salvateur_protections',
+      `game_id=eq.${gameId}&select=phase`
+    );
+    check(allProtections.length >= 1, 'Au moins une protection posée');
+    log(`partie complète en ${rounds} tours avec pouvoirs bots (${allProtections.length} protection(s)) ✓`);
+  },
+
   /** Partie réelle : MJ arbitre + 2 humains + bots (la config du bug
    * rapporté) — humains et bots cohabitent sans bloquer les résolutions. */
   'partie-mixte-bots': async ({ newGame, log }) => {

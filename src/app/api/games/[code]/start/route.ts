@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { shuffle } from '@/lib/utils/game';
 import { classicComposition } from '@/lib/game/composition';
-import { castBotWolfVotes } from '@/lib/game/bots';
+import { runBotNightEntryActions } from '@/lib/game/bots';
 import type { GameSettings } from '@/types/game';
 
 // POST /api/games/[code]/start - Start the game and distribute roles
@@ -211,9 +211,9 @@ export async function POST(
       );
     }
 
-    // Les loups bots votent dès la première nuit (compteur juste, résolution
-    // jamais bloquée par un bot — y compris en mode MJ arbitre)
-    await castBotWolfVotes(supabase, game.id, 1, isAutoMode);
+    // Actions des bots à l'entrée de la nuit 1 : cupidon, enfant sauvage,
+    // salvateur, vote de meute (voir lib/game/bots.ts pour la séquence)
+    await runBotNightEntryActions(supabase, game.id, 1, isAutoMode);
 
     // Count wolves in the distribution
     const wolfCount = rolesArray.filter(id => roleIdMap.get(id)?.team === 'loups').length;

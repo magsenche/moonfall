@@ -40,7 +40,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 (`src/lib/game/resolution.test.ts`) se lancent avec `npm run test:unit`
 (runner natif `node --test`, aucune dépendance).
 
-## Couverture actuelle (29 scénarios)
+## Couverture actuelle (30 scénarios)
 
 | Scénario | Ce qui est validé |
 |----------|-------------------|
@@ -71,6 +71,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 | `avatar` | Choix d'avatar au lobby : emoji de la grille persisté dans `players.avatar_url`, emoji hors grille refusé (400), changement verrouillé une fois la partie lancée, l'avatar choisi survit au démarrage |
 | `proces` | Procès d'avant-partie : accusation secrète au lobby (`votes` phase 0), upsert sans doublon, auto-accusation refusée, MJ arbitre exclu en mode manuel mais accusateur en Auto-Garou, tribunal fermé après le start, verdict « Délit de faciès » au récap (coupable 🐺 / innocenté 🐑), sans polluer « Flair du village » |
 | `partie-mj-bots` | Partie réelle MJ arbitre + 7 bots : les loups bots votent **dès l'entrée de chaque nuit** (compteur plein sans humain), résolutions nuit/conseil sans forcer, MJ jamais ciblé, partie jouée jusqu'à la victoire sans blocage |
+| `bots-pouvoirs` | Pouvoirs tenus par des bots (MJ arbitre + 8 bots : 2🐺, salvateur, cupidon, enfant sauvage, sorcière, chasseur) : couple, modèle et protection créés **dès l'entrée de la nuit 1**, meute 2/2, partie complète sans blocage malgré sauvetages et tirs |
 | `partie-mixte-bots` | MJ arbitre + 2 humains + 5 bots (config du bug rapporté) : bots déjà votés à l'entrée, résolution bloquée tant qu'un loup humain n'a pas voté (400 canForce), conseil mixte résolu |
 | `temps-ecoule` | Expiration du timer (ce que déclenchent les clients Auto-Garou) : nuit expirée sans vote → resolve forcé, jour sans victime ; jour expiré → conseil ; conseil expiré à un seul vote → élimination et nuit suivante (phase incrémentée) |
 
