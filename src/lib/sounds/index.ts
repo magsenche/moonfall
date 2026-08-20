@@ -128,6 +128,15 @@ function endCue(): void {
   ]);
 }
 
+/** 🎉 Un joueur rejoint le lobby : petit pop joyeux (façon Kahoot). */
+export function playJoinCue(): void {
+  playNotes([
+    { freq: 660, at: 0, duration: 0.12, type: 'triangle', gain: 0.1 },
+    { freq: 880, at: 0.09, duration: 0.18, type: 'triangle', gain: 0.12 },
+  ]);
+  vibrate(60);
+}
+
 /** 💀 Tu es mort : glas grave. */
 export function playDeathCue(): void {
   playNotes([

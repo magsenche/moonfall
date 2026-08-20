@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MotionButton, Input, MotionCard, CardHeader, CardTitle, CardDescription, CardContent, MoonLogo, NightSky } from '@/components/ui';
 import { OnboardingTooltips } from '@/components/game';
 import { cn } from '@/lib/utils';
-import { PlusCircle, LogIn, FlaskConical, BookOpen, Layers, GraduationCap, Smartphone, Gamepad2 } from 'lucide-react';
+import { PlusCircle, LogIn, FlaskConical, BookOpen, Layers, GraduationCap, Smartphone, Gamepad2, Dices } from 'lucide-react';
+import { randomPseudo } from '@/config/pseudos';
 import { 
   savePlayerSession, 
   getAllSessions, 
@@ -35,9 +36,17 @@ export default function HomePage() {
   useEffect(() => {
     // Migrate old format if needed
     migrateOldSession();
-    
+
     // Load all stored sessions
     setSessions(getAllSessions());
+
+    // Lien de join (QR du lobby) : ?join=CODE préremplit le code,
+    // il ne reste qu'à choisir un pseudo
+    const joinCode = new URLSearchParams(window.location.search).get('join');
+    if (joinCode) {
+      setGameCode(joinCode.toUpperCase().slice(0, 6));
+      setMode('join');
+    }
   }, []);
 
   const handleCreateGame = async (e: React.FormEvent) => {
@@ -392,10 +401,17 @@ export default function HomePage() {
                   required
                   maxLength={20}
                 />
-                
+                <button
+                  type="button"
+                  onClick={() => setPseudo(randomPseudo(pseudo))}
+                  className="flex items-center gap-1.5 text-xs text-moon-100/60 hover:text-moon-300 transition-colors"
+                >
+                  <Dices className="w-4 h-4" /> Pseudo aléatoire
+                </button>
+
                 <AnimatePresence>
                   {error && (
-                    <motion.p 
+                    <motion.p
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
@@ -410,16 +426,16 @@ export default function HomePage() {
                 </AnimatePresence>
 
                 <div className="flex gap-3 pt-2">
-                  <MotionButton 
-                    type="button" 
-                    variant="ghost" 
+                  <MotionButton
+                    type="button"
+                    variant="ghost"
                     onClick={() => { setMode('home'); setError(null); }}
                     className="flex-1"
                   >
                     ← Retour
                   </MotionButton>
-                  <MotionButton 
-                    type="submit" 
+                  <MotionButton
+                    type="submit"
                     variant="sticker"
                     className="flex-1 bg-moon-500 border-moon-100 text-night-950"
                     isLoading={isLoading}
@@ -468,10 +484,17 @@ export default function HomePage() {
                   required
                   maxLength={20}
                 />
-                
+                <button
+                  type="button"
+                  onClick={() => setPseudo(randomPseudo(pseudo))}
+                  className="flex items-center gap-1.5 text-xs text-moon-100/60 hover:text-moon-300 transition-colors"
+                >
+                  <Dices className="w-4 h-4" /> Pseudo aléatoire
+                </button>
+
                 <AnimatePresence>
                   {error && (
-                    <motion.p 
+                    <motion.p
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
@@ -486,16 +509,16 @@ export default function HomePage() {
                 </AnimatePresence>
 
                 <div className="flex gap-3 pt-2">
-                  <MotionButton 
-                    type="button" 
-                    variant="ghost" 
+                  <MotionButton
+                    type="button"
+                    variant="ghost"
                     onClick={() => { setMode('home'); setError(null); }}
                     className="flex-1"
                   >
                     ← Retour
                   </MotionButton>
-                  <MotionButton 
-                    type="submit" 
+                  <MotionButton
+                    type="submit"
                     variant="sticker"
                     className="flex-1 bg-moon-500 border-moon-100 text-night-950"
                     isLoading={isLoading}
