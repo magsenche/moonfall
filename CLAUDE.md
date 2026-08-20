@@ -34,9 +34,14 @@ Storage, Edge Functions) · Web Push VAPID · Sentry · Vercel (CD sur main) · 
 - `npm run scenarios` — runner de scénarios API (logique de jeu de bout en bout,
   dev server requis ; voir `docs/SCENARIOS.md`) · `npm run test:unit` — tests
   unitaires des fonctions pures (`node --test`, zéro dépendance).
+- `npm run tutorial:shots` — régénère les captures du tutoriel
+  (`public/tutorial/`, dev server requis). **Obligatoire après tout changement
+  visuel** (accueil, lobby, écrans de phase, galerie de rôles) : la page
+  `/tutorial` montre ces captures, elles doivent suivre le design.
 - Validation avant push : tsc + build + lint, scénarios verts pour tout
-  changement de logique de jeu, et parcours visuel du mode Démo (partie avec
-  bots, `/api/games/[code]/bots`) pour les changements d'UI.
+  changement de logique de jeu, et pour les changements d'UI : parcours visuel
+  du mode Démo (partie avec bots, `/api/games/[code]/bots`) + captures du
+  tutoriel régénérées.
 - Env local : `cp .env.local.example .env.local` (les clés `NEXT_PUBLIC_SUPABASE_*`
   sont publiques by design ; `SUPABASE_SERVICE_ROLE_KEY` ne quitte jamais
   Vercel/local).
