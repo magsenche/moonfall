@@ -40,7 +40,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 (`src/lib/game/resolution.test.ts`) se lancent avec `npm run test:unit`
 (runner natif `node --test`, aucune dépendance).
 
-## Couverture actuelle (24 scénarios)
+## Couverture actuelle (25 scénarios)
 
 | Scénario | Ce qui est validé |
 |----------|-------------------|
@@ -68,6 +68,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 | `missions-collective` | Tout le village crédité à la validation MJ (loup ×1, villageois ×1.5), échec sans points, création réservée au MJ |
 | `missions-encheres` | Min/max/surenchère, fermeture MJ, enchère refusée après fermeture, vainqueur crédité, échec sans points |
 | `boutique` | Solde et déduction, `max_per_player`, achat interdit aux morts, vision loup (usage unique), vote double et vote anonyme au conseil, immunité qui annule l'élimination |
+| `avatar` | Choix d'avatar au lobby : emoji de la grille persisté dans `players.avatar_url`, emoji hors grille refusé (400), changement verrouillé une fois la partie lancée, l'avatar choisi survit au démarrage |
 
 Le financement des joueurs dans les scénarios boutique passe par le helper
 `fundPlayer` (missions compétitives difficulté 5 validées par le MJ, +10 pts de

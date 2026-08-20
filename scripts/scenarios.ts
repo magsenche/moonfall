@@ -138,6 +138,7 @@ interface PlayerRow {
   is_alive: boolean;
   is_mj: boolean;
   role_id: string | null;
+  avatar_url: string | null;
 }
 
 interface GameRow {
@@ -606,6 +607,8 @@ interface ScenarioContext {
     extraSettings?: Record<string, unknown>,
     botCount?: number
   ) => Promise<GameClient>;
+  /** Partie créée mais non démarrée (tests de lobby). */
+  newLobby: (name: string, nPlayers: number) => Promise<GameClient>;
   log: (message: string) => void;
 }
 
@@ -1171,6 +1174,38 @@ const scenarios: Record<string, Scenario> = {
     const night = await g.nightKill(nextPrey.id);
     check(night.victim !== undefined, 'La meute élargie doit dévorer');
     log('l\'enfant transformé chasse avec la meute ✓');
+  },
+
+  /** Avatar au choix : grille d'emojis au lobby, verrouillé en partie. */
+  avatar: async ({ newLobby, log }) => {
+    const g = await newLobby('avatar', 4);
+    const player = g.players().find((p) => !p.is_mj);
+    check(player, 'Un joueur non-MJ est requis');
+
+    checkStatus(
+      await api('POST', `/api/games/${g.code}/avatar`, { playerId: player.id, avatar: '🥒' }),
+      200,
+      'Choix d\'avatar'
+    );
+    await g.refresh();
+    check(g.player(player.id).avatar_url === '🥒', 'L\'avatar choisi doit être persisté');
+
+    const offGrid = await api('POST', `/api/games/${g.code}/avatar`, {
+      playerId: player.id,
+      avatar: '💩',
+    });
+    check(offGrid.status === 400, `Avatar hors grille : 400 attendu, reçu ${offGrid.status}`);
+    log('cornichon adopté, avatar hors grille refusé ✓');
+
+    await g.configureRoles({ loup_garou: 1, villageois: 3 });
+    await g.start();
+    const late = await api('POST', `/api/games/${g.code}/avatar`, {
+      playerId: player.id,
+      avatar: '🐔',
+    });
+    check(late.status === 400, `Changement en partie : 400 attendu, reçu ${late.status}`);
+    check(g.player(player.id).avatar_url === '🥒', 'L\'avatar survit au démarrage');
+    log('verrouillé une fois la partie lancée ✓');
   },
 
   /** Prêt collectif : l'unanimité des humains vivants écourte la phase. */
@@ -1901,6 +1936,13 @@ async function main(): Promise<void> {
         if (botCount) await g.addBots(botCount);
         await g.configureRoles(distribution, extraSettings);
         await g.start();
+        return g;
+      },
+      newLobby: async (gameName, nPlayers) => {
+        const g = new GameClient(rolesByName);
+        await g.create(gameName, nPlayers);
+        games.push(g);
+        await g.refresh();
         return g;
       },
       log: (message) => console.log(`   · ${message}`),

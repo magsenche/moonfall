@@ -28,6 +28,38 @@ export interface PlayerCustomization {
   // customImage?: string;
 }
 
+// Avatars choisissables au lobby (façon Kahoot : le débile est un feature)
+export const AVATAR_CHOICES = [
+  '🐺', '🐔', '🐷', '🐸', '🐙', '🦄', '🐢', '🦝',
+  '🐧', '🦉', '🐴', '🐐', '🥖', '🥐', '🧀', '🥒',
+  '🍕', '🤡', '👻', '🤖', '👽', '🎃', '🧌', '🕵️',
+] as const;
+
+export function isAvatarChoice(value: string): boolean {
+  return (AVATAR_CHOICES as readonly string[]).includes(value);
+}
+
+// Registre des avatars personnalisés (players.avatar_url), alimenté par le
+// GameContext à chaque mise à jour des joueurs. Fallback : avatar déterministe.
+const customAvatars = new Map<string, string>();
+
+export function registerCustomAvatars(
+  players: { id: string; avatar_url?: string | null }[]
+): void {
+  for (const player of players) {
+    if (player.avatar_url) {
+      customAvatars.set(player.id, player.avatar_url);
+    } else {
+      customAvatars.delete(player.id);
+    }
+  }
+}
+
+/** Avatar affiché pour un joueur : personnalisé si choisi, sinon déterministe. */
+export function getAvatarFor(playerId: string): string {
+  return customAvatars.get(playerId) ?? getDefaultAvatar(playerId);
+}
+
 // Get a consistent avatar based on player ID (for non-customized players)
 export function getDefaultAvatar(playerId: string): string {
   // Use a hash of the player ID to get a consistent emoji

@@ -12,6 +12,7 @@ import { QRCodeSVG } from 'qrcode.react';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { playJoinCue } from '@/lib/sounds';
+import { AvatarPicker } from './AvatarPicker';
 import { MotionCard, CardContent, CardHeader, CardTitle, MotionButton, Button } from '@/components/ui';
 import { PlayerAvatar, RulesButton, PhaseBackground, OnboardingTooltips } from '@/components/game';
 import { NotificationPrompt } from '@/components/game/notification-prompt';
@@ -297,6 +298,9 @@ export function LobbyView() {
             )}
           </CardContent>
         </MotionCard>
+
+        {/* Choix d'avatar (chacun le sien) */}
+        {currentPlayerId && <AvatarPicker gameCode={game.code} playerId={currentPlayerId} />}
 
         {/* Presets (MJ only) - Y2K Style */}
         {isMJ && (

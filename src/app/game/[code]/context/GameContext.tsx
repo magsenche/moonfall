@@ -18,6 +18,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { getRoleConfig, type RoleConfig } from '@/config/roles';
+import { registerCustomAvatars } from '@/config/players';
 import { useNotifications } from '@/lib/notifications';
 import { useGameTips } from '@/components/game';
 import {
@@ -284,6 +285,11 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
   const alivePlayers = useMemo(() => players.filter((p) => p.is_alive !== false), [players]);
   const isMJ = currentPlayerId === mj?.id;
   const isAutoMode = (game.settings as { autoMode?: boolean })?.autoMode ?? false;
+
+  // Avatars personnalisés (players.avatar_url) → registre global d'affichage
+  useEffect(() => {
+    registerCustomAvatars(game.players);
+  }, [game.players]);
   const gameSettingsJson = game.settings as { missionsEnabled?: boolean; shopEnabled?: boolean } | null;
   const missionsEnabled = gameSettingsJson?.missionsEnabled !== false;
   const shopEnabled = gameSettingsJson?.shopEnabled !== false;
