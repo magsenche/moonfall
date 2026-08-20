@@ -59,7 +59,7 @@ export function VotingPanel({
     <MotionCard 
       variant="sticker" 
       rotation={0.5}
-      className="mb-6 border-amber-500/50"
+      className="border-amber-500/50"
     >
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-amber-400">

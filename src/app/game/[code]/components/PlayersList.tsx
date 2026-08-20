@@ -29,6 +29,16 @@ interface PlayersListProps {
   viewerIsDead?: boolean;
 }
 
+/** Rotation sticker stable par joueur (le Math.random() en render faisait
+ * frétiller la grille à chaque tick temps réel). */
+function stickerRotation(playerId: string): number {
+  let hash = 0;
+  for (let i = 0; i < playerId.length; i++) {
+    hash = (hash * 31 + playerId.charCodeAt(i)) | 0;
+  }
+  return ((hash % 9) - 4) / 2; // -2° à +2°
+}
+
 export function PlayersList({
   players,
   roles,
@@ -95,8 +105,8 @@ export function PlayersList({
                       ? 'bg-blood-700/30 border-blood-500/50'
                       : 'bg-night-800/80 border-white/30'
                 )}
-                style={{ 
-                  transform: `rotate(${(Math.random() - 0.5) * 4}deg)` 
+                style={{
+                  transform: `rotate(${stickerRotation(player.id)}deg)`
                 }}
               >
                 {/* Avatar - Sticker style */}

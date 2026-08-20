@@ -8,11 +8,10 @@
 
 'use client';
 
-import { motion } from 'framer-motion';
-import { MotionCard, CardContent } from '@/components/ui';
 import { useGame } from '../context';
 
 import {
+  PhaseHint,
   PlayerRoleCard,
   WolfPack,
   WolfNightVote,
@@ -49,56 +48,32 @@ export function NightPhaseLayout() {
 
   return (
     <div className="space-y-4">
-      {/* Night atmosphere instruction */}
-      <MotionCard
-        variant="sticker"
-        rotation={-0.5}
-        className="border-village-400/50"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <CardContent className="pt-5 pb-4">
-          <div className="text-center">
-            <motion.p 
-              className="text-4xl mb-2"
-              animate={{ opacity: [1, 0.5, 1], scale: [1, 1.1, 1] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            >
-              🌙
-            </motion.p>
-            <h3 className="font-black text-white text-lg mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.3)' }}>
-              La nuit tombe sur le village
-            </h3>
-            <p className="text-moon-100/70 text-sm">
-              {isWolf
-                ? '🐺 Concertez-vous avec votre meute pour choisir une victime.'
-                : isSeer
-                  ? "👁️ Vous pouvez sonder l'âme d'un joueur."
-                  : isWitch
-                    ? '🧪 Utilisez vos potions avec sagesse.'
-                    : isSalvateur
-                      ? '🛡️ Protégez un villageois des loups.'
-                      : isTrublion
-                        ? '🔀 Semez le chaos en échangeant des rôles !'
-                        : isWildChild
-                          ? '🧒 Votre modèle est-il toujours en vie ?'
-                          : isCupidon
-                            ? '💘 Choisissez deux joueurs qui tomberont amoureux !'
-                            : isLittleGirl
-                              ? '👀 Vous espionnez discrètement les loups...'
-                              : '🔮 La nuit porte conseil : confie ton intuition.'}
-            </p>
-          </div>
-        </CardContent>
-      </MotionCard>
+      {/* Consigne de la nuit : une ligne, l'action reste au-dessus du fold */}
+      <PhaseHint emoji="🌙" className="border-village-400/50">
+        {isWolf
+          ? 'Concertez-vous avec votre meute pour choisir une victime.'
+          : isSeer
+            ? "Vous pouvez sonder l'âme d'un joueur."
+            : isWitch
+              ? 'Utilisez vos potions avec sagesse.'
+              : isSalvateur
+                ? 'Protégez un villageois des loups.'
+                : isTrublion
+                  ? 'Semez le chaos en échangeant des rôles !'
+                  : isWildChild
+                    ? 'Votre modèle est-il toujours en vie ?'
+                    : isCupidon
+                      ? 'Choisissez deux joueurs qui tomberont amoureux !'
+                      : isLittleGirl
+                        ? 'Vous espionnez discrètement les loups...'
+                        : 'La nuit porte conseil : confie ton intuition.'}
+      </PhaseHint>
 
-      {/* Player's Role Card */}
+      {/* Rôle : grande carte tant qu'il n'est pas révélé (c'est alors LA chose
+          à faire), pilule compacte ensuite */}
       {currentRole && roleConfig && <PlayerRoleCard role={currentRole} roleConfig={roleConfig} />}
 
-      {/* Wolf teammates */}
-      {isWolf && <WolfPack wolves={wolves} />}
-
-      {/* Wolf Night Vote */}
+      {/* Wolf Night Vote - l'action de la meute, en premier */}
       {isWolf && isAlive && (
         <WolfNightVote
           alivePlayers={alivePlayers}
@@ -112,6 +87,9 @@ export function NightPhaseLayout() {
           onSubmitVote={nightActions.submitNightVote}
         />
       )}
+
+      {/* Wolf teammates */}
+      {isWolf && <WolfPack wolves={wolves} />}
 
       {/* Wolf Chat - Petite Fille et fantômes en lecture seule */}
       {(isWolf || isLittleGirl || !isAlive) && (

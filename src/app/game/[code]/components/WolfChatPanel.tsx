@@ -36,10 +36,7 @@ export function WolfChatPanel({
     <MotionCard 
       variant="sticker" 
       rotation={readOnly ? 0.5 : -0.5}
-      className={cn(
-        "mb-6",
-        readOnly ? "border-rose-500/50" : "border-blood-500/50"
-      )}
+      className={readOnly ? "border-rose-500/50" : "border-blood-500/50"}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
@@ -72,7 +69,7 @@ export function WolfChatPanel({
       <CardContent>
         {/* Messages */}
         <div className={cn(
-          "h-48 overflow-y-auto mb-4 space-y-2 p-3 rounded-xl",
+          "min-h-24 max-h-48 overflow-y-auto mb-4 space-y-2 p-3 rounded-xl",
           "bg-night-900/80 border border-night-700/50"
         )}>
           {messages.length === 0 ? (

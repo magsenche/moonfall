@@ -140,7 +140,7 @@ export function WitchNightPanel({
   );
 
   return (
-    <Card className="mb-6 border border-green-500/20">
+    <Card className="border border-green-500/20">
       <CardHeader>
         <CardTitle className="text-green-400 text-lg">🧪 Potions de la Sorcière</CardTitle>
       </CardHeader>

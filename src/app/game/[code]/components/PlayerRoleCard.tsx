@@ -11,7 +11,7 @@
 
 import { MoonLogo } from '@/components/ui';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleDetailModal } from '@/components/game';
 import { cn } from '@/lib/utils';
@@ -34,16 +34,33 @@ interface PlayerRoleCardProps {
   roleConfig: RoleConfig;
 }
 
+const emptySubscribe = () => () => {};
+
 export function PlayerRoleCard({ role, roleConfig }: PlayerRoleCardProps) {
   const { game } = useGame();
   const [showDetail, setShowDetail] = useState(false);
-  
+
   // Persist flip state across phase changes
   const storageKey = `role-revealed-${game?.id}-${role.id}`;
   const [isFlipped, setIsFlipped] = useState(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem(storageKey) === 'true';
   });
+
+  // Une fois le rôle déjà révélé (montages suivants : changement de phase,
+  // refresh), la grande carte laisse place à une pilule compacte — l'action
+  // de la phase reste au-dessus du fold. La grande carte ne s'affiche en
+  // entier que pour le moment de la révélation. Lecture via
+  // useSyncExternalStore : le serveur rend la grande carte, le client se
+  // corrige après hydratation sans mismatch. L'override épingle le choix de
+  // l'utilisateur pour ce montage (révélation en cours ou « Réduire »).
+  const storedRevealed = useSyncExternalStore(
+    emptySubscribe,
+    () => localStorage.getItem(storageKey) === 'true',
+    () => false
+  );
+  const [collapsedOverride, setCollapsedOverride] = useState<boolean | null>(null);
+  const collapsed = collapsedOverride ?? storedRevealed;
 
   // Save flip state to localStorage whenever it changes
   useEffect(() => {
@@ -54,8 +71,10 @@ export function PlayerRoleCard({ role, roleConfig }: PlayerRoleCardProps) {
 
   const handleClick = () => {
     if (!isFlipped) {
-      // First click: flip to reveal
+      // First click: flip to reveal — la grande carte reste affichée pour
+      // ce montage, même une fois l'état persisté
       setIsFlipped(true);
+      setCollapsedOverride(false);
     } else {
       // Already revealed: show detail modal
       setShowDetail(true);
@@ -88,10 +107,56 @@ export function PlayerRoleCard({ role, roleConfig }: PlayerRoleCardProps) {
 
   const colors = teamColors[role.team as keyof typeof teamColors] || teamColors.village;
 
+  // ── Variante compacte : rôle déjà révélé → pilule, tap = fiche détaillée ──
+  if (collapsed) {
+    return (
+      <>
+        <motion.button
+          type="button"
+          onClick={() => setShowDetail(true)}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileTap={{ scale: 0.97 }}
+          className={cn(
+            'w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl',
+            'border-2 bg-gradient-to-r',
+            colors.border,
+            colors.bg,
+            'shadow-[4px_4px_0px_0px_rgba(0,0,0,0.4)]'
+          )}
+        >
+          <span
+            className={cn(
+              'w-10 h-10 rounded-xl flex items-center justify-center text-2xl shrink-0',
+              'border border-white/30 bg-black/20'
+            )}
+          >
+            {roleConfig.assets.icon}
+          </span>
+          <span className="flex-1 text-left">
+            <span className={cn('block font-black text-base leading-tight', colors.accent)}>
+              {roleConfig.displayName}
+            </span>
+            <span className="block text-[11px] text-moon-100/50">
+              {role.team === 'loups' ? 'Loups-Garous' : role.team === 'village' ? 'Village' : 'Solo'} · détails
+            </span>
+          </span>
+          <span className="text-moon-100/40 text-lg">›</span>
+        </motion.button>
+
+        <RoleDetailModal
+          roleName={role.name}
+          isOpen={showDetail}
+          onClose={() => setShowDetail(false)}
+        />
+      </>
+    );
+  }
+
   return (
     <>
-      <div 
-        className="mb-6 perspective-1000"
+      <div
+        className="perspective-1000"
         style={{ perspective: '1000px' }}
       >
         <motion.div
@@ -213,7 +278,7 @@ export function PlayerRoleCard({ role, roleConfig }: PlayerRoleCardProps) {
               </motion.div>
               
               {/* Tap for more hint */}
-              <motion.p 
+              <motion.p
                 className="mt-4 text-xs text-moon-100/40"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -221,6 +286,25 @@ export function PlayerRoleCard({ role, roleConfig }: PlayerRoleCardProps) {
               >
                 Appuie pour plus de détails
               </motion.p>
+
+              {/* Réduire : rend l'écran à l'action de la phase */}
+              <motion.button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCollapsedOverride(true);
+                }}
+                className={cn(
+                  'mt-3 px-4 py-1.5 rounded-full text-xs font-bold',
+                  'bg-black/30 border border-white/20 text-moon-100/70'
+                )}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.2 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                ▲ Réduire la carte
+              </motion.button>
             </div>
           </motion.div>
         </motion.div>

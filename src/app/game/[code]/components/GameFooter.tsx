@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MotionButton } from '@/components/ui';
 import { getShop, type ShopItem, type ShopPlayerData } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { Coins, Zap, ShoppingBag } from 'lucide-react';
+import { Coins, Zap, ShoppingBag, Users } from 'lucide-react';
 import { useGame } from '../context';
 
 import { MJControls } from './MJControls';
@@ -43,6 +43,20 @@ export function GameFooter() {
   } = useGame();
 
   const [showWallet, setShowWallet] = useState(false);
+
+  // Liste des joueurs repliable : dépliée le jour (c'est l'info du moment),
+  // repliée la nuit et au conseil où la grille de cibles du panneau d'action
+  // affiche déjà les mêmes joueurs. Pas de setState dans un effet : l'override
+  // du joueur n'est valable que pour la phase où il a tapé.
+  const [playersOverride, setPlayersOverride] = useState<{ phase: string; open: boolean } | null>(
+    null
+  );
+  const playersOpenByDefault = gameStatus === 'jour';
+  const showPlayers =
+    playersOverride?.phase === gameStatus ? playersOverride.open : playersOpenByDefault;
+  const alivePlayersCount = game.players.filter(
+    (p) => p.is_alive !== false && (isAutoMode || !p.is_mj)
+  ).length;
 
   // Prefetch shop data for quick access
   const [shopItems, setShopItems] = useState<ShopItem[]>([]);
@@ -177,17 +191,51 @@ export function GameFooter() {
         </motion.div>
       )}
 
-      {/* Players List */}
-      <PlayersList
-        players={game.players}
-        roles={roles}
-        currentPlayerId={currentPlayerId}
-        isMJ={isMJ && !isAutoMode}
-        isWolf={isWolf}
-        wolves={wolves}
-        isAutoMode={isAutoMode}
-        viewerIsDead={!isAlive}
-      />
+      {/* Players List - repliable, même pattern que le wallet ci-dessus */}
+      <div>
+        <MotionButton
+          variant="sticker"
+          size="sm"
+          onClick={() => setPlayersOverride({ phase: gameStatus, open: !showPlayers })}
+          className={cn('w-full mb-2', showPlayers ? 'bg-night-700' : 'bg-night-800')}
+        >
+          <span className="flex items-center justify-center gap-2">
+            <Users className="w-4 h-4 text-village-300" />
+            <span className="font-bold">Joueurs</span>
+            <span
+              className={cn(
+                'px-2 py-0.5 rounded-full text-xs font-bold',
+                'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+              )}
+            >
+              {alivePlayersCount} en vie
+            </span>
+            <span className="text-moon-100/50">{showPlayers ? '▲' : '▼'}</span>
+          </span>
+        </MotionButton>
+
+        <AnimatePresence>
+          {showPlayers && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <PlayersList
+                players={game.players}
+                roles={roles}
+                currentPlayerId={currentPlayerId}
+                isMJ={isMJ && !isAutoMode}
+                isWolf={isWolf}
+                wolves={wolves}
+                isAutoMode={isAutoMode}
+                viewerIsDead={!isAlive}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* MJ Overview Panel - Hidden in Auto-Garou mode */}
       {isMJ && !isAutoMode && (

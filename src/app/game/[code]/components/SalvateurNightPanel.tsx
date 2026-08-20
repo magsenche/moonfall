@@ -118,7 +118,7 @@ export function SalvateurNightPanel({
     <MotionCard
       variant="sticker"
       rotation={-1}
-      className="mb-6 border-cyan-500/50"
+      className="border-cyan-500/50"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
