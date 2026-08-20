@@ -1208,6 +1208,102 @@ const scenarios: Record<string, Scenario> = {
     log('verrouillé une fois la partie lancée ✓');
   },
 
+  /** Procès d'avant-partie : accusation secrète au lobby, verdict au récap. */
+  proces: async ({ newLobby, log }) => {
+    const g = await newLobby('proces', 6);
+    const humans = g.players().filter((p) => !p.is_mj);
+    const mj = g.players().find((p) => p.is_mj);
+    check(mj, 'Un MJ est requis');
+    const [p1, p2, p3, p4] = humans;
+
+    const accuse = (playerId: string, targetId: string) =>
+      api('POST', `/api/games/${g.code}/proces`, { playerId, targetId });
+    const readProces = (playerId?: string) =>
+      api<{ count: number; targetId: string | null }>(
+        'GET',
+        `/api/games/${g.code}/proces${playerId ? `?playerId=${playerId}` : ''}`
+      );
+
+    // En mode manuel (MJ arbitre), le MJ n'accuse pas et n'est pas accusable.
+    checkStatus(
+      await api('PATCH', `/api/games/${g.code}/settings`, {
+        playerId: mj.id,
+        settings: { autoMode: false },
+      }),
+      200,
+      'Passage en mode manuel'
+    );
+    const mjAccuse = await accuse(mj.id, p2.id);
+    check(mjAccuse.status === 403, `MJ arbitre accusateur : 403 attendu, reçu ${mjAccuse.status}`);
+    const mjTarget = await accuse(p1.id, mj.id);
+    check(mjTarget.status === 400, `MJ arbitre accusé : 400 attendu, reçu ${mjTarget.status}`);
+    log('MJ arbitre hors du procès en mode manuel ✓');
+
+    // Accusation, restauration, secret (le GET ne rend que le compteur + soi).
+    checkStatus(await accuse(p1.id, p2.id), 200, 'Première accusation');
+    const afterFirst = checkStatus(await readProces(p1.id), 200, 'Lecture du procès');
+    check(afterFirst.count === 1, `1 accusation attendue, reçu ${afterFirst.count}`);
+    check(afterFirst.targetId === p2.id, 'Sa propre accusation doit être restaurée');
+    const selfAccuse = await accuse(p1.id, p1.id);
+    check(selfAccuse.status === 400, `Auto-accusation : 400 attendu, reçu ${selfAccuse.status}`);
+    log('accusation secrète posée, auto-accusation refusée ✓');
+
+    // Changement d'avis (upsert) + accusations groupées sur p3.
+    checkStatus(await accuse(p1.id, p3.id), 200, 'Changement d\'accusation');
+    const afterChange = checkStatus(await readProces(p1.id), 200, 'Relecture du procès');
+    check(afterChange.count === 1, `Le changement ne crée pas de doublon (reçu ${afterChange.count})`);
+    checkStatus(await accuse(p2.id, p3.id), 200, 'Accusation de p2');
+    checkStatus(await accuse(p4.id, p3.id), 200, 'Accusation de p4');
+
+    // Retour en Auto-Garou (via configureRoles) : le MJ joue, donc il accuse.
+    await g.configureRoles({ loup_garou: 1, villageois: 5 });
+    checkStatus(await accuse(mj.id, p3.id), 200, 'Accusation du MJ en Auto-Garou');
+    const total = checkStatus(await readProces(), 200, 'Compteur du procès');
+    check(total.count === 4, `4 accusations attendues, reçu ${total.count}`);
+
+    // La partie démarre : le tribunal est fermé.
+    await g.start();
+    const late = await accuse(p1.id, p2.id);
+    check(late.status === 400, `Accusation en partie : 400 attendu, reçu ${late.status}`);
+    log('tribunal fermé une fois la partie lancée ✓');
+
+    // Fin de partie éclair : une dévoration puis le loup au bûcher.
+    const prey = g.plainVillagers().find((p) => p.id !== p3.id) ?? g.plainVillagers()[0];
+    check(prey, 'Une proie est requise');
+    await g.nightKill(prey.id);
+    const wolf = g.wolves()[0];
+    const council = await g.councilKill(wolf.id);
+    check(council.gameOver === true, 'La partie doit se terminer (dernier loup au bûcher)');
+
+    // Verdict au récap : p3 est la tête de traître, coupable ou innocenté
+    // selon son rôle réellement tiré ; le procès ne pollue pas le Flair.
+    const recap = checkStatus(
+      await api<{ titles: { label: string; value: string }[] }>(
+        'GET',
+        `/api/games/${g.code}/recap`
+      ),
+      200,
+      'Lecture du récap'
+    );
+    const verdict = recap.titles.find((t) => t.label === 'Délit de faciès');
+    check(verdict, 'Le titre « Délit de faciès » doit exister');
+    check(
+      verdict.value.includes(p3.pseudo),
+      `Le verdict doit viser ${p3.pseudo} (reçu : ${verdict.value})`
+    );
+    const expectedVerdict =
+      g.player(p3.id).role?.team === 'loups' ? '🐺 coupable' : '🐑 innocenté';
+    check(
+      verdict.value.includes(expectedVerdict) && verdict.value.includes('4 accusations'),
+      `Verdict attendu « ${expectedVerdict} » avec 4 accusations (reçu : ${verdict.value})`
+    );
+    check(
+      !recap.titles.some((t) => t.label === 'Flair du village'),
+      'Le procès (phase 0) ne doit pas nourrir le Flair du village'
+    );
+    log(`verdict rendu : ${verdict.value} ✓`);
+  },
+
   /** Prêt collectif : l'unanimité des humains vivants écourte la phase. */
   'pret-collectif': async ({ newGame, log }) => {
     // 6 humains + 2 bots : les bots ne comptent jamais dans l'unanimité.

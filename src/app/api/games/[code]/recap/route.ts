@@ -75,14 +75,23 @@ export async function GET(
     data: (e.data ?? null) as Record<string, unknown> | null,
   }));
 
-  // Intuitions de nuit (vote_type 'pouvoir') pour le titre « Flair du village »
-  const { data: intuitionRows } = await supabase
+  // Votes 'pouvoir' : phase 0 = procès d'avant-partie (« Délit de faciès »),
+  // phases >= 1 = intuitions de nuit (« Flair du village »)
+  const { data: pouvoirRows } = await supabase
     .from('votes')
-    .select('voter_id, target_id')
+    .select('voter_id, target_id, phase')
     .eq('game_id', game.id)
     .eq('vote_type', 'pouvoir');
 
-  const recap = buildRecap(events, players, (intuitionRows ?? []) as RecapIntuition[]);
+  const intuitionRows: RecapIntuition[] = [];
+  const procesRows: RecapIntuition[] = [];
+  for (const row of pouvoirRows ?? []) {
+    const vote = { voter_id: row.voter_id, target_id: row.target_id };
+    if ((row.phase ?? 1) === 0) procesRows.push(vote);
+    else intuitionRows.push(vote);
+  }
+
+  const recap = buildRecap(events, players, intuitionRows, procesRows);
 
   return NextResponse.json({
     winner: game.winner,

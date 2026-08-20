@@ -108,6 +108,35 @@ describe('buildRecap', () => {
     assert.ok(!titles.some((t) => t.label === 'Flair du village'));
   });
 
+  it('titre Délit de faciès : le plus accusé au procès, coupable ou innocenté', () => {
+    const { titles } = buildRecap([], players, [], [
+      { voter_id: 'p2', target_id: 'p1' },
+      { voter_id: 'p3', target_id: 'p1' }, // Aline (loup) : 2 accusations
+      { voter_id: 'p4', target_id: 'p2' },
+    ]);
+    const proces = titles.find((t) => t.label === 'Délit de faciès');
+    assert.ok(proces, 'le titre Délit de faciès doit exister');
+    assert.match(proces.value, /Aline 🐺 coupable.*2 accusations au procès/);
+  });
+
+  it('Délit de faciès : innocenté quand le plus accusé n\'est pas loup', () => {
+    const { titles } = buildRecap([], players, [], [
+      { voter_id: 'p1', target_id: 'p2' },
+    ]);
+    const proces = titles.find((t) => t.label === 'Délit de faciès');
+    assert.ok(proces);
+    assert.match(proces.value, /Basile 🐑 innocenté/);
+  });
+
+  it('pas de Délit de faciès sans procès, et les votes du procès ne polluent pas le Flair', () => {
+    const noProces = buildRecap([], players, [], []);
+    assert.ok(!noProces.titles.some((t) => t.label === 'Délit de faciès'));
+
+    // Un procès qui vise un loup ne crée pas de « Flair du village »
+    const separated = buildRecap([], players, [], [{ voter_id: 'p2', target_id: 'p1' }]);
+    assert.ok(!separated.titles.some((t) => t.label === 'Flair du village'));
+  });
+
   it('ignore les événements inconnus sans casser', () => {
     const { timeline } = buildRecap(
       [event('shop_purchase', { item_name: 'x' }), event('points_earned', { points: 3 })],

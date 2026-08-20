@@ -32,7 +32,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=eyJ...
 | `mission_templates` | Templates de missions réutilisables (globaux) |
 | `shop_items` | Items achetables (name, cost, effect_type, limits) |
 | `player_purchases` | Achats joueurs (shop_item_id, used_at, result) |
-| `votes` | Votes jour/nuit |
+| `votes` | Votes jour/nuit ; `vote_type: pouvoir` porte aussi les intuitions de nuit (phase >= 1) et le procès d'avant-partie au lobby (phase 0) |
 | `wolf_chat` | Chat privé des loups |
 | `power_uses` | Historique pouvoirs utilisés |
 | `game_events` | Audit log (triggers les notifications push) |

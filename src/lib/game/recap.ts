@@ -54,7 +54,8 @@ const num = (data: Record<string, unknown> | null, key: string): number | null =
 export function buildRecap(
   events: RecapEventRow[],
   players: RecapPlayer[],
-  intuitions: RecapIntuition[] = []
+  intuitions: RecapIntuition[] = [],
+  procesVotes: RecapIntuition[] = []
 ): Recap {
   const byId = new Map(players.map((p) => [p.id, p]));
   const pseudoOf = (id: string | null): string | null => (id ? (byId.get(id)?.pseudo ?? null) : null);
@@ -247,6 +248,38 @@ export function buildRecap(
         emoji: '🔮',
         label: 'Flair du village',
         value: `${names.join(', ')} (${bestCount} intuition${bestCount > 1 ? 's' : ''} juste${bestCount > 1 ? 's' : ''})`,
+      });
+    }
+  }
+
+  // Délit de faciès : verdict du procès d'avant-partie — le joueur le plus
+  // accusé « tête de traître » au lobby, confronté à son rôle final
+  const accusations = new Map<string, number>();
+  for (const vote of procesVotes) {
+    if (vote.target_id && byId.has(vote.target_id)) {
+      accusations.set(vote.target_id, (accusations.get(vote.target_id) ?? 0) + 1);
+    }
+  }
+  let topVotes = 0;
+  let topIds: string[] = [];
+  for (const [targetId, count] of accusations) {
+    if (count > topVotes) {
+      topVotes = count;
+      topIds = [targetId];
+    } else if (count === topVotes) {
+      topIds.push(targetId);
+    }
+  }
+  if (topVotes > 0 && topIds.length > 0) {
+    const verdicts = topIds
+      .map((id) => byId.get(id))
+      .filter((p): p is RecapPlayer => Boolean(p))
+      .map((p) => `${p.pseudo} ${p.team === 'loups' ? '🐺 coupable' : '🐑 innocenté'}`);
+    if (verdicts.length > 0) {
+      titles.push({
+        emoji: '⚖️',
+        label: 'Délit de faciès',
+        value: `${verdicts.join(', ')} (${topVotes} accusation${topVotes > 1 ? 's' : ''} au procès)`,
       });
     }
   }
