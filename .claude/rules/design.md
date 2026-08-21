@@ -34,6 +34,12 @@ paths:
   `lib/game/narration.ts` — mêmes lignes sur tous les téléphones, causes
   secrètes jamais révélées). Tap pour passer, disparition auto. Le récap du
   dernier conseil vit dans `CouncilRecapCard` (footer, repliée).
+- **Narration** : le rideau de phase (`PhaseCurtain` + `lib/game/narration`)
+  parle avec la voix du narrateur de la partie — Corbeau (humour noir),
+  Commère (potins) ou Aubergiste (bonhomme), tiré de l'id de partie et stable
+  du premier rideau au dernier. Les faits (morts, rôles) restent neutres, la
+  personnalité colore les ambiances et commente les verdicts. Tout nouveau
+  texte de narration se décline dans les trois voix, en 3 variantes.
 - **Son** : jingles de phase synthétisés WebAudio dans `src/lib/sounds`
   (aucun asset audio), joués par `SoundEffects` + vibrations ; mute persisté,
   déblocage iOS au premier tap. Tout nouveau son passe par ce module.

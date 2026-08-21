@@ -1,6 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPhaseNarration, type NarrationEventRow } from './narration.ts';
+import {
+  buildPhaseNarration,
+  narratorForGame,
+  NARRATORS,
+  type NarratorId,
+  type NarrationEventRow,
+} from './narration.ts';
 
 const event = (
   event_type: string,
@@ -63,5 +69,44 @@ describe('buildPhaseNarration', () => {
     const lines = buildPhaseNarration('nuit', 1, []);
     assert.equal(lines.length, 1);
     assert.match(lines[0], /🌙/);
+  });
+
+  it('le narrateur commente le verdict : coupable vs bavure', () => {
+    const wolfVerdict = buildPhaseNarration('nuit', 2, [
+      event(
+        'council_results',
+        { phase: 1, eliminated: { pseudo: 'Hector', role: 'loup_garou', team: 'loups' } },
+        '2026-01-01T00:00:00Z'
+      ),
+    ], 'commere');
+    const innocentVerdict = buildPhaseNarration('nuit', 2, [
+      event(
+        'council_results',
+        { phase: 1, eliminated: { pseudo: 'Aline', role: 'villageois', team: 'village' } },
+        '2026-01-01T00:00:00Z'
+      ),
+    ], 'commere');
+    // verdict factuel + commentaire du narrateur + endormissement
+    assert.equal(wolfVerdict.length, 3);
+    assert.equal(innocentVerdict.length, 3);
+    assert.notEqual(wolfVerdict[1], innocentVerdict[1], 'le commentaire change selon le verdict');
+  });
+
+  it('chaque narrateur a sa propre voix', () => {
+    const voices = (['corbeau', 'commere', 'aubergiste'] as NarratorId[]).map(
+      (narrator) => buildPhaseNarration('conseil', 2, [], narrator)[0]
+    );
+    assert.equal(new Set(voices).size, 3, 'trois ouvertures de conseil distinctes');
+  });
+
+  it('narratorForGame : déterministe et couvre les trois narrateurs', () => {
+    assert.equal(narratorForGame('game-abc'), narratorForGame('game-abc'));
+    const drawn = new Set(
+      Array.from({ length: 60 }, (_, i) => narratorForGame(`game-${i}`))
+    );
+    assert.equal(drawn.size, 3, 'les trois narrateurs sortent sur 60 parties');
+    for (const id of drawn) {
+      assert.ok(NARRATORS[id], `profil défini pour ${id}`);
+    }
   });
 });

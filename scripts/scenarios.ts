@@ -1570,14 +1570,16 @@ const scenarios: Record<string, Scenario> = {
   narration: async ({ newGame, log }) => {
     const g = await newGame('narration', 8, { loup_garou: 2, villageois: 6 });
     const getNarration = () =>
-      api<{ status: string; phase: number; lines: string[] }>(
+      api<{ status: string; phase: number; lines: string[]; narrator: { id: string; name: string } }>(
         'GET',
         `/api/games/${g.code}/narration`
       );
 
-    // Nuit 1 : endormissement, sans verdict fantôme
+    // Nuit 1 : endormissement, sans verdict fantôme, avec un narrateur attitré
     const night1 = checkStatus(await getNarration(), 200, 'Narration nuit 1');
     check(night1.lines.length === 1 && night1.lines[0].includes('🌙'), 'Nuit 1 : une ligne d\'endormissement');
+    check(!!night1.narrator?.name, 'Un narrateur est attitré à la partie');
+    const narratorId = night1.narrator.id;
 
     // Dévoration → le jour annonce la victime et son rôle
     const prey = g.plainVillagers()[0];
@@ -1602,7 +1604,15 @@ const scenarios: Record<string, Scenario> = {
       nightText.includes(target.pseudo) && nightText.includes('bûcher'),
       `La nuit 2 doit rappeler le bûcher de ${target.pseudo} (reçu : ${nightText})`
     );
-    log(`narration : mort annoncée, verdict rappelé, village endormi ✓`);
+    check(
+      night2.lines.length >= 3,
+      'Le narrateur commente le verdict (verdict + commentaire + endormissement)'
+    );
+    check(
+      night2.narrator.id === narratorId,
+      'Le narrateur reste le même toute la partie (fil conducteur)'
+    );
+    log(`narration par ${night2.narrator.name} : mort annoncée, verdict commenté, village endormi ✓`);
   },
 
   /** Meute mixte : le loup HUMAIN décide, les loups bots s'alignent sur sa
