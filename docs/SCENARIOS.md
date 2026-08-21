@@ -59,7 +59,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 | `assassin-amoureux` | La cascade chagrin s'applique aussi à un assassinat |
 | `chasseur-amoureux` | La cascade chagrin s'applique aussi au tir du chasseur |
 | `enfant-sauvage` | Transformation en loup à la mort du modèle, chasse avec la meute |
-| `pret-collectif` | « Prêt » collectif : unanimité des humains vivants (bots exclus) → `phase_ends_at` ramené à ~3s sur nuit/jour/conseil ; loup non-voté et conseil non-voté refusés ; rétractation ; réservé à l'Auto-Garou |
+| `pret-collectif` | « Prêt » collectif : unanimité des humains vivants (bots exclus) → le dernier prêt déclenche la transition côté serveur, immédiatement (nuit résolue, jour → conseil, conseil résolu + cible éliminée) ; loup non-voté et conseil non-voté refusés ; rétractation ; réservé à l'Auto-Garou |
 | `intuition` | Action de nuit des non-loups : pose/changement/restauration, interdite aux loups, aux morts, de jour et sur soi-même ; sans effet sur la résolution ; titre « Flair du village » au récap |
 | `recap` | Chronique narrative de fin (dévorations, conseils, victoire) + titres, refusée (400) tant que la partie est en cours |
 | `resolution-concurrente` | Verrou de résolution : deux resolve simultanés (nuit puis conseil) → un seul passe (409 pour l'autre), une seule victime |
@@ -76,7 +76,7 @@ au moins un échec. Les tests unitaires des fonctions pures de résolution
 | `recap-conseil` | Récap du conseil persisté (`council_results`) et servi à tous via GET /council-recap : éliminé, phase, votes détaillés et nommés (masqués si anonymes), null avant le premier conseil |
 | `narration` | Rideau de narration (GET /narration) : nuit 1 = endormissement seul, le jour annonce la victime et son rôle, le conseil ouvre en une ligne, la nuit suivante rappelle le verdict du bûcher |
 | `partie-mixte-bots` | MJ arbitre + 2 humains + 5 bots (config du bug rapporté) : bots déjà votés à l'entrée, résolution bloquée tant qu'un loup humain n'a pas voté (400 canForce), conseil mixte résolu |
-| `temps-ecoule` | Expiration du timer (ce que déclenchent les clients Auto-Garou) : nuit expirée sans vote → resolve forcé, jour sans victime ; jour expiré → conseil ; conseil expiré à un seul vote → élimination et nuit suivante (phase incrémentée) |
+| `temps-ecoule` | Expiration du timer : nuit expirée sans vote → resolve forcé, jour sans victime ; jour expiré → conseil ; conseil expiré à un seul vote → élimination et nuit suivante (phase incrémentée) ; **lazy tick** : une simple lecture de l'état (GET) fait avancer une phase expirée côté serveur — le cas « tous les téléphones verrouillés » |
 
 Le financement des joueurs dans les scénarios boutique passe par le helper
 `fundPlayer` (missions compétitives difficulté 5 validées par le MJ, +10 pts de
