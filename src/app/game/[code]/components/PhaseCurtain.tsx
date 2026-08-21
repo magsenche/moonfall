@@ -40,7 +40,11 @@ const PHASE_STYLES: Record<string, { bg: string; emoji: string; title: string }>
 export function PhaseCurtain() {
   const { game, gameStatus } = useGame();
   const previousStatusRef = useRef<string | null>(null);
-  const [curtain, setCurtain] = useState<{ status: string; lines: string[] } | null>(null);
+  const [curtain, setCurtain] = useState<{
+    status: string;
+    lines: string[];
+    narrator: { name: string; tagline: string } | null;
+  } | null>(null);
 
   // À chaque transition de phase (pas au premier montage : on arrive peut-être
   // en cours de partie), le rideau tombe avec la narration du moment
@@ -55,7 +59,11 @@ export function PhaseCurtain() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (cancelled || !data || data.status !== gameStatus) return;
-        setCurtain({ status: gameStatus, lines: data.lines ?? [] });
+        setCurtain({
+          status: gameStatus,
+          lines: data.lines ?? [],
+          narrator: data.narrator ?? null,
+        });
       })
       .catch(() => {
         // Narration décorative : sans réseau, pas de rideau
@@ -117,6 +125,18 @@ export function PhaseCurtain() {
               </motion.p>
             ))}
           </div>
+
+          {/* Signature du narrateur de la partie — le fil conducteur du ton */}
+          {curtain.narrator && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.6, duration: 0.8 }}
+              className="mt-8 font-display italic text-sm text-moon-100/60"
+            >
+              — {curtain.narrator.name}, {curtain.narrator.tagline}
+            </motion.p>
+          )}
 
           <motion.p
             initial={{ opacity: 0 }}

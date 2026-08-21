@@ -5,7 +5,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
-import { buildPhaseNarration, type NarrationEventRow } from "@/lib/game/narration";
+import { buildPhaseNarration, narratorForGame, NARRATORS } from "@/lib/game/narration";
 
 export async function GET(
   request: NextRequest,
@@ -38,6 +38,10 @@ export async function GET(
     );
   }
 
+  // Le narrateur de la partie : tiré une fois pour toutes de l'id — le même
+  // ton du premier rideau au dernier, identique sur tous les téléphones
+  const narrator = narratorForGame(game.id);
+
   const lines = buildPhaseNarration(
     game.status ?? 'lobby',
     game.current_phase ?? 1,
@@ -45,12 +49,14 @@ export async function GET(
       event_type: e.event_type,
       data: (e.data ?? null) as Record<string, unknown> | null,
       created_at: e.created_at ?? "",
-    }))
+    })),
+    narrator
   );
 
   return NextResponse.json({
     status: game.status,
     phase: game.current_phase ?? 1,
     lines,
+    narrator: NARRATORS[narrator],
   });
 }
