@@ -20,6 +20,37 @@ import { useGame } from '../context';
 
 const CURTAIN_MS = 6500;
 
+/**
+ * Teinte visuelle par narrateur — posée PAR-DESSUS le fond de phase (qui
+ * reste l'info de gameplay) : halo doux en haut du rideau + signature
+ * colorée. Tokens du design system (blood reste réservé aux loups).
+ */
+const NARRATOR_TINTS: Record<
+  string,
+  { text: string; border: string; glow: string }
+> = {
+  corbeau: {
+    text: 'text-moon-100',
+    border: 'border-moon-100/40',
+    glow: 'rgba(244,236,218,0.10)',
+  },
+  commere: {
+    text: 'text-village-300',
+    border: 'border-village-400/50',
+    glow: 'rgba(167,196,228,0.12)',
+  },
+  aubergiste: {
+    text: 'text-moon-500',
+    border: 'border-moon-500/50',
+    glow: 'rgba(229,189,114,0.12)',
+  },
+  garde: {
+    text: 'text-emerald-300',
+    border: 'border-emerald-500/40',
+    glow: 'rgba(110,231,183,0.10)',
+  },
+};
+
 const PHASE_STYLES: Record<string, { bg: string; emoji: string; title: string }> = {
   nuit: {
     bg: 'from-[#0a0d1f] via-night-950 to-black',
@@ -48,13 +79,33 @@ export function PhaseCurtain() {
     isIntro: boolean;
   } | null>(null);
 
-  // À chaque transition de phase (pas au premier montage : on arrive peut-être
-  // en cours de partie), le rideau tombe avec la narration du moment
+  // À chaque transition de phase, le rideau tombe avec la narration du
+  // moment. Cas particulier : l'entrée en scène du narrateur (nuit 1) doit
+  // aussi se jouer au premier MONTAGE sur la nuit 1 — le démarrage de partie
+  // passe par un router.refresh qui remonte tout l'arbre, la « transition »
+  // lobby → nuit n'est donc jamais observée ici. Garde localStorage : une
+  // seule entrée en scène par partie et par joueur.
   useEffect(() => {
     const previous = previousStatusRef.current;
     previousStatusRef.current = gameStatus;
-    if (previous === null || previous === gameStatus) return;
     if (gameStatus !== 'nuit' && gameStatus !== 'jour' && gameStatus !== 'conseil') return;
+
+    const introSeenKey = `moonfall-curtain-intro-${game.id}`;
+    const introAlreadySeen = () => {
+      try {
+        return localStorage.getItem(introSeenKey) !== null;
+      } catch {
+        return true;
+      }
+    };
+
+    const isTransition = previous !== null && previous !== gameStatus;
+    // L'entrée en scène est gardée par le localStorage, PAS par la ref de
+    // transition : le démarrage remonte l'arbre (router.refresh) et le
+    // double-montage StrictMode consomme la première observation — la ref
+    // seule ferait sauter l'intro
+    const mayBeIntro = gameStatus === 'nuit' && !introAlreadySeen();
+    if (!isTransition && !mayBeIntro) return;
 
     let cancelled = false;
     fetch(`/api/games/${game.code}/narration`)
@@ -62,6 +113,19 @@ export function PhaseCurtain() {
       .then((data) => {
         if (cancelled || !data || data.status !== gameStatus) return;
         const isIntro = gameStatus === 'nuit' && data.phase === 1;
+        // Hors transition, seul le rideau d'entrée en scène se joue
+        if (!isTransition && !isIntro) return;
+        if (isIntro) {
+          if (introAlreadySeen()) {
+            if (!isTransition) return;
+          } else {
+            try {
+              localStorage.setItem(introSeenKey, '1');
+            } catch {
+              // Stockage indisponible : l'intro pourra se rejouer, sans gravité
+            }
+          }
+        }
         setCurtain({
           status: gameStatus,
           lines: data.lines ?? [],
@@ -80,7 +144,7 @@ export function PhaseCurtain() {
     return () => {
       cancelled = true;
     };
-  }, [gameStatus, game.code]);
+  }, [gameStatus, game.code, game.id]);
 
   // Le rideau se lève tout seul — un peu plus tard à l'entrée en scène du
   // narrateur (nuit 1), le temps de lire sa présentation
@@ -91,6 +155,7 @@ export function PhaseCurtain() {
   }, [curtain]);
 
   const style = curtain ? (PHASE_STYLES[curtain.status] ?? PHASE_STYLES.nuit) : null;
+  const tint = curtain?.narrator ? (NARRATOR_TINTS[curtain.narrator.id] ?? null) : null;
 
   return (
     <AnimatePresence>
@@ -109,6 +174,20 @@ export function PhaseCurtain() {
             style.bg
           )}
         >
+          {/* Halo du narrateur : sa couleur veille en haut du rideau */}
+          {tint && (
+            <motion.div
+              aria-hidden
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, duration: 1.2 }}
+              className="pointer-events-none absolute inset-x-0 top-0 h-1/3"
+              style={{
+                background: `radial-gradient(ellipse at 50% -20%, ${tint.glow} 0%, transparent 65%)`,
+              }}
+            />
+          )}
+
           <motion.p
             className="text-6xl mb-6"
             initial={{ scale: 0.6, opacity: 0 }}
@@ -145,7 +224,8 @@ export function PhaseCurtain() {
               transition={{ delay: curtain.isIntro ? 1.2 : 1.6, duration: 0.8, type: 'spring', damping: 18 }}
               className={cn(
                 'mt-8 flex items-center gap-2 justify-center',
-                curtain.isIntro && 'px-4 py-2 rounded-full border border-moon-500/30 bg-night-900/60'
+                curtain.isIntro && 'px-4 py-2 rounded-full border bg-night-900/60',
+                curtain.isIntro && (tint?.border ?? 'border-moon-500/30')
               )}
             >
               <span className={curtain.isIntro ? 'text-2xl' : 'text-base'}>
@@ -154,7 +234,9 @@ export function PhaseCurtain() {
               <span
                 className={cn(
                   'font-display italic',
-                  curtain.isIntro ? 'text-base text-moon-100/90' : 'text-sm text-moon-100/60'
+                  curtain.isIntro ? 'text-base' : 'text-sm',
+                  tint ? tint.text : 'text-moon-100/60',
+                  !curtain.isIntro && 'opacity-70'
                 )}
               >
                 — {curtain.narrator.name}, {curtain.narrator.tagline}
