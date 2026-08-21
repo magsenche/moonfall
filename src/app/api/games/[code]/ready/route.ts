@@ -2,11 +2,11 @@
  * « Prêt » collectif — écourter une phase quand tout le monde a fini.
  *
  * Chaque humain vivant peut se déclarer prêt pour la phase en cours
- * (Auto-Garou uniquement). Quand TOUS les humains vivants sont prêts,
- * l'API ramène phase_ends_at à maintenant + 3s : la machinerie
- * d'auto-résolution existante (timer → resolve échelonné + verrou) fait
- * avancer la partie. Le skip n'altère jamais la logique de jeu, il
- * supprime seulement le temps mort.
+ * (Auto-Garou uniquement). Quand TOUS les humains vivants sont prêts, le
+ * dernier prêt déclenche la transition côté serveur (lib/game/advance) —
+ * résolution comprise, instantanément. En cas d'échec, filet : le timer est
+ * ramené à +3s et l'auto-résolution des clients prend le relais. Le skip
+ * n'altère jamais la logique de jeu, il supprime seulement le temps mort.
  *
  * Garde-fous :
  * - la nuit, un loup ne peut être prêt qu'après avoir voté sa victime ;
@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
 import { computeReadiness, isAutoMode, isBotPseudo } from "@/lib/game/resolution";
 import { RESOLUTION_LOCK_STAMP } from "@/lib/game/phaseLock";
+import { triggerPhaseTransition } from "@/lib/game/advance";
 
 const SKIP_COUNTDOWN_MS = 3000;
 
@@ -175,33 +176,41 @@ export async function POST(
 
   const { readiness } = await loadReadiness(supabase, game.id, phase, status);
 
-  // Unanimité → on ramène le timer à maintenant + 3s ; l'auto-résolution
-  // existante (échelonnée + verrouillée) fait le reste. On n'y touche pas si
-  // une résolution est déjà en cours (tampon epoch) ni si le timer est déjà
-  // plus court.
+  // Unanimité → le dernier prêt déclenche la transition LUI-MÊME, côté
+  // serveur : personne n'attend qu'un téléphone se réveille. Si la
+  // transition échoue, l'ancien filet reprend (timer ramené à +3s, que
+  // l'auto-résolution des clients consommera). On ne touche à rien si une
+  // résolution est déjà en cours (tampon epoch).
   let skipTriggered = false;
+  let advanced = false;
   if (ready && readiness.allReady) {
-    const soon = new Date(Date.now() + SKIP_COUNTDOWN_MS).toISOString();
     const current = game.phase_ends_at;
     const resolutionInProgress = current === RESOLUTION_LOCK_STAMP;
-    const alreadySooner = current !== null && current <= soon;
 
-    if (!resolutionInProgress && !alreadySooner) {
-      const { error: skipError } = await supabase
-        .from("games")
-        .update({ phase_ends_at: soon })
-        .eq("id", game.id)
-        .eq("status", status);
-      if (!skipError) {
-        skipTriggered = true;
-        await supabase.from("game_events").insert({
-          game_id: game.id,
-          event_type: "phase_skipped",
-          data: { status, phase, ready_count: readiness.readyCount },
-        });
-      }
+    if (resolutionInProgress) {
+      skipTriggered = true;
+      advanced = true;
     } else {
-      skipTriggered = alreadySooner;
+      skipTriggered = true;
+      await supabase.from("game_events").insert({
+        game_id: game.id,
+        event_type: "phase_skipped",
+        data: { status, phase, ready_count: readiness.readyCount },
+      });
+
+      advanced = await triggerPhaseTransition(request.nextUrl.origin, code, status);
+
+      if (!advanced) {
+        const soon = new Date(Date.now() + SKIP_COUNTDOWN_MS).toISOString();
+        const alreadySooner = current !== null && current <= soon;
+        if (!alreadySooner) {
+          await supabase
+            .from("games")
+            .update({ phase_ends_at: soon })
+            .eq("id", game.id)
+            .eq("status", status);
+        }
+      }
     }
   }
 
@@ -212,6 +221,7 @@ export async function POST(
     totalHumans: readiness.totalHumans,
     allReady: readiness.allReady,
     skipTriggered,
+    advanced,
   });
 }
 

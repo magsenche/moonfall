@@ -36,7 +36,9 @@ interface UseAutoGarouOptions {
   fallbackIndex: number;
 }
 
-const FALLBACK_STAGGER_MS = 3000;
+// Le verrou de résolution (409) dédoublonne déjà : l'échelonnement évite
+// seulement des appels redondants, inutile qu'il coûte des secondes
+const FALLBACK_STAGGER_MS = 1500;
 
 export function useAutoGarou({
   gameCode,
@@ -101,6 +103,20 @@ export function useAutoGarou({
 
     return () => clearTimeout(timeout);
   }, [isAutoMode, isExpired, fallbackIndex, triggerAutoTransition]);
+
+  // Téléphone déverrouillé sur une phase expirée → on déclenche sans attendre
+  // l'échelonnement : les timers JS étaient gelés pendant le verrouillage
+  useEffect(() => {
+    if (!isAutoMode || !isExpired) return;
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && !hasTriggeredRef.current) {
+        triggerAutoTransition();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [isAutoMode, isExpired, triggerAutoTransition]);
 
   return {
     isAutoMode,

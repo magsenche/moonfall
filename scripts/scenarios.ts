@@ -1758,6 +1758,13 @@ const scenarios: Record<string, Scenario> = {
     g.expectStatus('nuit', 'Le conseil expiré enchaîne sur la nuit suivante');
     check(g.phase === 2, `La phase doit s'incrémenter (reçu ${g.phase})`);
     log('conseil expiré à un seul vote → élimination + nuit 2 ✓');
+
+    // Lazy tick : une simple LECTURE de l'état fait avancer une phase
+    // expirée côté serveur — le cas des téléphones tous verrouillés
+    await expireTimer();
+    await g.refresh();
+    g.expectStatus('jour', 'La lecture de l\'état doit avancer une phase expirée');
+    log('lazy tick : partie expirée avancée par une simple lecture ✓');
   },
 
   /** Prêt collectif : l'unanimité des humains vivants écourte la phase. */
@@ -1769,7 +1776,7 @@ const scenarios: Record<string, Scenario> = {
     const humanWolves = () => g.wolves().filter((p) => !isBot(p.pseudo));
 
     const ready = (playerId: string, value = true) =>
-      api<{ readyCount: number; totalHumans: number; allReady: boolean; skipTriggered: boolean; isReady: boolean }>(
+      api<{ readyCount: number; totalHumans: number; allReady: boolean; skipTriggered: boolean; advanced: boolean; isReady: boolean }>(
         'POST',
         `/api/games/${g.code}/ready`,
         { playerId, ready: value }
@@ -1808,34 +1815,21 @@ const scenarios: Record<string, Scenario> = {
       } else {
         check(response.allReady === true, 'Unanimité au dernier prêt');
         check(response.skipTriggered === true, 'Le skip doit se déclencher à l\'unanimité');
+        check(response.advanced === true, 'Le dernier prêt doit déclencher la transition lui-même');
       }
     }
+    // Plus aucun téléphone à attendre : la nuit est déjà résolue
     await g.refresh();
-    const nightEnds = g.phaseEndsAt;
-    check(
-      nightEnds !== null && new Date(nightEnds).getTime() <= Date.now() + 10_000,
-      `Le timer de nuit doit être ramené à ~3s, reçu ${nightEnds}`
-    );
-    log(`nuit écourtée à l'unanimité (6/6 humains, bots ignorés) ✓`);
-
-    // Le runner joue le rôle des clients : résolution puis jour.
-    checkStatus(await api('POST', `/api/games/${g.code}/vote/night/resolve`, { force: true }), 200, 'Résolution de nuit');
-    await g.refresh();
-    g.expectStatus('jour', 'Après la nuit écourtée');
+    g.expectStatus('jour', 'Le dernier prêt fait basculer la nuit immédiatement');
+    log(`nuit écourtée à l'unanimité (6/6 humains, bots ignorés), transition immédiate ✓`);
 
     // ── Jour ──
     for (const human of humans()) {
       checkStatus(await ready(human.id), 200, `Prêt jour de ${human.pseudo}`);
     }
     await g.refresh();
-    const dayEnds = g.phaseEndsAt;
-    check(
-      dayEnds !== null && new Date(dayEnds).getTime() <= Date.now() + 10_000,
-      'Le timer du jour doit être ramené à ~3s'
-    );
-    log('jour écourté ✓');
-    checkStatus(await api('POST', `/api/games/${g.code}/phase`, { phase: 'conseil' }), 200, 'Passage au conseil');
-    await g.refresh();
+    g.expectStatus('conseil', 'Le jour écourté bascule au conseil tout seul');
+    log('jour écourté, bascule immédiate au conseil ✓');
 
     // ── Conseil ──
     const councilHumans = humans();
@@ -1850,13 +1844,9 @@ const scenarios: Record<string, Scenario> = {
       checkStatus(await ready(human.id), 200, `Prêt conseil de ${human.pseudo}`);
     }
     await g.refresh();
-    const councilEnds = g.phaseEndsAt;
-    check(
-      councilEnds !== null && new Date(councilEnds).getTime() <= Date.now() + 10_000,
-      'Le timer du conseil doit être ramené à ~3s'
-    );
-    checkStatus(await api('POST', `/api/games/${g.code}/vote/resolve`, {}), 200, 'Résolution du conseil');
-    log('conseil écourté puis résolu ✓');
+    g.expectStatus('nuit', 'Le conseil écourté se résout et enchaîne sur la nuit');
+    check(g.player(target.id).is_alive === false, 'La cible du conseil écourté doit être éliminée');
+    log('conseil écourté : résolution immédiate, cible éliminée ✓');
 
     // ── Hors Auto-Garou : pas de prêt collectif ──
     const manual = await newGame('pret manuel', 4, {}, { autoMode: false });
