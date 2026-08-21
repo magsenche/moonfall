@@ -44,16 +44,19 @@ export function GameHeader({ className }: GameHeaderProps) {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       >
+        {/* Fond opaque, pas de backdrop-blur : un blur qui bouge au-dessus du
+            fond animé forçait un re-floutage à chaque frame (jank garanti sur
+            mobile pendant les 30 dernières secondes) */}
         <motion.div
           className={cn(
             'inline-flex items-center gap-3 px-4 py-2 rounded-full',
-            'border-2 border-white/20 backdrop-blur-md',
+            'border-2 border-white/20',
             'shadow-[0_4px_20px_rgba(0,0,0,0.3)]',
             isUrgent
-              ? 'bg-blood-700/80 border-blood-500/50'
+              ? 'bg-blood-700/95 border-blood-500/50'
               : isWarning
-                ? 'bg-night-800/80 border-moon-500/30'
-                : 'bg-night-900/80'
+                ? 'bg-night-800/95 border-moon-500/30'
+                : 'bg-night-900/95'
           )}
           animate={isUrgent ? {
             x: [-2, 2, -2, 2, 0],

@@ -89,16 +89,17 @@ export interface GameContextType {
   shopEnabled: boolean;
 
   // Voting (conseil)
+  // Les cibles/saisies en cours de sélection vivent dans les panneaux
+  // (VotingPanel, WolfNightVote, SeerPowerPanel, WolfChatPanel) : les hisser
+  // ici faisait re-render tout l'écran à chaque tap ou frappe
   voting: {
-    selectedTarget: string | null;
-    setSelectedTarget: (id: string | null) => void;
     confirmedVoteTarget: string | null;
     hasVoted: boolean;
     isVoting: boolean;
     voteError: string | null;
     votesCount: number;
     totalVoters: number;
-    submitVote: () => void;
+    submitVote: (targetId: string) => void;
     voteResults: ReturnType<typeof useVoting>['voteResults'];
     clearVoteResults: () => void;
     resolveVote: () => void;
@@ -107,13 +108,11 @@ export interface GameContextType {
 
   // Night actions (wolf vote + seer)
   nightActions: {
-    nightTarget: string | null;
-    setNightTarget: (id: string | null) => void;
     confirmedNightTarget: string | null;
     hasNightVoted: boolean;
     isNightVoting: boolean;
     nightVoteError: string | null;
-    submitNightVote: () => void;
+    submitNightVote: (targetId: string) => void;
     wolfVoteCount: { voted: number; total: number };
     nightVoteResolveError: string | null;
     showForceConfirm: boolean;
@@ -121,23 +120,19 @@ export interface GameContextType {
     isChangingPhase: boolean;
     resolveNightVote: () => void;
     // Seer
-    seerTarget: string | null;
-    setSeerTarget: (id: string | null) => void;
     seerResult: SeerResult | null;
     seerHistory: SeerResult[];
     hasUsedSeerPower: boolean;
     isUsingSeerPower: boolean;
     seerError: string | null;
-    useSeerPower: () => void;
+    useSeerPower: (targetId: string) => void;
   };
 
   // Wolf chat
   wolfChat: {
     wolfMessages: WolfMessage[];
-    newMessage: string;
-    setNewMessage: (msg: string) => void;
     isSendingMessage: boolean;
-    sendWolfMessage: () => void;
+    sendWolfMessage: (message: string) => Promise<boolean>;
   };
 
   // Missions
@@ -343,6 +338,7 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
 
   const voting = useVoting({
     gameCode: game.code,
+    gameId: game.id,
     currentPlayerId,
     gameStatus: game.status || 'lobby',
   });
@@ -351,6 +347,7 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
     gameCode: game.code,
     currentPlayerId,
     gameStatus: game.status || 'lobby',
+    isSeer,
     isMJ,
   });
 
@@ -534,10 +531,8 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
       missionsEnabled,
       shopEnabled,
 
-      // Voting
+      // Voting — la cible en cours de sélection vit dans VotingPanel
       voting: {
-        selectedTarget: voting.selectedTarget,
-        setSelectedTarget: voting.setSelectedTarget,
         confirmedVoteTarget: voting.confirmedVoteTarget,
         hasVoted: voting.hasVoted,
         isVoting: voting.isVoting,
@@ -551,10 +546,8 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
         isChangingPhase: voting.isChangingPhase,
       },
 
-      // Night actions
+      // Night actions — les cibles en cours de sélection vivent dans les panneaux
       nightActions: {
-        nightTarget: nightActionsHook.nightTarget,
-        setNightTarget: nightActionsHook.setNightTarget,
         confirmedNightTarget: nightActionsHook.confirmedNightTarget,
         hasNightVoted: nightActionsHook.hasNightVoted,
         isNightVoting: nightActionsHook.isNightVoting,
@@ -566,8 +559,6 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
         setShowForceConfirm: nightActionsHook.setShowForceConfirm,
         isChangingPhase: nightActionsHook.isChangingPhase,
         resolveNightVote: nightActionsHook.resolveNightVote,
-        seerTarget: nightActionsHook.seerTarget,
-        setSeerTarget: nightActionsHook.setSeerTarget,
         seerResult: nightActionsHook.seerResult,
         seerHistory: nightActionsHook.seerHistory,
         hasUsedSeerPower: nightActionsHook.hasUsedSeerPower,
@@ -576,11 +567,9 @@ export function GameProvider({ children, initialGame, roles }: GameProviderProps
         useSeerPower: nightActionsHook.useSeerPower,
       },
 
-      // Wolf chat
+      // Wolf chat — la saisie vit dans WolfChatPanel
       wolfChat: {
         wolfMessages: wolfChatHook.wolfMessages,
-        newMessage: wolfChatHook.newMessage,
-        setNewMessage: wolfChatHook.setNewMessage,
         isSendingMessage: wolfChatHook.isSendingMessage,
         sendWolfMessage: wolfChatHook.sendWolfMessage,
       },

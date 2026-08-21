@@ -9,9 +9,11 @@ Sentry.init({
   // Performance monitoring
   tracesSampleRate: 0.1, // 10% of transactions
   
-  // Session replay (optional, can be heavy)
-  replaysSessionSampleRate: 0.01, // 1% of sessions
-  replaysOnErrorSampleRate: 0.1, // 10% of sessions with errors
+  // Session replay désactivé : un taux non nul embarque l'intégration rrweb
+  // (plusieurs dizaines de Ko gzip) dans le bundle de TOUS les visiteurs
+  // pour 1 % de sessions rejouées. Les erreurs restent tracées par Sentry.
+  replaysSessionSampleRate: 0,
+  replaysOnErrorSampleRate: 0,
   
   // Environment
   environment: process.env.NODE_ENV,

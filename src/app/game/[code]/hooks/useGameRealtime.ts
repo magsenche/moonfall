@@ -107,9 +107,13 @@ export function useGameRealtime({ game, onGameUpdate, onPlayersChange }: UseGame
           
           const newStatus = payload.new.status as string;
           notifyPhaseChangeRef.current(newStatus);
-          
-          // Refresh on game start to get roles
-          if (payload.new.status !== 'lobby') {
+
+          // Refresh serveur UNIQUEMENT au vrai démarrage (lobby → en jeu),
+          // pour charger les rôles. Avant, chaque UPDATE de games (timer
+          // ramené par un « prêt », résolution…) re-exécutait la page
+          // serveur chez TOUS les clients alors que le realtime avait déjà
+          // tout mis à jour.
+          if (gameRef.current.status === 'lobby' && newStatus !== 'lobby') {
             router.refresh();
           }
         }

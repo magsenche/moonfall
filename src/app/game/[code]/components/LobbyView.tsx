@@ -200,7 +200,6 @@ export function LobbyView() {
                   initial="hidden"
                   animate="show"
                   exit="exit"
-                  layout
                   className={cn(
                     'relative flex flex-col items-center p-3 rounded-xl',
                     'bg-night-700/50 border-2 border-village-400',
@@ -228,7 +227,6 @@ export function LobbyView() {
                   initial="hidden"
                   animate="show"
                   exit="exit"
-                  layout
                   whileHover={{ scale: 1.05 }}
                   className={cn(
                     'flex flex-col items-center p-3 rounded-xl',

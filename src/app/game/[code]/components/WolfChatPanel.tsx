@@ -6,6 +6,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MotionCard, CardHeader, CardTitle, CardContent, MotionButton } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -13,25 +14,30 @@ import type { WolfMessage } from '../hooks/types';
 
 interface WolfChatPanelProps {
   messages: WolfMessage[];
-  newMessage: string;
   isSendingMessage: boolean;
   currentPlayerId: string | null;
   isAlive: boolean;
-  onMessageChange: (message: string) => void;
-  onSendMessage: () => void;
+  /** Envoie le message ; rend true si l'envoi a réussi (le champ se vide alors) */
+  onSendMessage: (message: string) => Promise<boolean>;
   readOnly?: boolean; // For Petite Fille - can read but not write
 }
 
 export function WolfChatPanel({
   messages,
-  newMessage,
   isSendingMessage,
   currentPlayerId,
   isAlive,
-  onMessageChange,
   onSendMessage,
   readOnly = false,
 }: WolfChatPanelProps) {
+  // Saisie locale au panneau : dans le contexte global, chaque caractère
+  // faisait re-render tout l'écran de jeu
+  const [newMessage, setNewMessage] = useState('');
+
+  const handleSend = async () => {
+    const sent = await onSendMessage(newMessage);
+    if (sent) setNewMessage('');
+  };
   return (
     <MotionCard 
       variant="sticker" 
@@ -118,13 +124,13 @@ export function WolfChatPanel({
         {/* Input - Hidden for readOnly (Petite Fille) */}
         {isAlive && !readOnly && (
           <form
-            onSubmit={(e) => { e.preventDefault(); onSendMessage(); }}
+            onSubmit={(e) => { e.preventDefault(); handleSend(); }}
             className="flex gap-2"
           >
             <input
               type="text"
               value={newMessage}
-              onChange={(e) => onMessageChange(e.target.value)}
+              onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Message à la meute..."
               className={cn(
                 "flex-1 px-4 py-3 rounded-xl text-white text-sm",

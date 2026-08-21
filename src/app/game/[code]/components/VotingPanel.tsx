@@ -4,6 +4,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { Vote, CheckCircle2 } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,15 +16,13 @@ import type { PartialPlayer } from '../hooks/types';
 interface VotingPanelProps {
   alivePlayers: PartialPlayer[];
   currentPlayerId: string | null;
-  selectedTarget: string | null;
   confirmedVoteTarget: string | null;
   hasVoted: boolean;
   isVoting: boolean;
   voteError: string | null;
   votesCount: number;
   totalVoters: number;
-  onSelectTarget: (playerId: string) => void;
-  onSubmitVote: () => void;
+  onSubmitVote: (targetId: string) => void;
 }
 
 const containerVariants = {
@@ -42,16 +41,18 @@ const itemVariants = {
 export function VotingPanel({
   alivePlayers,
   currentPlayerId,
-  selectedTarget,
   confirmedVoteTarget,
   hasVoted,
   isVoting,
   voteError,
   votesCount,
   totalVoters,
-  onSelectTarget,
   onSubmitVote,
 }: VotingPanelProps) {
+  // Sélection locale au panneau : dans le contexte global, chaque tap
+  // faisait re-render tout l'écran de jeu
+  const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
+
   // Filter out self
   const targets = alivePlayers.filter(p => p.id !== currentPlayerId);
 
@@ -129,7 +130,7 @@ export function VotingPanel({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    onClick={() => onSelectTarget(player.id)}
+                    onClick={() => setSelectedTarget(player.id)}
                     whileTap={{ scale: 0.95 }}
                     className={cn(
                       "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
@@ -174,7 +175,7 @@ export function VotingPanel({
                     ? "bg-blood-500 border-blood-400 hover:bg-blood-500" 
                     : "bg-night-700"
                 )}
-                onClick={onSubmitVote}
+                onClick={() => selectedTarget && onSubmitVote(selectedTarget)}
                 disabled={!selectedTarget || isVoting}
               >
                 {isVoting ? 'Vote en cours...' : 'Confirmer le vote'}
