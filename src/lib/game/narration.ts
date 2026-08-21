@@ -36,12 +36,14 @@ const pick = (variants: string[], seed: number): string =>
 // Les narrateurs
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type NarratorId = 'corbeau' | 'commere' | 'aubergiste';
+export type NarratorId = 'corbeau' | 'commere' | 'aubergiste' | 'garde';
 
 export interface NarratorProfile {
   id: NarratorId;
   name: string;
   tagline: string;
+  /** Emoji d'identité, affiché avec la signature (contenu, pas chrome UI) */
+  emoji: string;
 }
 
 export const NARRATORS: Record<NarratorId, NarratorProfile> = {
@@ -49,16 +51,25 @@ export const NARRATORS: Record<NarratorId, NarratorProfile> = {
     id: 'corbeau',
     name: 'Le Corbeau',
     tagline: 'perché au-dessus de vos malheurs',
+    emoji: '🐦‍⬛',
   },
   commere: {
     id: 'commere',
     name: 'La Commère',
     tagline: 'elle sait tout, elle dit tout (ou presque)',
+    emoji: '🗣️',
   },
   aubergiste: {
     id: 'aubergiste',
     name: "L'Aubergiste",
     tagline: 'il voit tout passer depuis son comptoir',
+    emoji: '🍺',
+  },
+  garde: {
+    id: 'garde',
+    name: 'Le Garde-Champêtre',
+    tagline: 'garant de l\'ordre et du protocole',
+    emoji: '📯',
   },
 };
 
@@ -68,11 +79,13 @@ export function narratorForGame(gameId: string): NarratorId {
   for (let i = 0; i < gameId.length; i++) {
     hash = (hash * 31 + gameId.charCodeAt(i)) | 0;
   }
-  const ids: NarratorId[] = ['corbeau', 'commere', 'aubergiste'];
+  const ids: NarratorId[] = ['corbeau', 'commere', 'aubergiste', 'garde'];
   return ids[Math.abs(hash) % ids.length];
 }
 
 interface NarratorTexts {
+  /** Entrée en scène : le narrateur se présente au tout premier rideau */
+  intro: string;
   nightFalls: string[];
   dayBreaksDeath: string[];
   dayBreaksSafe: string[];
@@ -85,6 +98,8 @@ interface NarratorTexts {
 
 const TEXTS: Record<NarratorId, NarratorTexts> = {
   corbeau: {
+    intro:
+      'On m\'appelle le Corbeau. Je serai vos yeux cette partie : je vois tout, je survole tout, et je ne préviens jamais personne. Croâ.',
     nightFalls: [
       'La nuit tombe. Croâ. Quelqu\'un ici ne verra pas l\'aube — je ne dis pas qui, je plane au-dessus de tout ça.',
       'Le village s\'endort. Moi je reste éveillé : les meilleurs spectacles se jouent dans le noir.',
@@ -117,6 +132,8 @@ const TEXTS: Record<NarratorId, NarratorTexts> = {
     ],
   },
   commere: {
+    intro:
+      'Moi c\'est la Commère. Je vous raconterai tout ce qui se passe ici : les morts, les votes, et deux ou trois choses qu\'on aurait préféré me cacher.',
     nightFalls: [
       'Tout le monde au lit ! Enfin... c\'est ce qu\'ils disent. J\'ai vu de la lumière chez certains.',
       'La nuit tombe. Entre nous, je me demande bien qui va « dormir » et qui va rôder.',
@@ -149,6 +166,8 @@ const TEXTS: Record<NarratorId, NarratorTexts> = {
     ],
   },
   aubergiste: {
+    intro:
+      'Bienvenue à l\'auberge ! C\'est moi qui raconterai cette partie, entre deux tournées. Premier conseil gratuit : méfiez-vous de ceux qui ne finissent pas leur assiette.',
     nightFalls: [
       'Dernière tournée, tout le monde dehors ! Rentrez bien... et fermez à double tour, hein.',
       'La nuit tombe. Je laisse une chandelle allumée et le tisonnier à portée de main. On ne sait jamais.',
@@ -178,6 +197,40 @@ const TEXTS: Record<NarratorId, NarratorTexts> = {
       'Sacrebleu... c\'était un brave client, lui. Le village me déçoit.',
       'Un innocent ! La prochaine fois, réfléchissez avant de sortir les fourches.',
       'Il me devait trois pièces. On dira que c\'est réglé.',
+    ],
+  },
+  garde: {
+    intro:
+      'Garde-champêtre assermenté, je consignerai chaque événement de cette partie au registre officiel. Tâchez de mourir dans les règles.',
+    nightFalls: [
+      'Article premier : couvre-feu à la tombée de la nuit. Les contrevenants seront dévorés, conformément au règlement.',
+      'Par arrêté municipal, le village est prié de dormir. Les hurlements sont tolérés jusqu\'à minuit.',
+      'Extinction des feux ! Toute circulation nocturne se fait à vos risques, périls et frais d\'obsèques.',
+    ],
+    dayBreaksDeath: [
+      'Avis à la population : un administré manque à l\'appel. L\'enquête est ouverte, le formulaire aussi.',
+      'J\'ai le regret de constater un décès non déclaré en mairie. C\'est très irrégulier.',
+      'Le recensement du matin fait état d\'une disparition. Le registre est corrigé à l\'encre rouge.',
+    ],
+    dayBreaksSafe: [
+      'Aucun décès à déclarer ce matin. Le protocole a été respecté, je vous en félicite solennellement.',
+      'Avis à la population : tout le monde est vivant. Le tampon « RAS » a été apposé.',
+      'Nuit sans incident. Quelqu\'un a manifestement fait obstruction au crime — sans permis, d\'ailleurs.',
+    ],
+    councilOpens: [
+      'Séance ouverte ! Le vote se déroulera dans l\'ordre, le calme et, si possible, la clairvoyance.',
+      'Convocation générale sur la place. Munissez-vous de votre accusation et d\'une pièce d\'identité.',
+      'Le conseil municipal extraordinaire est ouvert. Ordre du jour : un bûcher. Questions diverses : aucune.',
+    ],
+    verdictWolf: [
+      'Un loup en situation irrégulière. La procédure a fonctionné — pour une fois.',
+      'Justice est faite, dans les formes et dans les flammes. Dossier classé.',
+      'Le prévenu était bien un loup. J\'exige des applaudissements ordonnés.',
+    ],
+    verdictInnocent: [
+      'L\'administré était en règle. C\'est... fâcheux. Le registre des bavures est à jour.',
+      'Erreur judiciaire constatée. Les réclamations se déposent auprès du bûcher, aux heures ouvrées.',
+      'Innocent. Je relève par ailleurs une irrégularité majeure dans votre vote à main levée.',
     ],
   },
 };
@@ -221,6 +274,11 @@ export function buildPhaseNarration(
 
   if (status === 'nuit') {
     const lines: string[] = [];
+    // Entrée en scène : au tout premier rideau, le narrateur se présente —
+    // c'est LUI qui racontera cette partie
+    if (phase === 1) {
+      lines.push(voice.intro);
+    }
     // Verdict du conseil qui vient de se clore (phase précédente)
     const council = events.find(
       (e) =>

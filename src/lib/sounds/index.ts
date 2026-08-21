@@ -146,6 +146,50 @@ export function playDeathCue(): void {
   vibrate([300, 120, 300]);
 }
 
+/**
+ * 🎭 Entrée en scène du narrateur (premier rideau de la partie) : chaque
+ * narrateur a son motif — on le reconnaît à l'oreille avant de le lire.
+ */
+export function playNarratorCue(narrator: 'corbeau' | 'commere' | 'aubergiste' | 'garde'): void {
+  switch (narrator) {
+    case 'corbeau':
+      // Deux croassements : notes rêches et descendantes
+      playNotes([
+        { freq: 220, at: 0, duration: 0.18, type: 'sawtooth', gain: 0.07 },
+        { freq: 175, at: 0.24, duration: 0.28, type: 'sawtooth', gain: 0.08 },
+      ]);
+      break;
+    case 'commere':
+      // Trille aigu : le chuchotis qui court de porte en porte
+      playNotes([
+        { freq: 880, at: 0, duration: 0.1, type: 'triangle', gain: 0.09 },
+        { freq: 988, at: 0.1, duration: 0.1, type: 'triangle', gain: 0.09 },
+        { freq: 880, at: 0.2, duration: 0.1, type: 'triangle', gain: 0.09 },
+        { freq: 1175, at: 0.32, duration: 0.25, type: 'triangle', gain: 0.1 },
+      ]);
+      break;
+    case 'aubergiste':
+      // Accord majeur chaleureux : la cloche du comptoir
+      playNotes([
+        { freq: 262, at: 0, duration: 0.7, type: 'triangle', gain: 0.08 },
+        { freq: 330, at: 0.02, duration: 0.7, type: 'triangle', gain: 0.07 },
+        { freq: 392, at: 0.04, duration: 0.8, type: 'triangle', gain: 0.08 },
+      ]);
+      break;
+    case 'garde':
+      // Roulement réglementaire puis deux notes de clairon
+      playNotes([
+        { freq: 98, at: 0, duration: 0.08, type: 'square', gain: 0.06 },
+        { freq: 98, at: 0.1, duration: 0.08, type: 'square', gain: 0.06 },
+        { freq: 98, at: 0.2, duration: 0.08, type: 'square', gain: 0.06 },
+        { freq: 523, at: 0.36, duration: 0.22, type: 'square', gain: 0.06 },
+        { freq: 659, at: 0.6, duration: 0.4, type: 'square', gain: 0.07 },
+      ]);
+      break;
+  }
+  vibrate(80);
+}
+
 /** Joue le jingle d'une transition de phase (+ vibration associée). */
 export function playPhaseCue(phase: 'nuit' | 'jour' | 'conseil' | 'terminee'): void {
   switch (phase) {

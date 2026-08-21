@@ -1575,9 +1575,12 @@ const scenarios: Record<string, Scenario> = {
         `/api/games/${g.code}/narration`
       );
 
-    // Nuit 1 : endormissement, sans verdict fantôme, avec un narrateur attitré
+    // Nuit 1 : le narrateur se présente puis endort le village
     const night1 = checkStatus(await getNarration(), 200, 'Narration nuit 1');
-    check(night1.lines.length === 1 && night1.lines[0].includes('🌙'), 'Nuit 1 : une ligne d\'endormissement');
+    check(
+      night1.lines.length === 2 && night1.lines[1].includes('🌙'),
+      'Nuit 1 : présentation du narrateur + endormissement'
+    );
     check(!!night1.narrator?.name, 'Un narrateur est attitré à la partie');
     const narratorId = night1.narrator.id;
 
