@@ -46,14 +46,12 @@ export function CouncilPhaseLayout() {
         <VotingPanel
           alivePlayers={alivePlayers}
           currentPlayerId={currentPlayerId}
-          selectedTarget={voting.selectedTarget}
           confirmedVoteTarget={voting.confirmedVoteTarget}
           hasVoted={voting.hasVoted}
           isVoting={voting.isVoting}
           voteError={voting.voteError}
           votesCount={voting.votesCount}
           totalVoters={voting.totalVoters}
-          onSelectTarget={voting.setSelectedTarget}
           onSubmitVote={voting.submitVote}
         />
       )}

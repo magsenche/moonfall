@@ -78,12 +78,10 @@ export function NightPhaseLayout() {
         <WolfNightVote
           alivePlayers={alivePlayers}
           wolves={wolves}
-          nightTarget={nightActions.nightTarget}
           confirmedNightTarget={nightActions.confirmedNightTarget}
           hasNightVoted={nightActions.hasNightVoted}
           isNightVoting={nightActions.isNightVoting}
           nightVoteError={nightActions.nightVoteError}
-          onSelectTarget={nightActions.setNightTarget}
           onSubmitVote={nightActions.submitNightVote}
         />
       )}
@@ -95,11 +93,9 @@ export function NightPhaseLayout() {
       {(isWolf || isLittleGirl || !isAlive) && (
         <WolfChatPanel
           messages={wolfChat.wolfMessages}
-          newMessage={wolfChat.newMessage}
           isSendingMessage={wolfChat.isSendingMessage}
           currentPlayerId={currentPlayerId}
           isAlive={isAlive}
-          onMessageChange={wolfChat.setNewMessage}
           onSendMessage={wolfChat.sendWolfMessage}
           readOnly={isLittleGirl || !isAlive}
         />
@@ -110,13 +106,11 @@ export function NightPhaseLayout() {
         <SeerPowerPanel
           alivePlayers={alivePlayers}
           currentPlayerId={currentPlayerId}
-          seerTarget={nightActions.seerTarget}
           seerResult={nightActions.seerResult}
           seerHistory={nightActions.seerHistory}
           hasUsedSeerPower={nightActions.hasUsedSeerPower}
           isUsingSeerPower={nightActions.isUsingSeerPower}
           seerError={nightActions.seerError}
-          onSelectTarget={nightActions.setSeerTarget}
           onUsePower={nightActions.useSeerPower}
         />
       )}

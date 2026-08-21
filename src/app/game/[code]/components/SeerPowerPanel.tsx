@@ -5,6 +5,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MotionCard, CardHeader, CardTitle, CardContent, MotionButton } from '@/components/ui';
 import { PlayerAvatar } from '@/components/game';
@@ -24,28 +25,28 @@ function formatRoleName(roleName: string | undefined): string {
 interface SeerPowerPanelProps {
   alivePlayers: PartialPlayer[];
   currentPlayerId: string | null;
-  seerTarget: string | null;
   seerResult: SeerResult | null;
   seerHistory: SeerResult[];
   hasUsedSeerPower: boolean;
   isUsingSeerPower: boolean;
   seerError: string | null;
-  onSelectTarget: (playerId: string) => void;
-  onUsePower: () => void;
+  onUsePower: (targetId: string) => void;
 }
 
 export function SeerPowerPanel({
   alivePlayers,
   currentPlayerId,
-  seerTarget,
   seerResult,
   seerHistory,
   hasUsedSeerPower,
   isUsingSeerPower,
   seerError,
-  onSelectTarget,
   onUsePower,
 }: SeerPowerPanelProps) {
+  // Sélection locale au panneau : dans le contexte global, chaque tap
+  // faisait re-render tout l'écran de jeu
+  const [seerTarget, setSeerTarget] = useState<string | null>(null);
+
   // Filter out self
   const targets = alivePlayers.filter(p => p.id !== currentPlayerId);
 
@@ -140,7 +141,7 @@ export function SeerPowerPanel({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    onClick={() => onSelectTarget(player.id)}
+                    onClick={() => setSeerTarget(player.id)}
                     whileTap={{ scale: 0.95 }}
                     className={cn(
                       "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
@@ -178,7 +179,7 @@ export function SeerPowerPanel({
               <MotionButton
                 variant="sticker"
                 className="w-full bg-village-600 border-village-300 hover:bg-village-400"
-                onClick={onUsePower}
+                onClick={() => seerTarget && onUsePower(seerTarget)}
                 disabled={!seerTarget || isUsingSeerPower}
               >
                 {isUsingSeerPower ? '⏳ Vision en cours...' : '🔮 Sonder cette âme'}

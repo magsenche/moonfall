@@ -86,11 +86,12 @@ export function GameFooter() {
     fetchShopData();
   }, [fetchShopData, gameStatus, ui.shopRefreshKey]);
 
-  // Handle refresh from child components
+  // Handle refresh from child components — un seul chemin : refreshShop
+  // incrémente shopRefreshKey, ce qui redéclenche déjà fetchShopData via
+  // l'effet ci-dessus (l'appeler ici en plus doublait chaque requête /shop)
   const handleShopRefresh = useCallback(() => {
-    fetchShopData();
     ui.refreshShop();
-  }, [fetchShopData, ui]);
+  }, [ui]);
 
   // Summary for collapsed state
   const points = playerShopData?.points ?? 0;

@@ -34,8 +34,9 @@ export function useWolfChat({
 }: UseWolfChatOptions) {
   const supabase = createClient();
   
+  // Le texte en cours de frappe vit dans WolfChatPanel : le hisser ici
+  // (contexte global) faisait re-render tout l'écran à chaque caractère
   const [wolfMessages, setWolfMessages] = useState<WolfMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   // Can read wolf chat (wolf, little girl, or ghost spectator)
@@ -53,20 +54,21 @@ export function useWolfChat({
     }
   }, [gameCode, canReadWolfChat]);
 
-  // Send wolf message
-  const sendWolfMessage = useCallback(async () => {
-    if (!currentPlayerId || !newMessage.trim()) return;
-    
+  // Send wolf message — rend true si l'envoi a réussi (le panneau vide alors son champ)
+  const sendWolfMessage = useCallback(async (message: string): Promise<boolean> => {
+    if (!currentPlayerId || !message.trim()) return false;
+
     setIsSendingMessage(true);
     try {
-      await apiSendWolfMessage(gameCode, currentPlayerId, newMessage.trim());
-      setNewMessage('');
+      await apiSendWolfMessage(gameCode, currentPlayerId, message.trim());
+      return true;
     } catch (err) {
       console.error('Send message error:', err instanceof ApiError ? err.message : err);
+      return false;
     } finally {
       setIsSendingMessage(false);
     }
-  }, [currentPlayerId, newMessage, gameCode]);
+  }, [currentPlayerId, gameCode]);
 
   // Realtime subscription for wolf chat
   useEffect(() => {
@@ -97,9 +99,7 @@ export function useWolfChat({
 
   return {
     wolfMessages,
-    newMessage,
     isSendingMessage,
-    setNewMessage,
     sendWolfMessage,
   };
 }

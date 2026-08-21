@@ -5,6 +5,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MotionCard, CardHeader, CardTitle, CardContent, MotionButton } from '@/components/ui';
 import { PlayerAvatar } from '@/components/game';
@@ -14,26 +15,26 @@ import type { PartialPlayer } from '../hooks/types';
 interface WolfNightVoteProps {
   alivePlayers: PartialPlayer[];
   wolves: PartialPlayer[];
-  nightTarget: string | null;
   confirmedNightTarget: string | null;
   hasNightVoted: boolean;
   isNightVoting: boolean;
   nightVoteError: string | null;
-  onSelectTarget: (playerId: string) => void;
-  onSubmitVote: () => void;
+  onSubmitVote: (targetId: string) => void;
 }
 
 export function WolfNightVote({
   alivePlayers,
   wolves,
-  nightTarget,
   confirmedNightTarget,
   hasNightVoted,
   isNightVoting,
   nightVoteError,
-  onSelectTarget,
   onSubmitVote,
 }: WolfNightVoteProps) {
+  // Sélection locale au panneau : dans le contexte global, chaque tap
+  // faisait re-render tout l'écran de jeu
+  const [nightTarget, setNightTarget] = useState<string | null>(null);
+
   // Filter out wolves from targets
   const targets = alivePlayers.filter(p => !wolves.some(w => w.id === p.id));
 
@@ -101,7 +102,7 @@ export function WolfNightVote({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    onClick={() => onSelectTarget(player.id)}
+                    onClick={() => setNightTarget(player.id)}
                     whileTap={{ scale: 0.95 }}
                     className={cn(
                       "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
@@ -139,7 +140,7 @@ export function WolfNightVote({
               <MotionButton
                 variant="sticker"
                 className="w-full bg-blood-500 border-blood-400 hover:bg-blood-500"
-                onClick={onSubmitVote}
+                onClick={() => nightTarget && onSubmitVote(nightTarget)}
                 disabled={!nightTarget || isNightVoting}
               >
                 {isNightVoting ? '⏳ Vote en cours...' : '🐺 Dévorer cette proie'}

@@ -7,10 +7,11 @@
 
 'use client';
 
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../context';
 import { getRoleConfig } from '@/config/roles';
-import { GameOver, TipToast, RulesButton, PhaseBackground, MissionsDrawer } from '@/components/game';
+import { TipToast, RulesButton, PhaseBackground } from '@/components/game';
 import { GhostBanner } from './GhostBanner';
 import { PhaseCurtain } from './PhaseCurtain';
 import { ReadyButton } from './ReadyButton';
@@ -19,11 +20,25 @@ import { SessionRecovery } from './SessionRecovery';
 import { HunterDeathModal } from './HunterDeathModal';
 import { GameHeader } from './GameHeader';
 import { GameFooter } from './GameFooter';
-import { LobbyView } from './LobbyView';
 import { NightPhaseLayout } from './NightPhaseLayout';
 import { DayPhaseLayout } from './DayPhaseLayout';
 import { CouncilPhaseLayout } from './CouncilPhaseLayout';
 import { SeerHistoryPanel } from './SeerHistoryPanel';
+
+// Code-splitting : lourds et hors du chemin critique d'une partie en cours
+// (le lobby embarque qrcode.react, GameOver et le drawer missions ne servent
+// qu'à leur moment). Le PhaseBackground couvre l'écran pendant le chargement.
+const LobbyView = dynamic(() => import('./LobbyView').then((m) => m.LobbyView), {
+  ssr: false,
+});
+const GameOver = dynamic(
+  () => import('@/components/game/game-over').then((m) => m.GameOver),
+  { ssr: false }
+);
+const MissionsDrawer = dynamic(
+  () => import('@/components/game/missions-drawer').then((m) => m.MissionsDrawer),
+  { ssr: false }
+);
 
 export function GameLayout() {
   const {
@@ -108,13 +123,15 @@ export function GameLayout() {
         {/* Fantôme : le mort devient spectateur omniscient */}
         {currentPlayerId && !isAlive && <GhostBanner />}
 
-        {/* Phase-specific layout with animations */}
-        <AnimatePresence mode="wait">
+        {/* Phase-specific layout — crossfade court : mode="wait" bloquait le
+            paint du nouvel écran ~400ms le temps que l'ancien finisse de
+            sortir, sous le rideau déjà là pour habiller la transition */}
+        <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={gameStatus}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0, transition: { duration: 0.15 } }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           >
             {gameStatus === 'nuit' && <NightPhaseLayout />}

@@ -10,33 +10,31 @@ export default async function GamePage({ params }: GamePageProps) {
   const { code } = await params;
   const supabase = await createClient();
 
-  // Fetch game data
-  const { data: game, error } = await supabase
-    .from('games')
-    .select(`
-      *,
-      players (
-        id,
-        pseudo,
-        is_alive,
-        is_mj,
-        role_id,
-        created_at,
-        avatar_url
-      )
-    `)
-    .eq('code', code.toUpperCase())
-    .single();
+  // Partie + référentiel des rôles en parallèle (indépendants — les attendre
+  // en séquence doublait le TTFB de la page)
+  const [{ data: game, error }, { data: roles }] = await Promise.all([
+    supabase
+      .from('games')
+      .select(`
+        *,
+        players (
+          id,
+          pseudo,
+          is_alive,
+          is_mj,
+          role_id,
+          created_at,
+          avatar_url
+        )
+      `)
+      .eq('code', code.toUpperCase())
+      .single(),
+    supabase.from('roles').select('*').eq('is_active', true),
+  ]);
 
   if (error || !game) {
     redirect('/');
   }
-
-  // Get roles for display (only when game has started)
-  const { data: roles } = await supabase
-    .from('roles')
-    .select('*')
-    .eq('is_active', true);
 
   return (
     <GameClient 

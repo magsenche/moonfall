@@ -62,14 +62,20 @@ function PhaseScene({ phase }: { phase: GamePhase }) {
             animate={{ y: 0, opacity: 0.9 }}
             transition={{ duration: 2, ease: 'easeOut' }}
           />
-          {/* Étoiles */}
+          {/* Étoiles — scintillement en CSS pur (animate-twinkle) : dix
+              animations framer-motion permanentes coûtaient du JS par frame */}
           {STARS.map((star, i) => (
-            <motion.span
+            <span
               key={i}
-              className="absolute rounded-full bg-moon-100"
-              style={{ left: star.left, top: star.top, width: star.size, height: star.size }}
-              animate={{ opacity: [0.2, 0.7, 0.2] }}
-              transition={{ duration: 3 + (i % 3), repeat: Infinity, delay: i * 0.4 }}
+              className="absolute rounded-full bg-moon-100 animate-twinkle"
+              style={{
+                left: star.left,
+                top: star.top,
+                width: star.size,
+                height: star.size,
+                animationDuration: `${3 + (i % 3)}s`,
+                animationDelay: `${i * 0.4}s`,
+              }}
             />
           ))}
         </>
@@ -139,11 +145,13 @@ function generateFloatingPositions(count: number) {
 export function PhaseBackground({ phase, players = [], className }: PhaseBackgroundProps) {
   // Memoize floating positions based on players
   const floatingPositions = useMemo(() => {
-    const alive = players.filter(p => p.is_alive !== false && !p.is_mj).slice(0, 6);
+    const alive = players.filter(p => p.is_alive !== false && !p.is_mj).slice(0, 3);
     return generateFloatingPositions(alive.length);
   }, [players]);
 
-  const alivePlayers = players.filter(p => p.is_alive !== false && !p.is_mj).slice(0, 6);
+  // 3 avatars flottants max : chacun anime y+rotate en continu, six faisaient
+  // repeindre la couche de fond en permanence sur mobile
+  const alivePlayers = players.filter(p => p.is_alive !== false && !p.is_mj).slice(0, 3);
 
   return (
     <div className={cn('fixed inset-0 -z-10 overflow-hidden', className)}>

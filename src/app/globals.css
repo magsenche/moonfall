@@ -163,6 +163,27 @@ body {
   animation: confetti-fall linear forwards;
 }
 
+/* Scintillement des étoiles du fond de phase — CSS pur, zéro JS par frame */
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-twinkle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-twinkle {
+    animation: none;
+    opacity: 0.4;
+  }
+}
+
 /* Text shadow helper for Y2K headers */
 .text-shadow-hard {
   text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);

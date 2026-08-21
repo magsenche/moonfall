@@ -69,16 +69,25 @@ export function ReadyButton() {
 
   const toggleReady = async () => {
     if (!currentPlayerId || isLoading) return;
+
+    // Optimiste : le tap bascule tout de suite, rollback + message si l'API
+    // refuse (pas de fallback silencieux)
+    const wasReady = isReady;
+    const previousCount = readyCount;
+    setIsReady(!wasReady);
+    setReadyCount(Math.max(0, previousCount + (wasReady ? -1 : 1)));
     setIsLoading(true);
     setHint(null);
     try {
       const res = await fetch(`/api/games/${game.code}/ready`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: currentPlayerId, ready: !isReady }),
+        body: JSON.stringify({ playerId: currentPlayerId, ready: !wasReady }),
       });
       const data = await res.json();
       if (!res.ok) {
+        setIsReady(wasReady);
+        setReadyCount(previousCount);
         setHint(data.error ?? 'Impossible pour le moment');
         return;
       }
@@ -86,6 +95,8 @@ export function ReadyButton() {
       setReadyCount(data.readyCount ?? 0);
       setTotalHumans(data.totalHumans ?? 0);
     } catch (err) {
+      setIsReady(wasReady);
+      setReadyCount(previousCount);
       console.error('Ready toggle error:', err);
     } finally {
       setIsLoading(false);

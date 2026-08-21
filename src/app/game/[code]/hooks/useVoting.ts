@@ -10,12 +10,12 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { submitVote as apiSubmitVote, resolveVote as apiResolveVote, ApiError, VoteDetail, VoteResolveResponse } from '@/lib/api';
 
 interface UseVotingOptions {
   gameCode: string;
+  gameId: string;
   currentPlayerId: string | null;
   gameStatus: string;
 }
@@ -30,11 +30,9 @@ export interface VoteResults {
   winner?: string;
 }
 
-export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOptions) {
-  const router = useRouter();
-  
-  // Vote state
-  const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
+export function useVoting({ gameCode, gameId, currentPlayerId, gameStatus }: UseVotingOptions) {
+  // Vote state — la cible en cours de sélection vit dans VotingPanel
+  // (la hisser ici faisait re-render tout l'écran à chaque tap)
   const [confirmedVoteTarget, setConfirmedVoteTarget] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
@@ -53,7 +51,6 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
   useEffect(() => {
     if (gameStatus !== previousStatusRef.current) {
       setHasVoted(false);
-      setSelectedTarget(null);
       setConfirmedVoteTarget(null);
       setVotesCount(0);
       // Clear vote results when leaving conseil phase
@@ -64,25 +61,30 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
     }
   }, [gameStatus]);
 
-  // Submit vote
-  const submitVote = useCallback(async () => {
-    if (!currentPlayerId || !selectedTarget) return;
-    
+  // Submit vote — optimiste : le tap est confirmé immédiatement, rollback
+  // avec erreur affichée si l'API refuse (pas de fallback silencieux)
+  const submitVote = useCallback(async (targetId: string) => {
+    if (!currentPlayerId || !targetId) return;
+
+    const previousTarget = confirmedVoteTarget;
+    const hadVoted = hasVoted;
+    setConfirmedVoteTarget(targetId);
+    setHasVoted(true);
     setIsVoting(true);
     setVoteError(null);
-    
+
     try {
-      const data = await apiSubmitVote(gameCode, currentPlayerId, selectedTarget);
-      setConfirmedVoteTarget(selectedTarget);
-      setHasVoted(true);
+      const data = await apiSubmitVote(gameCode, currentPlayerId, targetId);
       setVotesCount(data.votesCount);
       setTotalVoters(data.totalPlayers);
     } catch (err) {
+      setConfirmedVoteTarget(previousTarget);
+      setHasVoted(hadVoted);
       setVoteError(err instanceof ApiError ? err.message : 'Une erreur est survenue');
     } finally {
       setIsVoting(false);
     }
-  }, [currentPlayerId, selectedTarget, gameCode]);
+  }, [currentPlayerId, gameCode, confirmedVoteTarget, hasVoted]);
 
   // Resolve vote (MJ only)
   const resolveVote = useCallback(async () => {
@@ -100,13 +102,14 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
         gameOver: result.gameOver,
         winner: result.winner,
       });
-      router.refresh();
+      // Le realtime propage le nouveau statut : pas de router.refresh, il
+      // re-exécutait toute la page serveur au pire moment
     } catch (err) {
       console.error('Vote resolution error:', err);
     } finally {
       setIsChangingPhase(false);
     }
-  }, [gameCode, router]);
+  }, [gameCode]);
 
   // Clear vote results (called when transitioning away)
   const clearVoteResults = useCallback(() => {
@@ -123,45 +126,47 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
     // Fetch current vote count on mount/status change
     const fetchVoteCount = async () => {
       try {
-        // Get game with id, current_phase, and settings in one query
+        // current_phase et settings peuvent bouger : lecture par id (indexée)
         const { data: gameData } = await supabase
           .from('games')
-          .select('id, current_phase, settings')
-          .eq('code', gameCode)
+          .select('current_phase, settings')
+          .eq('id', gameId)
           .single();
-        
+
         if (!gameData) return;
-        
+
         // Count votes for current phase only
         const { count: voteCount } = await supabase
           .from('votes')
           .select('*', { count: 'exact', head: true })
-          .eq('game_id', gameData.id)
+          .eq('game_id', gameId)
           .eq('phase', gameData.current_phase ?? 0)
           .eq('vote_type', 'jour');
-        
+
         // Count alive non-MJ players (or MJ in auto mode)
         const { data: players } = await supabase
           .from('players')
           .select('is_mj, is_alive')
-          .eq('game_id', gameData.id);
-        
+          .eq('game_id', gameId);
+
         const settings = gameData.settings as { autoMode?: boolean } | null;
         const isAutoMode = settings?.autoMode === true;
-        const totalVoters = players?.filter(p => 
+        const totalVoters = players?.filter(p =>
           p.is_alive && (!p.is_mj || isAutoMode)
         ).length || 0;
-        
+
         setVotesCount(voteCount || 0);
         setTotalVoters(totalVoters);
       } catch (err) {
         console.error('Error fetching vote count:', err);
       }
     };
-    
+
     fetchVoteCount();
-    
-    // Subscribe to vote changes
+
+    // Subscribe to vote changes — filtré par partie : sans le filtre, chaque
+    // client recevait les votes de TOUTES les parties du serveur et relançait
+    // trois requêtes à chacun
     const channel = supabase
       .channel(`votes:${gameCode}`)
       .on(
@@ -170,6 +175,7 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
           event: '*',
           schema: 'public',
           table: 'votes',
+          filter: `game_id=eq.${gameId}`,
         },
         () => {
           fetchVoteCount();
@@ -180,11 +186,10 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [gameCode, gameStatus]);
+  }, [gameCode, gameId, gameStatus]);
 
   return {
     // State
-    selectedTarget,
     confirmedVoteTarget,
     hasVoted,
     isVoting,
@@ -195,7 +200,6 @@ export function useVoting({ gameCode, currentPlayerId, gameStatus }: UseVotingOp
     voteResults,
     
     // Actions
-    setSelectedTarget,
     submitVote,
     resolveVote,
     clearVoteResults,

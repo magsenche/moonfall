@@ -9,14 +9,13 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { 
-  submitNightVote as apiSubmitNightVote, 
+import {
+  submitNightVote as apiSubmitNightVote,
   resolveNightVote as apiResolveNightVote,
   getNightVoteStatus,
   useSeerPower as apiUseSeerPower,
-  ApiError 
+  ApiError
 } from '@/lib/api';
 import type { SeerResult } from './types';
 
@@ -24,7 +23,6 @@ interface UseNightActionsOptions {
   gameCode: string;
   currentPlayerId: string | null;
   gameStatus: string;
-  isWolf: boolean;
   isSeer: boolean;
   isMJ: boolean;
 }
@@ -33,12 +31,11 @@ export function useNightActions({
   gameCode,
   currentPlayerId,
   gameStatus,
+  isSeer,
   isMJ,
-}: Omit<UseNightActionsOptions, 'isWolf' | 'isSeer'>) {
-  const router = useRouter();
-
-  // Wolf vote state
-  const [nightTarget, setNightTarget] = useState<string | null>(null);
+}: UseNightActionsOptions) {
+  // Wolf vote state — la cible en cours de sélection vit dans WolfNightVote
+  // (la hisser ici faisait re-render tout l'écran à chaque tap)
   const [confirmedNightTarget, setConfirmedNightTarget] = useState<string | null>(null);
   const [hasNightVoted, setHasNightVoted] = useState(false);
   const [isNightVoting, setIsNightVoting] = useState(false);
@@ -50,8 +47,7 @@ export function useNightActions({
   const [showForceConfirm, setShowForceConfirm] = useState(false);
   const [isChangingPhase, setIsChangingPhase] = useState(false);
 
-  // Seer power state
-  const [seerTarget, setSeerTarget] = useState<string | null>(null);
+  // Seer power state — la cible en cours de sélection vit dans SeerPowerPanel
   const [seerResult, setSeerResult] = useState<SeerResult | null>(null);
   const [seerHistory, setSeerHistory] = useState<SeerResult[]>([]);
   const [hasUsedSeerPower, setHasUsedSeerPower] = useState(false);
@@ -64,13 +60,11 @@ export function useNightActions({
     if (gameStatus !== previousStatusRef.current) {
       // Wolf vote reset
       setHasNightVoted(false);
-      setNightTarget(null);
       setConfirmedNightTarget(null);
       setWolfVoteCount({ voted: 0, total: 0 });
       setNightVoteResolveError(null);
       setShowForceConfirm(false);
       // Seer power reset (for new night)
-      setSeerTarget(null);
       setSeerResult(null);
       setHasUsedSeerPower(false);
       setSeerError(null);
@@ -78,23 +72,28 @@ export function useNightActions({
     }
   }, [gameStatus]);
 
-  // Submit wolf night vote
-  const submitNightVote = useCallback(async () => {
-    if (!currentPlayerId || !nightTarget) return;
-    
+  // Submit wolf night vote — optimiste : le tap est confirmé immédiatement,
+  // rollback avec erreur affichée si l'API refuse (pas de fallback silencieux)
+  const submitNightVote = useCallback(async (targetId: string) => {
+    if (!currentPlayerId || !targetId) return;
+
+    const previousTarget = confirmedNightTarget;
+    const hadVoted = hasNightVoted;
+    setConfirmedNightTarget(targetId);
+    setHasNightVoted(true);
     setIsNightVoting(true);
     setNightVoteError(null);
-    
+
     try {
-      await apiSubmitNightVote(gameCode, currentPlayerId, nightTarget);
-      setConfirmedNightTarget(nightTarget);
-      setHasNightVoted(true);
+      await apiSubmitNightVote(gameCode, currentPlayerId, targetId);
     } catch (err) {
+      setConfirmedNightTarget(previousTarget);
+      setHasNightVoted(hadVoted);
       setNightVoteError(err instanceof ApiError ? err.message : 'Une erreur est survenue');
     } finally {
       setIsNightVoting(false);
     }
-  }, [currentPlayerId, nightTarget, gameCode]);
+  }, [currentPlayerId, gameCode, confirmedNightTarget, hasNightVoted]);
 
   // Resolve night vote (MJ)
   const resolveNightVote = useCallback(async (force = false) => {
@@ -103,12 +102,11 @@ export function useNightActions({
     
     try {
       await apiResolveNightVote(gameCode, force);
-      // Reset state
+      // Reset state — le realtime propage le nouveau statut, pas besoin de
+      // re-exécuter la page serveur (router.refresh doublonnait l'aller-retour)
       setHasNightVoted(false);
-      setNightTarget(null);
       setConfirmedNightTarget(null);
       setShowForceConfirm(false);
-      router.refresh();
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {
         // Check if we can force resolve
@@ -128,7 +126,7 @@ export function useNightActions({
     } finally {
       setIsChangingPhase(false);
     }
-  }, [gameCode, router]);
+  }, [gameCode]);
 
   // Fetch wolf vote count (MJ)
   const fetchWolfVoteCount = useCallback(async () => {
@@ -149,15 +147,15 @@ export function useNightActions({
     return () => clearInterval(interval);
   }, [isMJ, gameStatus, fetchWolfVoteCount]);
 
-  // Use seer power
-  const useSeerPower = useCallback(async () => {
-    if (!currentPlayerId || !seerTarget) return;
-    
+  // Use seer power (pas d'optimisme possible : on attend la vision)
+  const useSeerPower = useCallback(async (targetId: string) => {
+    if (!currentPlayerId || !targetId) return;
+
     setIsUsingSeerPower(true);
     setSeerError(null);
-    
+
     try {
-      const data = await apiUseSeerPower(gameCode, currentPlayerId, seerTarget);
+      const data = await apiUseSeerPower(gameCode, currentPlayerId, targetId);
       setSeerResult(data.result);
       setHasUsedSeerPower(true);
       // Add to history
@@ -167,11 +165,12 @@ export function useNightActions({
     } finally {
       setIsUsingSeerPower(false);
     }
-  }, [currentPlayerId, seerTarget, gameCode]);
+  }, [currentPlayerId, gameCode]);
 
-  // Fetch seer power history
+  // Fetch seer power history — voyante uniquement : ces deux requêtes
+  // partaient chez TOUS les joueurs à chaque changement de phase
   useEffect(() => {
-    if (!currentPlayerId || gameStatus === 'lobby') return;
+    if (!isSeer || !currentPlayerId || gameStatus === 'lobby') return;
     
     const supabase = createClient();
     
@@ -225,34 +224,30 @@ export function useNightActions({
 
   return {
     // Wolf vote state
-    nightTarget,
     confirmedNightTarget,
     hasNightVoted,
     isNightVoting,
     nightVoteError,
     wolfVoteCount,
-    
+
     // Night resolution state (MJ)
     nightVoteResolveError,
     showForceConfirm,
     isChangingPhase,
-    
+
     // Seer state
-    seerTarget,
     seerResult,
     seerHistory,
     hasUsedSeerPower,
     isUsingSeerPower,
     seerError,
-    
+
     // Wolf actions
-    setNightTarget,
     submitNightVote,
     resolveNightVote,
     setShowForceConfirm,
-    
+
     // Seer actions
-    setSeerTarget,
     useSeerPower,
   };
 }
