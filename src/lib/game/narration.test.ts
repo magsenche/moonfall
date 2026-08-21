@@ -65,10 +65,14 @@ describe('buildPhaseNarration', () => {
     assert.deepEqual(a, b);
   });
 
-  it('nuit 1 : pas de verdict fantôme, juste l\'endormissement', () => {
-    const lines = buildPhaseNarration('nuit', 1, []);
-    assert.equal(lines.length, 1);
-    assert.match(lines[0], /🌙/);
+  it('nuit 1 : le narrateur se présente puis endort le village, sans verdict fantôme', () => {
+    const lines = buildPhaseNarration('nuit', 1, [], 'garde');
+    assert.equal(lines.length, 2);
+    assert.match(lines[0], /Garde-champêtre assermenté/);
+    assert.match(lines[1], /🌙/);
+    // L'intro ne se rejoue pas les nuits suivantes
+    const night2 = buildPhaseNarration('nuit', 2, [], 'garde');
+    assert.ok(!night2.some((l) => l.includes('assermenté')), 'présentation à la nuit 1 seulement');
   });
 
   it('le narrateur commente le verdict : coupable vs bavure', () => {
@@ -93,20 +97,21 @@ describe('buildPhaseNarration', () => {
   });
 
   it('chaque narrateur a sa propre voix', () => {
-    const voices = (['corbeau', 'commere', 'aubergiste'] as NarratorId[]).map(
+    const voices = (['corbeau', 'commere', 'aubergiste', 'garde'] as NarratorId[]).map(
       (narrator) => buildPhaseNarration('conseil', 2, [], narrator)[0]
     );
-    assert.equal(new Set(voices).size, 3, 'trois ouvertures de conseil distinctes');
+    assert.equal(new Set(voices).size, 4, 'quatre ouvertures de conseil distinctes');
   });
 
-  it('narratorForGame : déterministe et couvre les trois narrateurs', () => {
+  it('narratorForGame : déterministe et couvre les quatre narrateurs', () => {
     assert.equal(narratorForGame('game-abc'), narratorForGame('game-abc'));
     const drawn = new Set(
-      Array.from({ length: 60 }, (_, i) => narratorForGame(`game-${i}`))
+      Array.from({ length: 80 }, (_, i) => narratorForGame(`game-${i}`))
     );
-    assert.equal(drawn.size, 3, 'les trois narrateurs sortent sur 60 parties');
+    assert.equal(drawn.size, 4, 'les quatre narrateurs sortent sur 80 parties');
     for (const id of drawn) {
       assert.ok(NARRATORS[id], `profil défini pour ${id}`);
+      assert.ok(NARRATORS[id].emoji, `emoji défini pour ${id}`);
     }
   });
 });

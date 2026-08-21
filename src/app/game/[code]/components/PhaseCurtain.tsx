@@ -15,6 +15,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { playNarratorCue } from '@/lib/sounds';
 import { useGame } from '../context';
 
 const CURTAIN_MS = 6500;
@@ -43,7 +44,8 @@ export function PhaseCurtain() {
   const [curtain, setCurtain] = useState<{
     status: string;
     lines: string[];
-    narrator: { name: string; tagline: string } | null;
+    narrator: { id: string; name: string; tagline: string; emoji: string } | null;
+    isIntro: boolean;
   } | null>(null);
 
   // À chaque transition de phase (pas au premier montage : on arrive peut-être
@@ -59,11 +61,18 @@ export function PhaseCurtain() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (cancelled || !data || data.status !== gameStatus) return;
+        const isIntro = gameStatus === 'nuit' && data.phase === 1;
         setCurtain({
           status: gameStatus,
           lines: data.lines ?? [],
           narrator: data.narrator ?? null,
+          isIntro,
         });
+        // Entrée en scène : le motif sonore du narrateur, après le jingle de
+        // phase (SoundEffects) pour ne pas se marcher dessus
+        if (isIntro && data.narrator?.id) {
+          setTimeout(() => playNarratorCue(data.narrator.id), 1200);
+        }
       })
       .catch(() => {
         // Narration décorative : sans réseau, pas de rideau
@@ -73,10 +82,11 @@ export function PhaseCurtain() {
     };
   }, [gameStatus, game.code]);
 
-  // Le rideau se lève tout seul
+  // Le rideau se lève tout seul — un peu plus tard à l'entrée en scène du
+  // narrateur (nuit 1), le temps de lire sa présentation
   useEffect(() => {
     if (!curtain) return;
-    const timeout = setTimeout(() => setCurtain(null), CURTAIN_MS);
+    const timeout = setTimeout(() => setCurtain(null), curtain.isIntro ? CURTAIN_MS + 3000 : CURTAIN_MS);
     return () => clearTimeout(timeout);
   }, [curtain]);
 
@@ -126,16 +136,30 @@ export function PhaseCurtain() {
             ))}
           </div>
 
-          {/* Signature du narrateur de la partie — le fil conducteur du ton */}
+          {/* Signature du narrateur de la partie — le fil conducteur du ton.
+              À l'entrée en scène (nuit 1), elle prend toute sa place. */}
           {curtain.narrator && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.6, duration: 0.8 }}
-              className="mt-8 font-display italic text-sm text-moon-100/60"
+            <motion.div
+              initial={{ opacity: 0, scale: curtain.isIntro ? 0.8 : 1 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: curtain.isIntro ? 1.2 : 1.6, duration: 0.8, type: 'spring', damping: 18 }}
+              className={cn(
+                'mt-8 flex items-center gap-2 justify-center',
+                curtain.isIntro && 'px-4 py-2 rounded-full border border-moon-500/30 bg-night-900/60'
+              )}
             >
-              — {curtain.narrator.name}, {curtain.narrator.tagline}
-            </motion.p>
+              <span className={curtain.isIntro ? 'text-2xl' : 'text-base'}>
+                {curtain.narrator.emoji}
+              </span>
+              <span
+                className={cn(
+                  'font-display italic',
+                  curtain.isIntro ? 'text-base text-moon-100/90' : 'text-sm text-moon-100/60'
+                )}
+              >
+                — {curtain.narrator.name}, {curtain.narrator.tagline}
+              </span>
+            </motion.div>
           )}
 
           <motion.p
